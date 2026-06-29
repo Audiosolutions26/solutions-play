@@ -8,13 +8,14 @@ import { ProgramPanel } from "./ProgramPanel";
 import { FoldersPanel } from "./FoldersPanel";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { QuickStartPanel } from "./QuickStartPanel";
-import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel } from "./BottomPanels";
+import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel, TextoDoDiaPanel } from "./BottomPanels";
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
+import { BeepDialog, BeepController } from "./BeepDialog";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import type { PanelVisibility } from "./AppMenu";
 
-const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Hoje", "Mini site", "Anotações"];
+const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Hoje", "Mini site", "Anotações"];
 
 // Atalhos de teclado (manual p.16, 18, 30): Espaço = Tocar/Passar, Delete = Remover.
 function KeyboardShortcuts() {
@@ -37,6 +38,16 @@ function KeyboardShortcuts() {
   return null;
 }
 
+// Quando a inserção no ar é um texto, abre o painel Textos ao vivo (manual p.36).
+function LiveTextAutoOpen({ onOpen }: { onOpen: () => void }) {
+  const { current } = usePlayer();
+  useEffect(() => {
+    if (current && current.category === "texto") onOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id]);
+  return null;
+}
+
 export function PlayApp() {
   const [operator, setOperator] = useState<Operator>(operators[0]);
   const [loginMode, setLoginMode] = useState<null | "switch" | "logout">(null);
@@ -44,6 +55,7 @@ export function PlayApp() {
   const [activeTab, setActiveTab] = useState("Programação");
   const [options, setOptions] = useState<{ open: boolean; tab: string }>({ open: false, tab: "geral" });
   const [advanced, setAdvanced] = useState<{ open: boolean; tab: string }>({ open: false, tab: "ini" });
+  const [beepOpen, setBeepOpen] = useState(false);
 
   const togglePanel = (key: keyof PanelVisibility) =>
     setPanels((p) => ({ ...p, [key]: !p[key] }));
@@ -54,6 +66,8 @@ export function PlayApp() {
     <ConfigProvider>
     <PlayerProvider>
       <KeyboardShortcuts />
+      <BeepController />
+      <LiveTextAutoOpen onOpen={() => setActiveTab("Textos ao vivo")} />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
         <TopBar
           panels={panels}
@@ -63,6 +77,7 @@ export function PlayApp() {
           onSwitchOperator={() => setLoginMode("switch")}
           onOpenQuickStart={() => setActiveTab("QuickStart")}
           onOpenAdvanced={openAdvanced}
+          onOpenBeep={() => setBeepOpen(true)}
         />
         <OnAirBar />
         <div className="flex min-h-0 flex-1">
@@ -72,6 +87,8 @@ export function PlayApp() {
             <PlayedPanel />
           ) : activeTab === "Textos ao vivo" ? (
             <LiveTextPanel />
+          ) : activeTab === "Texto do dia" ? (
+            <TextoDoDiaPanel />
           ) : activeTab === "Hoje" ? (
             <TodayPanel />
           ) : activeTab === "Mini site" ? (
@@ -121,6 +138,7 @@ export function PlayApp() {
         </div>
       </div>
       <OptionsDialog open={options.open} onOpenChange={(v) => setOptions((o) => ({ ...o, open: v }))} tab={options.tab} />
+      <BeepDialog open={beepOpen} onOpenChange={setBeepOpen} />
       <RecursosAvancadosDialog
         open={advanced.open}
         onOpenChange={(v) => setAdvanced((a) => ({ ...a, open: v }))}
