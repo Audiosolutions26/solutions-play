@@ -14,11 +14,15 @@ import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel, Text
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
 import { BeepDialog, BeepController } from "./BeepDialog";
+import { SecoesDialog } from "./SecoesDialog";
+import { AudioDevicesDialog } from "./AudioDevicesDialog";
+import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { getMarkers } from "@/lib/play-markers";
+import { logEvent } from "@/lib/play-events";
 import type { PanelVisibility } from "./AppMenu";
 
-const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
+const tabs = ["Programação", "QuickStart", "Status", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
 
 // Atalhos de teclado (manual p.16, 18, 30): Espaço = Tocar/Passar, Delete = Remover.
 function KeyboardShortcuts() {
@@ -101,17 +105,20 @@ function MarkerController() {
       firedRef.current.add(key);
       switch (m.kind) {
         case "annotation":
-          if (m.note) toast.info(`📝 ${m.note}`);
+          if (m.note) { toast.info(`📝 ${m.note}`); logEvent("marcador", "Anotação", m.note); }
           break;
         case "introEnd":
           toast.message("Fim da introdução — locutor liberado.");
+          logEvent("marcador", "Fim da introdução", current.title);
           break;
         case "locStart":
           toast.message("🎙️ Início de locução.");
+          logEvent("locucao", "Início de locução", current.title);
           break;
         case "carimbo":
           eng.fire(current.freq > 0 ? current.freq : 330, 0.5);
           toast.message("Carimbo (Hora Certa) disparado.");
+          logEvent("carimbo", "Carimbo disparado", current.title);
           break;
         case "fadeOutStart": {
           preFade.current = volume;
@@ -125,9 +132,11 @@ function MarkerController() {
             setVolume(startVol * f);
             if (f <= 0 && fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
           }, 100);
+          logEvent("marcador", "Início do Fade-Out", current.title);
           break;
         }
         case "nextEntry":
+          logEvent("marcador", "Entrada do próximo", current.title);
           next();
           break;
         default:
