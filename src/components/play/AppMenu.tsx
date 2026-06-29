@@ -32,7 +32,7 @@ const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
 export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced }: Props) {
-  const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack } = usePlayer();
+  const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack } = usePlayer();
 
   const removeSelected = () => {
     if (!selectedId) {
@@ -44,6 +44,11 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
       removeTrack(block.id, selectedId);
       toast.success("Inserção removida");
     }
+  };
+
+  const move = (dir: -1 | 1) => {
+    if (!selectedId) { toast.info("Selecione uma inserção primeiro."); return; }
+    moveTrack(selectedId, dir);
   };
 
   return (
@@ -79,8 +84,8 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
           <MenubarItem onSelect={soon("Colar")}>Colar<MenubarShortcut>Ctrl+V</MenubarShortcut></MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={removeSelected}>Remover inserção<MenubarShortcut>Del</MenubarShortcut></MenubarItem>
-          <MenubarItem onSelect={soon("Mover para cima")}>Mover inserção p/ cima</MenubarItem>
-          <MenubarItem onSelect={soon("Mover para baixo")}>Mover inserção p/ baixo</MenubarItem>
+          <MenubarItem onSelect={() => move(-1)}>Mover inserção p/ cima</MenubarItem>
+          <MenubarItem onSelect={() => move(1)}>Mover inserção p/ baixo</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={soon("Localizar")}>Localizar arquivo…<MenubarShortcut>Ctrl+F</MenubarShortcut></MenubarItem>
           <MenubarItem onSelect={soon("Selecionar tudo")}>Selecionar tudo<MenubarShortcut>Ctrl+A</MenubarShortcut></MenubarItem>
