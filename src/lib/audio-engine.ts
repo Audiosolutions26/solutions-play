@@ -414,7 +414,7 @@ export class AudioEngine {
   setVolume(v: number) {
     this.volume = v;
     if (this.master && this.ctx) {
-      this.master.gain.setTargetAtTime(v * 0.5, this.ctx.currentTime, 0.05);
+      this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
     }
   }
 
