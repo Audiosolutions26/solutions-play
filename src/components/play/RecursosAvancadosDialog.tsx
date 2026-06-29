@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
-import { DEFAULT_GRADE, DEFAULT_MAPA } from "@/lib/play-data";
+import { DEFAULT_GRADE, DEFAULT_MAPA, fmt, type Block } from "@/lib/play-data";
 import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib/play-gen";
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
@@ -53,6 +53,12 @@ export function RecursosAvancadosDialog({
   const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
   const errorCount = gradeIssues.filter((i) => i.severity === "error").length
     + mapaIssues.filter((i) => i.severity === "error").length;
+
+  const preview = useMemo<Block[]>(
+    () => (errorCount > 0 ? [] : generateProgram(grade, mapa)),
+    [grade, mapa, errorCount],
+  );
+  const previewTotal = preview.reduce((s, b) => s + b.items.length, 0);
 
   const gerar = () => {
     if (errorCount > 0) {
