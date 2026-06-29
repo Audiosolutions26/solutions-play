@@ -18,6 +18,25 @@ const fs = require("fs");
 function rmrf(p) { if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true }); }
 function copy(src, dst) { fs.cpSync(src, dst, { recursive: true, dereference: true }); }
 
+function findElectronBinary(dir) {
+  const wanted = new Set(["electron.exe", "Electron.exe", "electron"]);
+  const stack = [dir];
+
+  while (stack.length) {
+    const current = stack.pop();
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+      } else if (entry.isFile() && wanted.has(entry.name)) {
+        return full;
+      }
+    }
+  }
+
+  return null;
+}
+
 function main() {
   const root = path.resolve(__dirname, "..");
   const electronPkgDir = path.dirname(require.resolve("electron/package.json"));
@@ -41,25 +60,27 @@ function main() {
   copy(distSrc, outDir);
 
   // Renomeia o binário do Electron para Solutions-Play.exe.
-  const winBin = path.join(outDir, "electron.exe");
-  const nixBin = path.join(outDir, "electron");
-  let exe;
-  if (fs.existsSync(winBin)) {
-    exe = path.join(outDir, "Solutions-Play.exe");
-    fs.renameSync(winBin, exe);
-  } else if (fs.existsSync(nixBin)) {
-    exe = path.join(outDir, "Solutions-Play");
-    fs.renameSync(nixBin, exe);
-  } else {
+  // Em alguns Windows/Node, a cópia pode ficar aninhada; por isso procuramos
+  // recursivamente e usamos a pasta real do runtime como destino do app.
+  const electronBin = findElectronBinary(outDir);
+  if (!electronBin) {
     console.error("[pack] Binário do Electron não encontrado em " + outDir);
+    console.error("[pack] Conteúdo encontrado: " + fs.readdirSync(outDir).join(", "));
     process.exit(1);
   }
 
+  const runtimeDir = path.dirname(electronBin);
+  const exeName = process.platform === "win32" || electronBin.toLowerCase().endsWith(".exe")
+    ? "Solutions-Play.exe"
+    : "Solutions-Play";
+  const exe = path.join(runtimeDir, exeName);
+  if (electronBin !== exe) fs.renameSync(electronBin, exe);
+
   // Remove o app de exemplo embutido no Electron.
-  rmrf(path.join(outDir, "resources", "default_app.asar"));
+  rmrf(path.join(runtimeDir, "resources", "default_app.asar"));
 
   // Monta resources/app com apenas o necessário.
-  const appDir = path.join(outDir, "resources", "app");
+  const appDir = path.join(runtimeDir, "resources", "app");
   rmrf(appDir);
   fs.mkdirSync(path.join(appDir, "electron"), { recursive: true });
 
