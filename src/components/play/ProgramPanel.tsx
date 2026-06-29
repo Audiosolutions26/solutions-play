@@ -11,6 +11,7 @@ import { MarkersDialog } from "./MarkersDialog";
 import { BlockClockDialog } from "./BlockClockDialog";
 import { saveMarkers, getMarkers, hasRefrao, hasCarimbo } from "@/lib/play-markers";
 import { hasTrackAudio, readAudioFile } from "@/lib/play-audio-files";
+import { AUDIO_ACCEPT } from "@/lib/audio-formats";
 
 const catIcon = {
   musical: Music,
