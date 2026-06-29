@@ -31,6 +31,7 @@ interface PlayerState {
   select: (id: string) => void;
   addTrack: (blockId: string, track: Track) => void;
   moveTrack: (trackId: string, dir: -1 | 1) => void;
+  reorderTrack: (sourceId: string, targetId: string, place?: "before" | "after") => void;
   removeTrack: (blockId: string, trackId: string) => void;
   replaceBlocks: (blocks: Block[]) => void;
   setTrackAudio: (blockId: string, trackId: string, url: string, duration: number) => void;
@@ -161,6 +162,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  // Arrastar e soltar para reposicionar inserções (clicar, arrastar e soltar).
+  // Funciona dentro do mesmo bloco e entre blocos, respeitando blocos LOCKED.
+  const reorderTrack = useCallback((sourceId: string, targetId: string, place: "before" | "after" = "before") => {
+    if (sourceId === targetId) return;
+    setBlocks((bs) => {
+      const srcBlock = bs.find((b) => b.items.some((t) => t.id === sourceId));
+      const dstBlock = bs.find((b) => b.items.some((t) => t.id === targetId));
+      if (!srcBlock || !dstBlock) return bs;
+      if (srcBlock.clock?.locked || dstBlock.clock?.locked) return bs;
+      const moving = srcBlock.items.find((t) => t.id === sourceId);
+      if (!moving) return bs;
+      const flagged = { ...moving, moved: moving.origin === "auto" ? true : moving.moved };
+      return bs.map((b) => {
+        let items = b.items;
+        if (b.id === srcBlock.id) items = items.filter((t) => t.id !== sourceId);
+        if (b.id === dstBlock.id) {
+          const idx = items.findIndex((t) => t.id === targetId);
+          if (idx < 0) return { ...b, items };
+          const at = place === "after" ? idx + 1 : idx;
+          items = [...items.slice(0, at), flagged, ...items.slice(at)];
+        }
+        return items === b.items ? b : { ...b, items };
+      });
+    });
+  }, []);
+
   const setTrackAudio = useCallback((blockId: string, trackId: string, url: string, duration: number) => {
     setTrackAudioUrl(trackId, url);
     setBlocks((bs) =>
@@ -219,7 +246,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     onAir: isPlaying, cue, selectedId,
     playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
