@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings, Plus, Trash2, KeyRound } from "lucide-react";
+import { useRef, useState } from "react";
+import { Settings, Plus, Trash2, KeyRound, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { configGuides, type ConfigField, type ConfigGuide } from "@/lib/play-config";
+import { configGuides, exportConfig, importConfig, type ConfigField, type ConfigGuide } from "@/lib/play-config";
 import { useConfig } from "@/hooks/use-config";
 import { validateFieldValue, validateConfigState } from "@/lib/play-config-validate";
 import { operators as seedOperators, type Operator } from "./OperatorLogin";
@@ -215,8 +215,9 @@ export function OptionsDialog({
   onOpenChange: (v: boolean) => void;
   tab: string;
 }) {
-  const { commit, cancel, reset, draft } = useConfig();
+  const { commit, cancel, reset, draft, setDraftAll } = useConfig();
   const [active, setActive] = useState(tab);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const errors = validateConfigState(draft);
   const errorKeys = Object.keys(errors);
@@ -232,6 +233,38 @@ export function OptionsDialog({
     commit();
     toast.success("Configurações salvas.");
     onOpenChange(false);
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([exportConfig(draft)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `solutions-play-config-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success("Configurações exportadas (não altera o que está salvo).");
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite reimportar o mesmo arquivo
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const { state, applied, ignored } = importConfig(text);
+      setDraftAll(state);
+      toast.success(
+        `Configurações importadas: ${applied} aplicada(s)` +
+        (ignored.length ? `, ${ignored.length} ignorada(s).` : ".") +
+        " Revise e clique em Salvar.",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao importar arquivo.");
+    }
   };
 
   // sync requested tab when dialog opens
