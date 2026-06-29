@@ -126,6 +126,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const select = useCallback((id: string) => setSelectedId(id), []);
 
   const addTrack = useCallback((blockId: string, track: Track) => {
+    const block = blocksRef.current.find((b) => b.id === blockId);
+    if (block?.clock?.locked) return; // bloco LOCKED (manual p.141)
     const t = { ...cloneTrack(track), origin: "manual" as const, moved: false };
     setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: [...b.items, t] } : b)));
   }, []);
@@ -135,6 +137,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const moveTrack = useCallback((trackId: string, dir: -1 | 1) => {
     setBlocks((bs) =>
       bs.map((b) => {
+        if (b.clock?.locked) return b; // bloco LOCKED (manual p.141)
         const i = b.items.findIndex((t) => t.id === trackId);
         if (i < 0) return b;
         const j = i + dir;
@@ -149,7 +152,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeTrack = useCallback((blockId: string, trackId: string) => {
-    setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: b.items.filter((t) => t.id !== trackId) } : b)));
+    setBlocks((bs) =>
+      bs.map((b) =>
+        b.id === blockId && !b.clock?.locked
+          ? { ...b, items: b.items.filter((t) => t.id !== trackId) }
+          : b,
+      ),
+    );
   }, []);
 
   const setTrackAudio = useCallback((blockId: string, trackId: string, url: string, duration: number) => {
