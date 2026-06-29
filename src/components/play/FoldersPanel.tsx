@@ -89,6 +89,9 @@ export function FoldersPanel({ onManage }: { onManage?: () => void }) {
         <button onClick={() => preview()} title="Pré-escuta (atalho: C)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
         <button onClick={stopPreview} title="Parar pré-escuta (atalho: C)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
         <button onClick={() => sel && add(sel)} title="Adicionar à programação" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><SkipForward className="h-4 w-4" /></button>
+        {onManage && (
+          <button onClick={onManage} title="Gerenciamento de atalhos" className="grid h-7 w-7 place-items-center rounded border border-pl-panel-dark bg-white/60 text-pl-text hover:bg-white"><Settings2 className="h-4 w-4" /></button>
+        )}
         <span className="ml-2 truncate text-[12px] font-semibold text-pl-text">
           {results ? `Resultados: "${query}"` : open ? open.name : "Pastas de trabalho"}
         </span>
