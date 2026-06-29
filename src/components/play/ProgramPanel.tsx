@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Block, type Track } from "@/lib/play-data";
@@ -9,6 +9,7 @@ import {
 import { TransportBar } from "./TransportBar";
 import { MarkersDialog } from "./MarkersDialog";
 import { saveMarkers, getMarkers, hasRefrao, hasCarimbo } from "@/lib/play-markers";
+import { hasTrackAudio, readAudioFile } from "@/lib/play-audio-files";
 
 const catIcon = {
   musical: Music,
@@ -25,13 +26,28 @@ const catRowBg = {
 } as const;
 
 function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarkers: (t: Track) => void }) {
-  const { current, position, selectedId, select, playAt, removeTrack, getEngine } = usePlayer();
+  const { current, position, selectedId, select, playAt, removeTrack, getEngine, setTrackAudio } = usePlayer();
+  const fileRef = useRef<HTMLInputElement>(null);
   const isCurrent = current?.id === track.id;
   const isSelected = selectedId === track.id;
   const Icon = catIcon[track.category];
   const pct = isCurrent ? Math.min(100, (position / track.duration) * 100) : 0;
   const refrao = hasRefrao(track.id);
   const carimbo = hasCarimbo(track.id);
+  const realAudio = hasTrackAudio(track.id);
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const { url, duration } = await readAudioFile(file);
+      setTrackAudio(block.id, track.id, url, duration);
+      toast.success(`Áudio real carregado: ${file.name}`);
+    } catch {
+      toast.error("Não foi possível carregar o arquivo de áudio.");
+    }
+  };
 
   const addRefrao = () => {
     const m = getMarkers(track.id).filter((x) => x.kind !== "refraoStart" && x.kind !== "refraoEnd");
@@ -67,16 +83,22 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
             {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
             {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
             {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
+            {realAudio && <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />}
           </span>
           <span className="relative z-10 font-mono text-[11px] tabular-nums opacity-80">
             {isCurrent ? `-${fmt(track.duration - position)}` : fmt(track.duration)}
           </span>
+          <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         <ContextMenuItem onClick={() => playAt(block.id, track.id)}><Play className="mr-2 h-4 w-4" /> Tocar</ContextMenuItem>
         <ContextMenuItem onClick={() => { getEngine().fire(track.freq, 1.2); toast.message("Pré-escuta (CUE)"); }}>
           <Headphones className="mr-2 h-4 w-4" /> Pré-escuta (CUE)
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => fileRef.current?.click()}>
+          <FileAudio className="mr-2 h-4 w-4" /> {realAudio ? "Trocar áudio real…" : "Carregar áudio real…"}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onMarkers(track)}><Bookmark className="mr-2 h-4 w-4" /> Marcadores…</ContextMenuItem>
