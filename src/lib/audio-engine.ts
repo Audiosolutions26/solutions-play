@@ -53,6 +53,9 @@ export class AudioEngine {
   // Vozes de URL (uma por inserção em reprodução). Durante a mixagem
   // (crossfade) coexistem temporariamente duas vozes: a que sai e a que entra.
   private mainVoice: UrlVoice | null = null;
+  // Callback disparado quando a inserção atual (voz principal) termina
+  // naturalmente — usado para o avanço automático mesmo sem duração conhecida.
+  private onEndedCb: (() => void) | null = null;
 
   private ensure() {
     if (typeof window === "undefined") return;
@@ -78,6 +81,11 @@ export class AudioEngine {
     return this.analyser;
   }
 
+  // Registra o callback de "fim da faixa atual" (avanço automático confiável).
+  setOnEnded(cb: (() => void) | null) {
+    this.onEndedCb = cb;
+  }
+
   // ---- vozes de URL (para mixagem/crossfade real) -----------------------
 
   private makeVoice(url: string): UrlVoice | null {
@@ -89,7 +97,13 @@ export class AudioEngine {
     const gain = this.ctx.createGain();
     src.connect(gain);
     gain.connect(this.master);
-    return { el, src, gain };
+    const voice: UrlVoice = { el, src, gain };
+    // Avanço automático no fim real do arquivo. Só a voz PRINCIPAL dispara
+    // (vozes antigas em crossfade são ignoradas para não pular duas vezes).
+    el.addEventListener("ended", () => {
+      if (voice === this.mainVoice && this.onEndedCb) this.onEndedCb();
+    });
+    return voice;
   }
 
   private disposeVoice(v: UrlVoice | null) {

@@ -109,6 +109,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [findNext, playAt, engine]);
 
+  // Avanço automático confiável: quando a inserção atual termina de verdade
+  // (evento "ended" do arquivo), pula para a próxima — mesmo que a duração
+  // não tenha sido detectada. Sem isto, faixas sem metadados de duração ficam
+  // paradas no fim e o crossfade nunca dispara.
+  useEffect(() => {
+    engine.setOnEnded(() => {
+      if (!transitioningRef.current) next();
+    });
+    return () => engine.setOnEnded(null);
+  }, [engine, next]);
+
   // Passagem manual (botão "Próxima"): aplica o fade configurado em
   // "Fade nas passagens manuais" (manual p.106).
   const nextManual = useCallback(() => {
@@ -262,9 +273,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (cur) {
           const hasAudio = !!(getTrackAudioUrl(cur.id) || cur.audioUrl);
           const pos = hasAudio || cur.freq > 0 ? engine.position() : position + 0.2;
-          // Inserções de pasta começam sem duração conhecida (0): usa a duração
-          // real do arquivo assim que o navegador a conhece.
-          const dur = cur.duration > 0 ? cur.duration : (hasAudio ? engine.mediaDuration() : 0);
+          // Prefere a duração REAL do arquivo (precisa para crossfade e avanço);
+          // só usa a duração armazenada como fallback quando a real é desconhecida.
+          const media = hasAudio ? engine.mediaDuration() : 0;
+          const dur = media > 0 ? media : (cur.duration > 0 ? cur.duration : 0);
           // Assim que o arquivo informa a duração real, grava de volta no track
           // para que o "tempo" apareça na Programação e o avanço automático
           // funcione (músicas de pasta entram com 0:00).
