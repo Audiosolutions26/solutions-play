@@ -48,3 +48,21 @@ export async function resolveTrackAudio(track: Track): Promise<string | undefine
   }
   return undefined;
 }
+
+// Lê a duração (em segundos) de um track sem manter o arquivo em memória.
+// Usado para mostrar o "tempo" das músicas de uma pasta na lista, sem
+// inflar o cache (importante quando a pasta tem muitos arquivos).
+export async function readTrackDuration(track: Track): Promise<number> {
+  let url = urls.get(track.id) || track.audioUrl;
+  if (!url && track.filePath) {
+    url = (await readAudioPathNative(track.filePath)) ?? undefined;
+  }
+  if (!url) return 0;
+  return new Promise<number>((resolve) => {
+    const a = new Audio();
+    a.preload = "metadata";
+    a.onloadedmetadata = () => resolve(Number.isFinite(a.duration) ? a.duration : 0);
+    a.onerror = () => resolve(0);
+    a.src = url as string;
+  });
+}
