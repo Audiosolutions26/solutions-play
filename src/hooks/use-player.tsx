@@ -10,7 +10,7 @@ import {
 } from "react";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
-import { getTrackAudioUrl, setTrackAudioUrl } from "@/lib/play-audio-files";
+import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
 
 interface PlayerState {
@@ -87,6 +87,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPosition(0);
     const url = getTrackAudioUrl(trackId) || track.audioUrl;
     if (url) engine.playUrl(url, 0, fadeMs);
+    else if (track.filePath) {
+      void resolveTrackAudio(track).then((u) => {
+        if (u && currentRef.current.track?.id === trackId) engine.playUrl(u, 0, fadeMs);
+        else if (!u && track.freq > 0) engine.play(track.freq, 0);
+      });
+    }
     else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
     setIsPlaying(true);
