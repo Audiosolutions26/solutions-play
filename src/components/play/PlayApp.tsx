@@ -167,6 +167,8 @@ export function PlayApp() {
   const [options, setOptions] = useState<{ open: boolean; tab: string }>({ open: false, tab: "geral" });
   const [advanced, setAdvanced] = useState<{ open: boolean; tab: string }>({ open: false, tab: "ini" });
   const [beepOpen, setBeepOpen] = useState(false);
+  const [secoesOpen, setSecoesOpen] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
 
   const togglePanel = (key: keyof PanelVisibility) =>
     setPanels((p) => ({ ...p, [key]: !p[key] }));
@@ -179,6 +181,7 @@ export function PlayApp() {
       <KeyboardShortcuts />
       <BeepController />
       <MarkerController />
+      <ProgramLogger />
       <TextoDoDiaAutoPlay onOpen={() => setActiveTab("Texto do dia")} />
       <LiveTextAutoOpen onOpen={() => setActiveTab("Textos ao vivo")} />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
@@ -191,11 +194,15 @@ export function PlayApp() {
           onOpenQuickStart={() => setActiveTab("QuickStart")}
           onOpenAdvanced={openAdvanced}
           onOpenBeep={() => setBeepOpen(true)}
+          onOpenSecoes={() => setSecoesOpen(true)}
+          onOpenDevices={() => setDevicesOpen(true)}
         />
         <OnAirBar />
         <div className="flex min-h-0 flex-1">
           {activeTab === "QuickStart" ? (
             <QuickStartPanel />
+          ) : activeTab === "Status" ? (
+            <StatusPanel />
           ) : activeTab === "Músicas executadas" ? (
             <PlayedPanel />
           ) : activeTab === "Textos ao vivo" ? (
@@ -254,6 +261,8 @@ export function PlayApp() {
       </div>
       <OptionsDialog open={options.open} onOpenChange={(v) => setOptions((o) => ({ ...o, open: v }))} tab={options.tab} />
       <BeepDialog open={beepOpen} onOpenChange={setBeepOpen} />
+      <SecoesDialog open={secoesOpen} onOpenChange={setSecoesOpen} />
+      <AudioDevicesDialog open={devicesOpen} onOpenChange={setDevicesOpen} />
       <RecursosAvancadosDialog
         open={advanced.open}
         onOpenChange={(v) => setAdvanced((a) => ({ ...a, open: v }))}
