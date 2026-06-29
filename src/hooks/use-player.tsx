@@ -11,6 +11,7 @@ import {
 import { getAudioEngine } from "@/lib/audio-engine";
 import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
 import { getTrackAudioUrl, setTrackAudioUrl } from "@/lib/play-audio-files";
+import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
 
 interface PlayerState {
   blocks: Block[];
@@ -26,6 +27,7 @@ interface PlayerState {
   togglePlay: () => void;
   stop: () => void;
   next: () => void;
+  nextManual: () => void;
   setVolume: (v: number) => void;
   setCue: (v: boolean) => void;
   select: (id: string) => void;
@@ -56,6 +58,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
   const currentRef = useRef<{ track: Track | null; blockId: string | null }>({ track: null, blockId: null });
+  // Evita disparar a mixagem (crossfade) mais de uma vez na mesma transição.
+  const transitioningRef = useRef(false);
 
   const findNext = useCallback((blockId: string, trackId: string): { block: Block; track: Track } | null => {
     const bs = blocksRef.current;
@@ -71,32 +75,39 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
-  const playAt = useCallback((blockId: string, trackId: string) => {
+  const playAt = useCallback((blockId: string, trackId: string, fadeMs = 0) => {
     const block = blocksRef.current.find((b) => b.id === blockId);
     const track = block?.items.find((t) => t.id === trackId);
     if (!track) return;
     currentRef.current = { track, blockId };
+    transitioningRef.current = false;
     setCurrent(track);
     setCurrentBlockId(blockId);
     setSelectedId(trackId);
     setPosition(0);
     const url = getTrackAudioUrl(trackId) || track.audioUrl;
-    if (url) engine.playUrl(url, 0);
+    if (url) engine.playUrl(url, 0, fadeMs);
     else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
     setIsPlaying(true);
   }, [engine]);
 
-  const next = useCallback(() => {
+  const next = useCallback((fadeMs = 0) => {
     const cur = currentRef.current;
     if (!cur.track || !cur.blockId) return;
     const nx = findNext(cur.blockId, cur.track.id);
-    if (nx) playAt(nx.block.id, nx.track.id);
+    if (nx) playAt(nx.block.id, nx.track.id, fadeMs);
     else {
       engine.stop();
       setIsPlaying(false);
     }
   }, [findNext, playAt, engine]);
+
+  // Passagem manual (botão "Próxima"): aplica o fade configurado em
+  // "Fade nas passagens manuais" (manual p.106).
+  const nextManual = useCallback(() => {
+    next(manualFadeMs());
+  }, [next]);
 
   const togglePlay = useCallback(() => {
     const cur = currentRef.current;
@@ -245,6 +256,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (cur) {
           const hasAudio = !!(getTrackAudioUrl(cur.id) || cur.audioUrl);
           const pos = hasAudio || cur.freq > 0 ? engine.position() : position + 0.2;
+          // Mixagem real (crossfade): inicia a próxima inserção ANTES do fim
+          // da atual, sobrepondo pelo tempo de mixagem do tipo (manual p.106).
+          // Só vale para inserções com áudio real (URL).
+          if (hasAudio && !transitioningRef.current) {
+            const mixMs = mixTimeForTrack(cur);
+            const mixSec = mixMs / 1000;
+            if (mixSec > 0.05 && pos >= cur.duration - mixSec) {
+              transitioningRef.current = true;
+              next(mixMs);
+              return;
+            }
+          }
           if (pos >= cur.duration) {
             next();
             return;
@@ -262,9 +285,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
+    playAt, togglePlay, stop, next, nextManual, setVolume, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, nextManual, setVolume, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
