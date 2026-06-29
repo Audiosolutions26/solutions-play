@@ -1,4 +1,4 @@
-import { Play, Pause, SkipForward, Square, Volume2, ChevronUp, ChevronDown, Music, X } from "lucide-react";
+import { Play, Pause, SkipForward, Square, ChevronUp, ChevronDown, Music, X } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 
@@ -21,7 +21,7 @@ function TButton({
 }
 
 export function TransportBar() {
-  const { isPlaying, togglePlay, nextManual, stop, volume, setVolume, selectedId, blocks, moveTrack, removeTrack, currentBlockId } = usePlayer();
+  const { isPlaying, togglePlay, nextManual, stop, selectedId, blocks, moveTrack, removeTrack, currentBlockId } = usePlayer();
 
   const requireSel = (): boolean => {
     if (!selectedId) { toast.info("Selecione uma inserção primeiro."); return false; }
@@ -49,18 +49,6 @@ export function TransportBar() {
       <TButton onClick={stop} title="Parar">
         <Square className="h-4 w-4" />
       </TButton>
-      <div className="mx-1 flex items-center gap-1">
-        <Volume2 className="h-4 w-4 text-pl-text" />
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-          className="h-1 w-28 cursor-pointer accent-pl-transport"
-        />
-      </div>
       <div className="ml-auto flex items-center gap-1.5">
         <TButton onClick={() => moveSel(-1)} title="Subir inserção"><ChevronUp className="h-5 w-5" /></TButton>
         <TButton onClick={() => moveSel(1)} title="Descer inserção"><ChevronDown className="h-5 w-5" /></TButton>
