@@ -13,12 +13,22 @@ let cueEl: HTMLAudioElement | null = null;
 let currentId: string | null = null;
 const toneCache = new Map<number, string>();
 
+// Assinantes para refletir o estado da pré-escuta na UI (indicador visual).
+const listeners = new Set<() => void>();
+function notify() { listeners.forEach((l) => l()); }
+export function subscribeCue(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+}
+
 function ensureEl(): HTMLAudioElement | null {
   if (typeof window === "undefined") return null;
   if (!cueEl) {
     cueEl = new Audio();
     cueEl.preload = "auto";
-    cueEl.addEventListener("ended", () => { currentId = null; });
+    cueEl.addEventListener("ended", () => { currentId = null; notify(); });
+    cueEl.addEventListener("pause", () => { notify(); });
+    cueEl.addEventListener("playing", () => { notify(); });
   }
   return cueEl;
 }
@@ -72,6 +82,7 @@ export async function cuePlay(track: Track): Promise<void> {
   try { el.currentTime = 0; } catch { /* ignore */ }
   currentId = track.id;
   try { await el.play(); } catch { /* ignore */ }
+  notify();
 }
 
 export function cueStop(): void {
@@ -79,6 +90,7 @@ export function cueStop(): void {
     try { cueEl.pause(); cueEl.currentTime = 0; } catch { /* ignore */ }
   }
   currentId = null;
+  notify();
 }
 
 export function cueIsPlaying(): boolean {

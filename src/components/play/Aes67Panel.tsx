@@ -15,6 +15,7 @@ import {
   CHANNEL_OPTS, RATE_OPTS, BITS_OPTS, PTIME_OPTS, DEFAULT_AES67,
   loadAes67, saveAes67, packetMetrics, buildSdp, validateAes67, aes67Supported,
   openTxAes67, closeTxAes67, loopbackAes67, downloadAccessFile, parseAccessFile,
+  type Aes67Input, loadAes67Rx, saveAes67Rx,
 } from "@/lib/play-aes67";
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
@@ -25,6 +26,7 @@ export function Aes67Panel() {
   const [tx, setTx] = useState<{ active: boolean; sdp?: string; sourceIp?: string }>({ active: false });
   const [loop, setLoop] = useState<LoopbackResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rx, setRx] = useState<Aes67Input | null>(loadAes67Rx);
   const fileRef = useRef<HTMLInputElement>(null);
   const supported = aes67Supported();
 
@@ -38,6 +40,10 @@ export function Aes67Panel() {
     void validateAes67(cfg).then((r) => { if (alive) setVal(r); });
     return () => { alive = false; };
   }, [cfg]);
+
+  // Auto-save dos presets (TX e entrada) por projeto — sem reconfigurar.
+  useEffect(() => { saveAes67(cfg); }, [cfg]);
+  useEffect(() => { saveAes67Rx(rx); }, [rx]);
 
   const previewSdp = useMemo(
     () => buildSdp(cfg, tx.sourceIp || val?.interfaces[0]?.address || "0.0.0.0"),
@@ -92,8 +98,11 @@ export function Aes67Panel() {
     const reader = new FileReader();
     reader.onload = () => {
       const parsed = parseAccessFile(String(reader.result || ""));
-      setCfg((c) => ({ ...c, ...parsed }));
-      toast.success(`Entrada importada de "${f.name}".`);
+      const sourceIp = parsed.sourceIp;
+      delete parsed.sourceIp;
+      const input: Aes67Input = { ...DEFAULT_AES67, ...parsed, sourceIp };
+      setRx(input);
+      toast.success(`Entrada AES67 importada de "${f.name}".`);
     };
     reader.readAsText(f);
     e.target.value = "";
@@ -246,15 +255,32 @@ export function Aes67Panel() {
       {/* Arquivo de acesso */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
         <Button variant="outline" size="sm" onClick={() => downloadAccessFile(cfg, tx.sourceIp || val?.interfaces[0]?.address || "0.0.0.0")}>
-          <Download className="mr-1 h-4 w-4" /> Gerar arquivo de acesso (saída)
+          <Download className="mr-1 h-4 w-4" /> Baixar .sdp (saída TX)
         </Button>
         <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-          <Upload className="mr-1 h-4 w-4" /> Importar arquivo (entrada)
+          <Upload className="mr-1 h-4 w-4" /> Importar .sdp (entrada RX)
         </Button>
         <input ref={fileRef} type="file" accept=".sdp,text/plain" className="hidden" onChange={onImport} />
         <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setCfg({ ...DEFAULT_AES67 })}>Padrões</Button>
         <Button size="sm" onClick={persist}>Salvar</Button>
       </div>
+
+      {/* Entrada AES67 (RX) importada */}
+      {rx && (
+        <div className="rounded-lg border border-sky-300 bg-sky-50 p-2 text-[11px]">
+          <div className="mb-1 flex items-center gap-2 text-[12px] font-semibold text-sky-800">
+            <Upload className="h-4 w-4" /> Entrada AES67 (RX): {rx.name}
+            <Button variant="ghost" size="sm" className="ml-auto h-6 text-sky-800" onClick={() => setRx(null)}>Remover</Button>
+          </div>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-sky-900">
+            <li>Group: <b className="font-mono">{rx.group}:{rx.port}</b></li>
+            <li>Formato: <b>{rx.bits} {rx.sampleRate / 1000}kHz/{rx.channels}ch</b></li>
+            <li>ptime: <b>{rx.ptime} ms</b> • TTL: <b>{rx.ttl}</b></li>
+            {rx.sourceIp && <li>Origem: <b className="font-mono">{rx.sourceIp}</b></li>}
+          </ul>
+          <p className="mt-1 text-sky-700">Preset salvo automaticamente — recarrega ao reabrir o app.</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -35,6 +35,7 @@ export const DEFAULT_AES67: Aes67Config = {
 };
 
 const KEY = "solutions-play-aes67";
+const KEY_RX = "solutions-play-aes67-rx";
 const MTU = 1500;
 
 export function loadAes67(): Aes67Config {
@@ -48,6 +49,25 @@ export function loadAes67(): Aes67Config {
 
 export function saveAes67(cfg: Aes67Config) {
   try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch { /* ignore */ }
+}
+
+// Preset de ENTRADA (RX) importado de um arquivo .sdp.
+export interface Aes67Input extends Aes67Config { sourceIp?: string }
+
+export function loadAes67Rx(): Aes67Input | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY_RX) || "null");
+    return raw ? { ...DEFAULT_AES67, ...raw } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAes67Rx(rx: Aes67Input | null) {
+  try {
+    if (rx) localStorage.setItem(KEY_RX, JSON.stringify(rx));
+    else localStorage.removeItem(KEY_RX);
+  } catch { /* ignore */ }
 }
 
 export function bytesPerSample(bits: Aes67Bits): number {
