@@ -316,6 +316,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           // só usa a duração armazenada como fallback quando a real é desconhecida.
           const media = hasAudio ? engine.mediaDuration() : 0;
           const dur = media > 0 ? media : (cur.duration > 0 ? cur.duration : 0);
+          // Ponto de saída efetivo: o cue-out detectado (fim real do áudio,
+          // sem a cauda de silêncio) quando disponível; senão, a duração total.
+          const cp = cueRef.current;
+          const endPoint = cp && cp.cueOut > 0 ? cp.cueOut : dur;
           // Assim que o arquivo informa a duração real, grava de volta no track
           // para que o "tempo" apareça na Programação e o avanço automático
           // funcione (músicas de pasta entram com 0:00).
@@ -337,13 +341,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           if (hasAudio && !transitioningRef.current) {
             const mixMs = mixTimeForTrack(cur);
             const mixSec = mixMs / 1000;
-            if (mixSec > 0.05 && dur > 0 && pos >= dur - mixSec) {
+            if (mixSec > 0.05 && endPoint > 0 && pos >= endPoint - mixSec) {
               transitioningRef.current = true;
               next(mixMs);
               return;
             }
           }
-          if (dur > 0 && pos >= dur) {
+          if (endPoint > 0 && pos >= endPoint) {
             next();
             return;
           }
