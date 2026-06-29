@@ -30,6 +30,7 @@ interface PlayerState {
   select: (id: string) => void;
   addTrack: (blockId: string, track: Track) => void;
   removeTrack: (blockId: string, trackId: string) => void;
+  replaceBlocks: (blocks: Block[]) => void;
   getEngine: typeof getAudioEngine;
 }
 
@@ -126,6 +127,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: b.items.filter((t) => t.id !== trackId) } : b)));
   }, []);
 
+  const replaceBlocks = useCallback((bs: Block[]) => {
+    engine.stop();
+    currentRef.current = { track: null, blockId: null };
+    setBlocks(bs);
+    setCurrent(null);
+    setCurrentBlockId(null);
+    setSelectedId(null);
+    setIsPlaying(false);
+    setPosition(0);
+  }, [engine]);
+
   // progress + auto-advance loop
   useEffect(() => {
     if (!isPlaying) return;
@@ -154,9 +166,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, removeTrack,
+    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, removeTrack, replaceBlocks,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, removeTrack]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, removeTrack, replaceBlocks]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
