@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { usePlayer } from "@/hooks/use-player";
 
-export function Waveform() {
+export function Waveform({ zoom = 1 }: { zoom?: number }) {
   const { getEngine, isPlaying } = usePlayer();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
   useEffect(() => {
     const engine = getEngine();
@@ -38,10 +40,14 @@ export function Waveform() {
         ctx.fillStyle = "rgba(232,130,30,0.35)";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        const step = buf.length / w;
+        const z = zoomRef.current;
+        // Zoom: amplia a amplitude (vertical) e "estica" o tempo (horizontal),
+        // mostrando menos amostras ao longo da largura conforme aumenta.
+        const visible = Math.max(16, Math.floor(buf.length / z));
+        const step = visible / w;
         for (let x = 0; x < w; x++) {
           const v = (buf[Math.floor(x * step)] - 128) / 128;
-          const y = h / 2 + v * (h / 2) * 0.95;
+          const y = h / 2 + Math.max(-1, Math.min(1, v * z)) * (h / 2) * 0.95;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
