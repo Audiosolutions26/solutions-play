@@ -7,6 +7,7 @@ interface ConfigCtx {
   config: ConfigState;
   draft: ConfigState;
   setDraft: (key: string, value: ConfigValue) => void;
+  setDraftAll: (state: ConfigState) => void;
   commit: () => void;
   reset: () => void;
   cancel: () => void;
@@ -28,6 +29,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     config,
     draft,
     setDraft: (key, v) => setDraftState((d) => ({ ...d, [key]: v })),
+    setDraftAll: (state) => setDraftState(state),
     commit: () => { setConfig(draft); saveConfig(draft); },
     reset: () => { const d = defaultConfig(); setDraftState(d); },
     cancel: () => setDraftState(config),
