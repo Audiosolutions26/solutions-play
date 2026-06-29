@@ -1,7 +1,14 @@
-import { Music, Megaphone, Radio, FileText } from "lucide-react";
+import { useState } from "react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Block, type Track } from "@/lib/play-data";
+import {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import { TransportBar } from "./TransportBar";
+import { MarkersDialog } from "./MarkersDialog";
+import { saveMarkers, getMarkers, hasRefrao, hasCarimbo } from "@/lib/play-markers";
 
 const catIcon = {
   musical: Music,
@@ -17,56 +24,84 @@ const catRowBg = {
   texto: "bg-pl-texto",
 } as const;
 
-function Row({ block, track }: { block: Block; track: Track }) {
-  const { current, isPlaying, position, selectedId, select, playAt } = usePlayer();
+function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarkers: (t: Track) => void }) {
+  const { current, position, selectedId, select, playAt, removeTrack, getEngine } = usePlayer();
   const isCurrent = current?.id === track.id;
   const isSelected = selectedId === track.id;
   const Icon = catIcon[track.category];
   const pct = isCurrent ? Math.min(100, (position / track.duration) * 100) : 0;
+  const refrao = hasRefrao(track.id);
+  const carimbo = hasCarimbo(track.id);
+
+  const addRefrao = () => {
+    const m = getMarkers(track.id).filter((x) => x.kind !== "refraoStart" && x.kind !== "refraoEnd");
+    saveMarkers(track.id, [...m, { kind: "refraoStart", pos: 0.4 }, { kind: "refraoEnd", pos: 0.7 }]);
+    toast.success("Refrão marcado (40%–70%). Ajuste em Marcadores.");
+  };
+  const carimbar = () => {
+    const m = getMarkers(track.id).filter((x) => x.kind !== "carimbo");
+    saveMarkers(track.id, [...m, { kind: "carimbo", pos: 0.05, note: "Hora Certa" }]);
+    toast.success("Áudio carimbado com Hora Certa.");
+  };
 
   return (
-    <div
-      onClick={() => select(track.id)}
-      onDoubleClick={() => playAt(block.id, track.id)}
-      className={`relative flex cursor-default items-center gap-2 border-b border-black/5 px-2 py-[3px] text-[12px] text-pl-text ${
-        isCurrent
-          ? "bg-pl-onair font-semibold text-pl-onair-text"
-          : isSelected
-            ? "bg-pl-toolbar-light/40"
-            : catRowBg[track.category]
-      }`}
-    >
-      {isCurrent && (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
         <div
-          className="absolute inset-y-0 left-0 bg-white/30"
-          style={{ width: `${pct}%` }}
-        />
-      )}
-      <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
-      <span className="relative z-10 flex-1 truncate">
-        {track.title}
-        {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
-      </span>
-      <span className="relative z-10 font-mono text-[11px] tabular-nums opacity-80">
-        {isCurrent ? `-${fmt(track.duration - position)}` : fmt(track.duration)}
-      </span>
-    </div>
+          onClick={() => select(track.id)}
+          onDoubleClick={() => playAt(block.id, track.id)}
+          className={`relative flex cursor-default items-center gap-2 border-b border-black/5 px-2 py-[3px] text-[12px] text-pl-text ${
+            isCurrent
+              ? "bg-pl-onair font-semibold text-pl-onair-text"
+              : isSelected
+                ? "bg-pl-toolbar-light/40"
+                : catRowBg[track.category]
+          }`}
+        >
+          {isCurrent && (
+            <div className="absolute inset-y-0 left-0 bg-white/30" style={{ width: `${pct}%` }} />
+          )}
+          <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
+          <span className="relative z-10 flex-1 truncate">
+            {track.title}
+            {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
+            {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
+            {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
+          </span>
+          <span className="relative z-10 font-mono text-[11px] tabular-nums opacity-80">
+            {isCurrent ? `-${fmt(track.duration - position)}` : fmt(track.duration)}
+          </span>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56">
+        <ContextMenuItem onClick={() => playAt(block.id, track.id)}><Play className="mr-2 h-4 w-4" /> Tocar</ContextMenuItem>
+        <ContextMenuItem onClick={() => { getEngine().fire(track.freq, 1.2); toast.message("Pré-escuta (CUE)"); }}>
+          <Headphones className="mr-2 h-4 w-4" /> Pré-escuta (CUE)
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => onMarkers(track)}><Bookmark className="mr-2 h-4 w-4" /> Marcadores…</ContextMenuItem>
+        <ContextMenuItem onClick={addRefrao}><Repeat className="mr-2 h-4 w-4" /> Adicionar refrão</ContextMenuItem>
+        <ContextMenuItem onClick={carimbar}><Clock className="mr-2 h-4 w-4" /> Carimbar Hora Certa</ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem className="text-destructive" onClick={() => { removeTrack(block.id, track.id); toast.success("Inserção removida."); }}>
+          <Trash2 className="mr-2 h-4 w-4" /> Remover inserção
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
-function BlockView({ block }: { block: Block }) {
+function BlockView({ block, onMarkers }: { block: Block; onMarkers: (t: Track) => void }) {
   const total = block.items.reduce((s, t) => s + t.duration, 0);
   const head = block.category === "musical" ? "bg-pl-musical-head" : "bg-pl-comercial-head";
   return (
     <div className="mb-1">
       <div className={`flex items-center justify-between px-2 py-1 text-[11px] font-bold text-pl-text ${head}`}>
-        <span>
-          {block.date}, {block.time} • {block.title}
-        </span>
+        <span>{block.date}, {block.time} • {block.title}</span>
         <span className="font-mono">{fmt(total)}</span>
       </div>
       {block.items.map((t) => (
-        <Row key={t.id} block={block} track={t} />
+        <Row key={t.id} block={block} track={t} onMarkers={onMarkers} />
       ))}
     </div>
   );
@@ -74,6 +109,11 @@ function BlockView({ block }: { block: Block }) {
 
 export function ProgramPanel() {
   const { blocks } = usePlayer();
+  const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
+  const [markersOpen, setMarkersOpen] = useState(false);
+
+  const openMarkers = (t: Track) => { setMarkerTrack(t); setMarkersOpen(true); };
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
@@ -82,9 +122,10 @@ export function ProgramPanel() {
       <TransportBar />
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {blocks.map((b) => (
-          <BlockView key={b.id} block={b} />
+          <BlockView key={b.id} block={b} onMarkers={openMarkers} />
         ))}
       </div>
+      <MarkersDialog track={markerTrack} open={markersOpen} onOpenChange={setMarkersOpen} />
     </div>
   );
 }
