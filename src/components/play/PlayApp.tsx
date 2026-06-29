@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { PlayerProvider } from "@/hooks/use-player";
-import { usePlayer } from "@/hooks/use-player";
 import { ConfigProvider } from "@/hooks/use-config";
 import { ShortcutsProvider } from "@/hooks/use-shortcuts";
 import { TopBar } from "./TopBar";
@@ -14,153 +12,17 @@ import { LocucoesPanel } from "./LocucoesPanel";
 import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel, TextoDoDiaPanel } from "./BottomPanels";
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
-import { BeepDialog, BeepController } from "./BeepDialog";
+import { BeepDialog } from "./BeepDialog";
 import { SecoesDialog } from "./SecoesDialog";
 import { AudioDevicesDialog } from "./AudioDevicesDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
-import { getMarkers } from "@/lib/play-markers";
-import { logEvent } from "@/lib/play-events";
+import { PlayerControllers } from "./PlayerControllers";
 import { applyRouting } from "@/lib/play-outputs";
 import type { PanelVisibility } from "./AppMenu";
 
 const tabs = ["Programação", "QuickStart", "Status", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
-
-// Atalhos de teclado (manual p.16, 18, 30): Espaço = Tocar/Passar, Delete = Remover.
-function KeyboardShortcuts() {
-  const { togglePlay, selectedId, blocks, removeTrack } = usePlayer();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === "Delete" && selectedId) {
-        const block = blocks.find((b) => b.items.some((t) => t.id === selectedId));
-        if (block) removeTrack(block.id, selectedId);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, selectedId, blocks, removeTrack]);
-  return null;
-}
-
-// Quando a inserção no ar é um texto, abre o painel Textos ao vivo (manual p.36).
-function LiveTextAutoOpen({ onOpen }: { onOpen: () => void }) {
-  const { current } = usePlayer();
-  useEffect(() => {
-    if (current && current.category === "texto" && current.kind !== "textodia") onOpen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id]);
-  return null;
-}
-
-// Registra no log de status cada inserção que entra no ar (manual p.113).
-function ProgramLogger() {
-  const { current } = usePlayer();
-  useEffect(() => {
-    if (current) logEvent("programa", `No ar: ${current.title}`, current.artist);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id]);
-  return null;
-}
-
-// Texto do dia (manual p.36): ao chegar a vez na programação, abre o painel e
-// lê o texto automaticamente por voz (TTS).
-function TextoDoDiaAutoPlay({ onOpen }: { onOpen: () => void }) {
-  const { current } = usePlayer();
-  useEffect(() => {
-    if (current?.kind === "textodia") {
-      onOpen();
-      try {
-        const synth = window.speechSynthesis;
-        synth.cancel();
-        const u = new SpeechSynthesisUtterance(current.body || current.title);
-        u.lang = "pt-BR";
-        u.rate = 1;
-        synth.speak(u);
-      } catch { /* ignore */ }
-    } else {
-      try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id]);
-  return null;
-}
-
-// Marcadores em execução (manual p.113-119): dispara o evento de cada marcador
-// no momento exato em que a posição do áudio cruza a marca.
-function MarkerController() {
-  const { current, position, getEngine, next, setVolume, volume } = usePlayer();
-  const idRef = useRef<string | null>(null);
-  const firedRef = useRef<Set<string>>(new Set());
-  const fadeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const preFade = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!current) { idRef.current = null; firedRef.current.clear(); return; }
-    if (idRef.current !== current.id) {
-      if (fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
-      if (preFade.current != null) { setVolume(preFade.current); preFade.current = null; }
-      idRef.current = current.id;
-      firedRef.current = new Set();
-    }
-    const markers = getMarkers(current.id);
-    if (!markers.length) return;
-    const eng = getEngine();
-    for (const m of markers) {
-      const at = m.pos * current.duration;
-      const key = `${m.kind}:${m.pos}`;
-      if (position < at || firedRef.current.has(key)) continue;
-      firedRef.current.add(key);
-      switch (m.kind) {
-        case "annotation":
-          if (m.note) { toast.info(`📝 ${m.note}`); logEvent("marcador", "Anotação", m.note); }
-          break;
-        case "introEnd":
-          toast.message("Fim da introdução — locutor liberado.");
-          logEvent("marcador", "Fim da introdução", current.title);
-          break;
-        case "locStart":
-          toast.message("🎙️ Início de locução.");
-          logEvent("locucao", "Início de locução", current.title);
-          break;
-        case "carimbo":
-          eng.fire(current.freq > 0 ? current.freq : 330, 0.5);
-          toast.message("Carimbo (Hora Certa) disparado.");
-          logEvent("carimbo", "Carimbo disparado", current.title);
-          break;
-        case "fadeOutStart": {
-          preFade.current = volume;
-          const startVol = volume;
-          const remaining = Math.max(0.4, current.duration - at);
-          let t = 0;
-          if (fadeTimer.current) clearInterval(fadeTimer.current);
-          fadeTimer.current = setInterval(() => {
-            t += 0.1;
-            const f = Math.max(0, 1 - t / remaining);
-            setVolume(startVol * f);
-            if (f <= 0 && fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
-          }, 100);
-          logEvent("marcador", "Início do Fade-Out", current.title);
-          break;
-        }
-        case "nextEntry":
-          logEvent("marcador", "Entrada do próximo", current.title);
-          next();
-          break;
-        default:
-          break;
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id, position]);
-
-  return null;
-}
 
 export function PlayApp() {
   const [operator, setOperator] = useState<Operator>(operators[0]);
@@ -186,12 +48,10 @@ export function PlayApp() {
     <ConfigProvider>
     <ShortcutsProvider>
     <PlayerProvider>
-      <KeyboardShortcuts />
-      <BeepController />
-      <MarkerController />
-      <ProgramLogger />
-      <TextoDoDiaAutoPlay onOpen={() => setActiveTab("Texto do dia")} />
-      <LiveTextAutoOpen onOpen={() => setActiveTab("Textos ao vivo")} />
+      <PlayerControllers
+        onOpenTextoDoDia={() => setActiveTab("Texto do dia")}
+        onOpenLiveText={() => setActiveTab("Textos ao vivo")}
+      />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
         <TopBar
           panels={panels}
