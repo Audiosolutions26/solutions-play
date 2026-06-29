@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones } from "lucide-react";
+import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
-import { folders, fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
+import { fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
+import { useShortcuts } from "@/hooks/use-shortcuts";
+import { SHORTCUT_TYPES } from "@/lib/play-shortcuts";
 import {
   ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import { cuePlay, cueStop, cueIsPlaying, cueCurrentId } from "@/lib/play-cue";
 import { useCue } from "@/hooks/use-cue";
 
-export function FoldersPanel() {
+export function FoldersPanel({ onManage }: { onManage?: () => void }) {
   const { addTrack, blocks, currentBlockId } = usePlayer();
+  const { shortcuts: folders } = useShortcuts();
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<Track | null>(null);
@@ -24,7 +27,7 @@ export function FoldersPanel() {
     return folders.flatMap((f) =>
       f.tracks.filter((t) => t.title.toLowerCase().includes(q) || (t.artist ?? "").toLowerCase().includes(q)),
     );
-  }, [query]);
+  }, [query, folders]);
 
   const targetBlock = currentBlockId ?? blocks[0]?.id;
 
@@ -86,6 +89,9 @@ export function FoldersPanel() {
         <button onClick={() => preview()} title="Pré-escuta (atalho: C)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
         <button onClick={stopPreview} title="Parar pré-escuta (atalho: C)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
         <button onClick={() => sel && add(sel)} title="Adicionar à programação" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><SkipForward className="h-4 w-4" /></button>
+        {onManage && (
+          <button onClick={onManage} title="Gerenciamento de atalhos" className="grid h-7 w-7 place-items-center rounded border border-pl-panel-dark bg-white/60 text-pl-text hover:bg-white"><Settings2 className="h-4 w-4" /></button>
+        )}
         <span className="ml-2 truncate text-[12px] font-semibold text-pl-text">
           {results ? `Resultados: "${query}"` : open ? open.name : "Pastas de trabalho"}
         </span>
@@ -104,10 +110,23 @@ export function FoldersPanel() {
         ) : open ? (
           <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} cueId={cueId} cuePlaying={cuePlaying} />
         ) : (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {folders.map((f) => (
-              <FolderTile key={f.id} folder={f} onOpen={() => setOpenId(f.id)} onRandom={() => addRandom(f)} />
-            ))}
+          <div className="space-y-3">
+            {SHORTCUT_TYPES.map((meta) => {
+              const items = folders.filter((f) => (f as FolderType & { type?: string }).type === meta.type);
+              if (!items.length) return null;
+              return (
+                <div key={meta.type}>
+                  <div className="mb-1 border-b border-pl-panel-dark/40 px-1 text-[10px] font-bold uppercase tracking-wide text-pl-toolbar">
+                    {meta.label}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {items.map((f) => (
+                      <FolderTile key={f.id} folder={f} onOpen={() => setOpenId(f.id)} onRandom={() => addRandom(f)} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
