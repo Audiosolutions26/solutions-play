@@ -22,6 +22,7 @@ import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { getMarkers } from "@/lib/play-markers";
 import { logEvent } from "@/lib/play-events";
+import { applyRouting } from "@/lib/play-outputs";
 import type { PanelVisibility } from "./AppMenu";
 
 const tabs = ["Programação", "QuickStart", "Status", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
