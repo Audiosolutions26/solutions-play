@@ -98,8 +98,8 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
           className={`relative flex items-center gap-2 border-b border-black/5 px-2 py-[3px] text-[12px] text-pl-text ${
             locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"
           } ${
-            dragOver === "top" ? "shadow-[inset_0_2px_0_0_hsl(var(--pl-transport))]"
-              : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_hsl(var(--pl-transport))]" : ""
+            dragOver === "top" ? "shadow-[inset_0_2px_0_0_var(--color-pl-transport)]"
+              : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]" : ""
           } ${
             isCurrent
               ? "bg-pl-onair font-semibold text-pl-onair-text"
