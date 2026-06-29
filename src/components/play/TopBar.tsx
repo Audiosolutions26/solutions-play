@@ -14,9 +14,15 @@ const toolIcons = [
 export function TopBar({
   panels,
   onTogglePanel,
+  onOpenOptions,
+  onLogout,
+  onOpenQuickStart,
 }: {
   panels: PanelVisibility;
   onTogglePanel: (key: keyof PanelVisibility) => void;
+  onOpenOptions: (tab: string) => void;
+  onLogout: () => void;
+  onOpenQuickStart: () => void;
 }) {
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
@@ -34,7 +40,13 @@ export function TopBar({
       </div>
       {/* menu */}
       <div className="flex items-center gap-1 px-2 py-0.5">
-        <AppMenu panels={panels} onTogglePanel={onTogglePanel} />
+        <AppMenu
+          panels={panels}
+          onTogglePanel={onTogglePanel}
+          onOpenOptions={onOpenOptions}
+          onLogout={onLogout}
+          onOpenQuickStart={onOpenQuickStart}
+        />
       </div>
       {/* toolbar row */}
       <div className="flex items-center gap-2 border-t border-white/15 px-2 py-1">
