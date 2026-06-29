@@ -224,3 +224,48 @@ function CodeLegend() {
     </div>
   );
 }
+
+function IssuesPanel({ issues }: { issues: CodeIssue[] }) {
+  if (!issues.length) {
+    return (
+      <div className="flex items-center gap-2 rounded border border-green-600/40 bg-green-50 px-3 py-2 text-[12px] text-green-700">
+        <CheckCircle2 className="h-4 w-4" /> Todos os códigos são válidos e consistentes.
+      </div>
+    );
+  }
+  const errors = issues.filter((i) => i.severity === "error");
+  const warnings = issues.filter((i) => i.severity === "warning");
+  return (
+    <div className="max-h-40 space-y-1 overflow-auto rounded border p-2 text-[12px]">
+      <div className="mb-1 font-semibold">
+        {errors.length} erro(s), {warnings.length} aviso(s)
+      </div>
+      {issues.map((i, idx) => (
+        <div key={idx} className={`flex items-start gap-2 ${i.severity === "error" ? "text-red-600" : "text-amber-600"}`}>
+          {i.severity === "error"
+            ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+          <span>Linha {i.line}: {i.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CodeLegendOld() {
+  return (
+    <div className="rounded border p-2 text-[11px]">
+      <span className="font-semibold">Códigos: </span>
+      {codeLegend.map((c) => (
+        <span key={c.code} className="mr-2 inline-block">
+          <code className="rounded bg-muted px-1 font-mono">{c.code}</code> {c.name}
+        </span>
+      ))}
+      {specialCodes.map(([c, d]) => (
+        <span key={c} className="mr-2 inline-block">
+          <code className="rounded bg-muted px-1 font-mono">{c}</code> {d}
+        </span>
+      ))}
+    </div>
+  );
+}
