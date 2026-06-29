@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper, Disc3 } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
@@ -26,6 +26,12 @@ const catRowBg = {
   vinheta: "bg-pl-vinheta",
   texto: "bg-pl-texto",
 } as const;
+
+// Rolagem automática (segue): à medida que as músicas tocam, a grade sobe
+// sozinha mantendo no máximo estas linhas já tocadas visíveis acima da que
+// está no ar. APPROX_ROW_HEIGHT é a altura média de uma linha já tocada (px).
+const VISIBLE_PLAYED_ROWS = 5;
+const APPROX_ROW_HEIGHT = 24;
 
 // Formato de tempo do rádio: M'SS (e M'SS.t com décimos para a contagem no ar).
 function pfmt(sec: number, tenths = false): string {
