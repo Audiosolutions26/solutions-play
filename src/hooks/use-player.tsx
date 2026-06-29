@@ -265,6 +265,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           // Inserções de pasta começam sem duração conhecida (0): usa a duração
           // real do arquivo assim que o navegador a conhece.
           const dur = cur.duration > 0 ? cur.duration : (hasAudio ? engine.mediaDuration() : 0);
+          // Assim que o arquivo informa a duração real, grava de volta no track
+          // para que o "tempo" apareça na Programação e o avanço automático
+          // funcione (músicas de pasta entram com 0:00).
+          if (cur.duration <= 0 && dur > 0) {
+            const rounded = Math.round(dur);
+            const fixed = { ...cur, duration: rounded };
+            currentRef.current.track = fixed;
+            setCurrent(fixed);
+            setBlocks((bs) =>
+              bs.map((b) => ({
+                ...b,
+                items: b.items.map((t) => (t.id === cur.id ? { ...t, duration: rounded } : t)),
+              })),
+            );
+          }
           // Mixagem real (crossfade): inicia a próxima inserção ANTES do fim
           // da atual, sobrepondo pelo tempo de mixagem do tipo (manual p.106).
           // Só vale para inserções com áudio real (URL).

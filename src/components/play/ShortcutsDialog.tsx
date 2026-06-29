@@ -18,6 +18,7 @@ import {
 } from "@/lib/play-shortcuts";
 import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative, listFolderAudioNative } from "@/lib/play-native";
 import { makeFolderAudioTrack, type Track } from "@/lib/play-data";
+import { readTrackDuration } from "@/lib/play-audio-files";
 
 const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   musicas: Music,
@@ -182,7 +183,23 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
       makeFolderAudioTrack(f.name, f.path, sel.category),
     );
     onChange({ tracks });
+    // Lê a duração real de cada música em segundo plano e atualiza o "tempo"
+    // exibido na lista (as inserções entram com 0:00 e vão sendo preenchidas).
+    void resolveDurations(tracks);
     return tracks.length;
+  };
+
+  // Resolve as durações dos áudios da pasta sequencialmente, atualizando a
+  // lista conforme cada uma fica pronta (evita carregar tudo de uma vez).
+  const resolveDurations = async (tracks: Track[]) => {
+    const out = [...tracks];
+    for (let i = 0; i < out.length; i++) {
+      const d = await readTrackDuration(out[i]);
+      if (d > 0) {
+        out[i] = { ...out[i], duration: Math.round(d) };
+        onChange({ tracks: [...out] });
+      }
+    }
   };
 
   // Abre a árvore de pastas do Windows e aponta o atalho para a pasta escolhida.
