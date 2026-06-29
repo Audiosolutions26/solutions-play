@@ -18,10 +18,18 @@ const MIME = {
   ".woff": "font/woff", ".ttf": "font/ttf", ".map": "application/json",
 };
 
+// Codecs/formatos de áudio suportados — o Chromium embutido decodifica
+// nativamente MP3, WAV, FLAC (lossless), AAC/M4A/MP4, OGG/Opus e WebM com a
+// melhor qualidade disponível. Lista ampla para aceitar as principais
+// extensões do mercado.
 const AUDIO_MIME = {
-  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg",
-  ".m4a": "audio/mp4", ".aac": "audio/aac", ".flac": "audio/flac",
-  ".webm": "audio/webm", ".wma": "audio/x-ms-wma",
+  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".wave": "audio/wav",
+  ".flac": "audio/flac", ".ogg": "audio/ogg", ".oga": "audio/ogg",
+  ".opus": "audio/ogg", ".m4a": "audio/mp4", ".m4b": "audio/mp4",
+  ".mp4": "audio/mp4", ".aac": "audio/aac", ".webm": "audio/webm",
+  ".weba": "audio/webm", ".aiff": "audio/aiff", ".aif": "audio/aiff",
+  ".aifc": "audio/aiff", ".wma": "audio/x-ms-wma", ".mka": "audio/x-matroska",
+  ".3gp": "audio/3gpp", ".amr": "audio/amr", ".caf": "audio/x-caf",
 };
 
 function fileToDataUrl(file) {
@@ -67,7 +75,7 @@ ipcMain.handle("sp:pick-audio-files", async () => {
     title: "Selecionar áudios / locuções",
     properties: ["openFile", "multiSelections"],
     filters: [
-      { name: "Áudio", extensions: ["mp3", "wav", "ogg", "m4a", "aac", "flac", "webm", "wma"] },
+      { name: "Áudio", extensions: Object.keys(AUDIO_MIME).map((e) => e.slice(1)) },
       { name: "Todos os arquivos", extensions: ["*"] },
     ],
   });

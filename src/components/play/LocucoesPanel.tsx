@@ -8,6 +8,7 @@ import {
   getLocucoes, subscribeLocucoes, addLocucao, removeLocucao, moveLocucao, reorderLocucao, resolveLocucaoUrl, type Locucao,
 } from "@/lib/play-locucoes";
 import { isDesktop, pickAudioFilesNative } from "@/lib/play-native";
+import { AUDIO_ACCEPT } from "@/lib/audio-formats";
 import { ensureMicPermission, loadDevicePrefs, micConstraints, applyOutput } from "@/lib/play-audio-devices";
 import { logEvent } from "@/lib/play-events";
 
@@ -136,7 +137,7 @@ export function LocucoesPanel() {
             {isDesktop() ? "Abrir do Windows" : "Carregar"}
           </button>
         </div>
-        <input ref={fileRef} type="file" accept="audio/*" multiple className="hidden" onChange={onPick} />
+        <input ref={fileRef} type="file" accept={AUDIO_ACCEPT} multiple className="hidden" onChange={onPick} />
       </div>
 
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
