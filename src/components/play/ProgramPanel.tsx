@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper } from "lucide-react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper, Disc3 } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makePause, makeHoraCerta, type Block, type Track } from "@/lib/play-data";
@@ -25,6 +25,16 @@ const catRowBg = {
   vinheta: "bg-pl-vinheta",
   texto: "bg-pl-texto",
 } as const;
+
+// Formato de tempo do rádio: M'SS (e M'SS.t com décimos para a contagem no ar).
+function pfmt(sec: number, tenths = false): string {
+  const s = Math.max(0, sec);
+  const m = Math.floor(s / 60);
+  const r = Math.floor(s % 60);
+  const base = `${m}'${r.toString().padStart(2, "0")}`;
+  if (!tenths) return base;
+  return `${base}.${Math.floor((s - Math.floor(s)) * 10)}`;
+}
 
 // Próxima inserção a entrar no ar, na mesma ordem usada pelo player.
 function findNextId(blocks: Block[], currentId: string | null): string | null {
