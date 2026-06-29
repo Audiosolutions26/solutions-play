@@ -13,6 +13,7 @@ import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } fr
 import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
 import { analyzeCuePoints, getCachedCuePoints, cueDetectionEnabled, equalPowerEnabled, type CuePoints } from "@/lib/play-cuepoints";
+import { updateRds } from "@/lib/play-rds";
 
 interface PlayerState {
   blocks: Block[];
