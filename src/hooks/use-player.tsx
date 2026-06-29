@@ -183,6 +183,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPosition(0);
   }, [engine]);
 
+  // Relógio Operacional (manual p.137-142): define parâmetros do bloco.
+  const setBlockClock = useCallback((blockId: string, clock: BlockClock) => {
+    setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, clock: { ...b.clock, ...clock } } : b)));
+  }, []);
+
   // progress + auto-advance loop
   useEffect(() => {
     if (!isPlaying) return;
@@ -212,9 +217,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio,
+    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
