@@ -110,10 +110,23 @@ export function FoldersPanel({ onManage }: { onManage?: () => void }) {
         ) : open ? (
           <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} cueId={cueId} cuePlaying={cuePlaying} />
         ) : (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {folders.map((f) => (
-              <FolderTile key={f.id} folder={f} onOpen={() => setOpenId(f.id)} onRandom={() => addRandom(f)} />
-            ))}
+          <div className="space-y-3">
+            {SHORTCUT_TYPES.map((meta) => {
+              const items = folders.filter((f) => (f as FolderType & { type?: string }).type === meta.type);
+              if (!items.length) return null;
+              return (
+                <div key={meta.type}>
+                  <div className="mb-1 border-b border-pl-panel-dark/40 px-1 text-[10px] font-bold uppercase tracking-wide text-pl-toolbar">
+                    {meta.label}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {items.map((f) => (
+                      <FolderTile key={f.id} folder={f} onOpen={() => setOpenId(f.id)} onRandom={() => addRandom(f)} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
