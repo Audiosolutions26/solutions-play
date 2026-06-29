@@ -30,6 +30,7 @@ interface PlayerState {
   setCue: (v: boolean) => void;
   select: (id: string) => void;
   addTrack: (blockId: string, track: Track) => void;
+  addTrackAt: (targetId: string, track: Track, place?: "before" | "after") => void;
   moveTrack: (trackId: string, dir: -1 | 1) => void;
   reorderTrack: (sourceId: string, targetId: string, place?: "before" | "after") => void;
   removeTrack: (blockId: string, trackId: string) => void;
@@ -131,6 +132,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (block?.clock?.locked) return; // bloco LOCKED (manual p.141)
     const t = { ...cloneTrack(track), origin: "manual" as const, moved: false };
     setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: [...b.items, t] } : b)));
+  }, []);
+
+  // Inserir um áudio (vindo das Pastas) numa posição específica da Programação,
+  // arrastando e soltando sobre uma inserção alvo (clicar, arrastar e soltar).
+  const addTrackAt = useCallback((targetId: string, track: Track, place: "before" | "after" = "before") => {
+    setBlocks((bs) => {
+      const dstBlock = bs.find((b) => b.items.some((t) => t.id === targetId));
+      if (!dstBlock || dstBlock.clock?.locked) return bs; // bloco LOCKED (manual p.141)
+      const t = { ...cloneTrack(track), origin: "manual" as const, moved: false };
+      return bs.map((b) => {
+        if (b.id !== dstBlock.id) return b;
+        const idx = b.items.findIndex((x) => x.id === targetId);
+        if (idx < 0) return b;
+        const at = place === "after" ? idx + 1 : idx;
+        return { ...b, items: [...b.items.slice(0, at), t, ...b.items.slice(at)] };
+      });
+    });
   }, []);
 
   // Move an insertion up/down within its block (manual p.16-17).
@@ -244,9 +262,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
+    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
