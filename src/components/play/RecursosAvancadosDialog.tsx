@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
-import { DEFAULT_GRADE, DEFAULT_MAPA } from "@/lib/play-data";
+import { DEFAULT_GRADE, DEFAULT_MAPA, fmt, type Block } from "@/lib/play-data";
 import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib/play-gen";
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
@@ -53,6 +53,12 @@ export function RecursosAvancadosDialog({
   const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
   const errorCount = gradeIssues.filter((i) => i.severity === "error").length
     + mapaIssues.filter((i) => i.severity === "error").length;
+
+  const preview = useMemo<Block[]>(
+    () => (errorCount > 0 ? [] : generateProgram(grade, mapa)),
+    [grade, mapa, errorCount],
+  );
+  const previewTotal = preview.reduce((s, b) => s + b.items.length, 0);
 
   const gerar = () => {
     if (errorCount > 0) {
@@ -190,6 +196,17 @@ export function RecursosAvancadosDialog({
               <div>Mapa: {mapa.split("\n").filter((l) => l.trim()).length} blocos comerciais</div>
             </div>
             <IssuesPanel issues={[...gradeIssues, ...mapaIssues]} />
+            {errorCount === 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Pré-visualização da programação</Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {preview.length} blocos · {previewTotal} inserções
+                  </span>
+                </div>
+                <PreviewGrid blocks={preview} />
+              </div>
+            )}
             <button onClick={gerar}
               disabled={errorCount > 0}
               className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
@@ -220,6 +237,55 @@ function CodeLegend() {
         <span key={c} className="mr-2 inline-block">
           <code className="rounded bg-muted px-1 font-mono">{c}</code> {d}
         </span>
+      ))}
+    </div>
+  );
+}
+
+const catStyle: Record<string, string> = {
+  musical: "bg-blue-50 text-blue-700 border-blue-200",
+  comercial: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  vinheta: "bg-amber-50 text-amber-700 border-amber-200",
+  texto: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+function PreviewGrid({ blocks }: { blocks: Block[] }) {
+  if (!blocks.length) {
+    return (
+      <div className="rounded border p-3 text-[12px] text-muted-foreground">
+        Nenhum bloco para pré-visualizar.
+      </div>
+    );
+  }
+  return (
+    <div className="max-h-64 space-y-2 overflow-auto rounded border p-2">
+      {blocks.map((b) => (
+        <div key={b.id} className="rounded border border-pl-panel-dark/40">
+          <div className="flex items-center justify-between gap-2 border-b bg-muted/60 px-2 py-1 text-[12px] font-semibold">
+            <span className="flex items-center gap-2">
+              <span className="font-mono">{b.time}</span>
+              <span className={`rounded border px-1.5 text-[10px] uppercase ${catStyle[b.category] ?? ""}`}>
+                {b.category}
+              </span>
+            </span>
+            <span className="text-[10px] font-normal text-muted-foreground">{b.items.length} inserções</span>
+          </div>
+          <ol className="divide-y text-[12px]">
+            {b.items.map((t, i) => (
+              <li key={t.id} className="flex items-center gap-2 px-2 py-1">
+                <span className="w-5 text-right font-mono text-[10px] text-muted-foreground">{i + 1}</span>
+                <span className={`rounded border px-1 text-[10px] uppercase ${catStyle[t.category] ?? ""}`}>
+                  {t.category.slice(0, 3)}
+                </span>
+                <span className="flex-1 truncate">
+                  {t.title}
+                  {t.artist ? <span className="text-muted-foreground"> — {t.artist}</span> : null}
+                </span>
+                <span className="font-mono text-[10px] text-muted-foreground">{fmt(t.duration)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       ))}
     </div>
   );
