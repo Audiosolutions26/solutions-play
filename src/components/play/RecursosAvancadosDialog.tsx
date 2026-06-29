@@ -16,6 +16,7 @@ import {
 import {
   loadPresets, savePreset, deletePreset, getPreset, type GenPreset,
 } from "@/lib/play-presets";
+import { validateIniFile, validateIniFormat } from "@/lib/play-config-validate";
 
 const variables = [
   ["%d", "dia do mês (31)"],
@@ -99,6 +100,12 @@ export function RecursosAvancadosDialog({
     [grade, mapa, errorCount],
   );
   const previewTotal = preview.reduce((s, b) => s + b.items.length, 0);
+
+  const comFileErr = validateIniFile(comFile, "ARQUIVO comercial");
+  const musFileErr = validateIniFile(musFile, "ARQUIVO musical");
+  const comFmtErr = validateIniFormat(comFormat, "FORMATO comercial");
+  const musFmtErr = validateIniFormat(musFormat, "FORMATO musical");
+  const iniErrors = [comFileErr, musFileErr, comFmtErr, musFmtErr].filter(Boolean) as string[];
 
   const gerar = () => {
     if (errorCount > 0) {
