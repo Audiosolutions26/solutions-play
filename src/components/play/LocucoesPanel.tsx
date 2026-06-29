@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Mic, Square, FileAudio, Play, Pause, Trash2, ListPlus, Circle } from "lucide-react";
+import { Mic, Square, FileAudio, Play, Pause, Trash2, ListPlus, Circle, HardDrive } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makeLocucao } from "@/lib/play-data";
 import { readAudioFile } from "@/lib/play-audio-files";
 import {
-  getLocucoes, subscribeLocucoes, addLocucao, removeLocucao, type Locucao,
+  getLocucoes, subscribeLocucoes, addLocucao, removeLocucao, resolveLocucaoUrl, type Locucao,
 } from "@/lib/play-locucoes";
+import { isDesktop, pickAudioFilesNative } from "@/lib/play-native";
+import { ensureMicPermission, loadDevicePrefs, micConstraints, applyOutput } from "@/lib/play-audio-devices";
+import { logEvent } from "@/lib/play-events";
 
 export function LocucoesPanel() {
   const locucoes = useSyncExternalStore(subscribeLocucoes, getLocucoes, getLocucoes);
@@ -34,6 +37,17 @@ export function LocucoesPanel() {
     return () => clearInterval(id);
   }, [recording]);
 
+  // seletor nativo do Windows (caminhos persistidos)
+  const pickNative = async () => {
+    const picked = await pickAudioFilesNative();
+    if (!picked) { fileRef.current?.click(); return; }
+    for (const f of picked) {
+      const dur = await durationOf(f.dataUrl);
+      addLocucao(f.name, f.dataUrl, dur || 1, "arquivo", f.path);
+    }
+    if (picked.length) toast.success(`${picked.length} áudio(s) carregado(s) do Windows.`);
+  };
+
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
@@ -47,8 +61,12 @@ export function LocucoesPanel() {
   };
 
   const startRec = async () => {
+    const perm = await ensureMicPermission();
+    if (perm === "denied") { toast.error("Permissão de microfone negada. Verifique as configurações do Windows."); return; }
+    if (perm === "unsupported") { toast.error("Microfone não suportado neste ambiente."); return; }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const prefs = loadDevicePrefs();
+      const stream = await navigator.mediaDevices.getUserMedia(micConstraints(prefs.inputId));
       const rec = new MediaRecorder(stream);
       chunksRef.current = [];
       rec.ondataavailable = (ev) => { if (ev.data.size) chunksRef.current.push(ev.data); };
@@ -56,13 +74,7 @@ export function LocucoesPanel() {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
         const url = URL.createObjectURL(blob);
-        const dur = await new Promise<number>((resolve) => {
-          const a = new Audio();
-          a.preload = "metadata";
-          a.onloadedmetadata = () => resolve(Number.isFinite(a.duration) ? a.duration : (Date.now() - recStart.current) / 1000);
-          a.onerror = () => resolve((Date.now() - recStart.current) / 1000);
-          a.src = url;
-        });
+        const dur = await durationOf(url) || (Date.now() - recStart.current) / 1000;
         addLocucao(`Locução ${new Date().toLocaleTimeString("pt-BR")}`, url, dur || 1, "gravada");
         toast.success("Locução gravada.");
       };
@@ -81,18 +93,25 @@ export function LocucoesPanel() {
     setRecording(false);
   };
 
-  const preview = (loc: Locucao) => {
+  const preview = async (loc: Locucao) => {
     const a = audioRef.current!;
     if (playingId === loc.id) { a.pause(); setPlayingId(null); return; }
-    a.src = loc.url;
+    const url = await resolveLocucaoUrl(loc);
+    if (!url) { toast.error("Áudio indisponível (arquivo movido/ausente)."); return; }
+    const prefs = loadDevicePrefs();
+    await applyOutput(a, prefs.outputId);
+    a.src = url;
     void a.play();
     setPlayingId(loc.id);
   };
 
-  const insert = (loc: Locucao) => {
+  const insert = async (loc: Locucao) => {
     const blockId = currentBlockId ?? blocks[0]?.id;
     if (!blockId) { toast.error("Nenhum bloco disponível."); return; }
-    addTrack(blockId, makeLocucao(loc.name, loc.url, loc.duration));
+    const url = await resolveLocucaoUrl(loc);
+    if (!url) { toast.error("Áudio indisponível para inserir."); return; }
+    addTrack(blockId, makeLocucao(loc.name, url, loc.duration));
+    logEvent("locucao", `Inserida: ${loc.name}`, "Locução adicionada à programação");
     toast.success(`"${loc.name}" inserida na programação.`);
   };
 
@@ -110,8 +129,9 @@ export function LocucoesPanel() {
               <Circle className="h-3.5 w-3.5 fill-red-500 text-red-500" /> Gravar
             </button>
           )}
-          <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1 rounded bg-white/15 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/30">
-            <FileAudio className="h-3.5 w-3.5" /> Carregar
+          <button onClick={pickNative} className="inline-flex items-center gap-1 rounded bg-white/15 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/30">
+            {isDesktop() ? <HardDrive className="h-3.5 w-3.5" /> : <FileAudio className="h-3.5 w-3.5" />}
+            {isDesktop() ? "Abrir do Windows" : "Carregar"}
           </button>
         </div>
         <input ref={fileRef} type="file" accept="audio/*" multiple className="hidden" onChange={onPick} />
@@ -120,7 +140,7 @@ export function LocucoesPanel() {
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {locucoes.length === 0 ? (
           <p className="p-3 text-[12px] text-muted-foreground">
-            Nenhuma locução. Use <b>Gravar</b> (microfone) ou <b>Carregar</b> para adicionar áudios e depois inserir na programação.
+            Nenhuma locução. Use <b>Gravar</b> (microfone) ou <b>{isDesktop() ? "Abrir do Windows" : "Carregar"}</b> para adicionar áudios e depois inserir na programação.
           </p>
         ) : (
           <table className="w-full text-[12px]">
@@ -137,7 +157,9 @@ export function LocucoesPanel() {
                 <tr key={loc.id} className="border-t border-pl-panel-dark/20">
                   <td className="px-2 py-1">
                     <span className="block truncate">{loc.name}</span>
-                    <span className="block text-[10px] text-muted-foreground">{loc.date}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {loc.date}{loc.path ? " • arquivo do Windows" : ""}
+                    </span>
                   </td>
                   <td className="px-2 py-1 capitalize">{loc.source}</td>
                   <td className="px-2 py-1 text-right font-mono tabular-nums">{fmt(loc.duration)}</td>
@@ -162,4 +184,14 @@ export function LocucoesPanel() {
       </div>
     </div>
   );
+}
+
+function durationOf(url: string): Promise<number> {
+  return new Promise((resolve) => {
+    const a = new Audio();
+    a.preload = "metadata";
+    a.onloadedmetadata = () => resolve(Number.isFinite(a.duration) ? a.duration : 0);
+    a.onerror = () => resolve(0);
+    a.src = url;
+  });
 }
