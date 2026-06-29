@@ -123,11 +123,18 @@ function TrackList({ tracks, onAdd, onSelect, selId }: { tracks: Track[]; onAdd:
       {tracks.map((t, i) => (
         <div
           key={t.id}
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData("application/x-play-folder-track", JSON.stringify(t));
+            e.dataTransfer.effectAllowed = "copy";
+            onSelect(t);
+          }}
           onClick={() => onSelect(t)}
           onDoubleClick={() => onAdd(t)}
-          className={`group flex cursor-default items-center gap-2 px-2 py-1 text-[12px] text-pl-text ${
+          className={`group flex cursor-grab items-center gap-2 px-2 py-1 text-[12px] text-pl-text active:cursor-grabbing ${
             selId === t.id ? "bg-pl-toolbar-light/40" : i % 2 ? "bg-pl-row-alt" : "bg-white"
           }`}
+          title="Arraste para a posição desejada na Programação"
         >
           <Music className="h-3.5 w-3.5 shrink-0 opacity-60" />
           <span className="flex-1 truncate">
