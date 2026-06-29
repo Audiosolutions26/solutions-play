@@ -7,6 +7,7 @@ import { FoldersPanel } from "./FoldersPanel";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { QuickStartPanel } from "./QuickStartPanel";
 import { OptionsDialog } from "./OptionsDialog";
+import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
 import { OperatorLogin, type Operator } from "./OperatorLogin";
 import type { PanelVisibility } from "./AppMenu";
 
@@ -17,10 +18,12 @@ export function PlayApp() {
   const [panels, setPanels] = useState<PanelVisibility>({ pastas: true, propriedades: true });
   const [activeTab, setActiveTab] = useState("Programação");
   const [options, setOptions] = useState<{ open: boolean; tab: string }>({ open: false, tab: "geral" });
+  const [advanced, setAdvanced] = useState<{ open: boolean; tab: string }>({ open: false, tab: "ini" });
 
   const togglePanel = (key: keyof PanelVisibility) =>
     setPanels((p) => ({ ...p, [key]: !p[key] }));
   const openOptions = (tab: string) => setOptions({ open: true, tab });
+  const openAdvanced = (tab: string) => setAdvanced({ open: true, tab });
 
   if (!operator) return <OperatorLogin onLogin={setOperator} />;
 
@@ -33,6 +36,7 @@ export function PlayApp() {
           onOpenOptions={openOptions}
           onLogout={() => setOperator(null)}
           onOpenQuickStart={() => setActiveTab("QuickStart")}
+          onOpenAdvanced={openAdvanced}
         />
         <OnAirBar />
         <div className="flex min-h-0 flex-1">
@@ -81,6 +85,12 @@ export function PlayApp() {
         </div>
       </div>
       <OptionsDialog open={options.open} onOpenChange={(v) => setOptions((o) => ({ ...o, open: v }))} tab={options.tab} />
+      <RecursosAvancadosDialog
+        open={advanced.open}
+        onOpenChange={(v) => setAdvanced((a) => ({ ...a, open: v }))}
+        defaultTab={advanced.tab}
+        onGenerated={() => setActiveTab("Programação")}
+      />
     </PlayerProvider>
   );
 }
