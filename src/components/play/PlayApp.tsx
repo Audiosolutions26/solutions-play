@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { PlayerProvider } from "@/hooks/use-player";
 import { usePlayer } from "@/hooks/use-player";
 import { ConfigProvider } from "@/hooks/use-config";
@@ -8,14 +9,16 @@ import { ProgramPanel } from "./ProgramPanel";
 import { FoldersPanel } from "./FoldersPanel";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { QuickStartPanel } from "./QuickStartPanel";
+import { LocucoesPanel } from "./LocucoesPanel";
 import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel, TextoDoDiaPanel } from "./BottomPanels";
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
 import { BeepDialog, BeepController } from "./BeepDialog";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
+import { getMarkers } from "@/lib/play-markers";
 import type { PanelVisibility } from "./AppMenu";
 
-const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Hoje", "Mini site", "Anotações"];
+const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
 
 // Atalhos de teclado (manual p.16, 18, 30): Espaço = Tocar/Passar, Delete = Remover.
 function KeyboardShortcuts() {
@@ -42,9 +45,98 @@ function KeyboardShortcuts() {
 function LiveTextAutoOpen({ onOpen }: { onOpen: () => void }) {
   const { current } = usePlayer();
   useEffect(() => {
-    if (current && current.category === "texto") onOpen();
+    if (current && current.category === "texto" && current.kind !== "textodia") onOpen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
+  return null;
+}
+
+// Texto do dia (manual p.36): ao chegar a vez na programação, abre o painel e
+// lê o texto automaticamente por voz (TTS).
+function TextoDoDiaAutoPlay({ onOpen }: { onOpen: () => void }) {
+  const { current } = usePlayer();
+  useEffect(() => {
+    if (current?.kind === "textodia") {
+      onOpen();
+      try {
+        const synth = window.speechSynthesis;
+        synth.cancel();
+        const u = new SpeechSynthesisUtterance(current.body || current.title);
+        u.lang = "pt-BR";
+        synth.rate = 1;
+        synth.speak(u);
+      } catch { /* ignore */ }
+    } else {
+      try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id]);
+  return null;
+}
+
+// Marcadores em execução (manual p.113-119): dispara o evento de cada marcador
+// no momento exato em que a posição do áudio cruza a marca.
+function MarkerController() {
+  const { current, position, getEngine, next, setVolume, volume } = usePlayer();
+  const idRef = useRef<string | null>(null);
+  const firedRef = useRef<Set<string>>(new Set());
+  const fadeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const preFade = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!current) { idRef.current = null; firedRef.current.clear(); return; }
+    if (idRef.current !== current.id) {
+      if (fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
+      if (preFade.current != null) { setVolume(preFade.current); preFade.current = null; }
+      idRef.current = current.id;
+      firedRef.current = new Set();
+    }
+    const markers = getMarkers(current.id);
+    if (!markers.length) return;
+    const eng = getEngine();
+    for (const m of markers) {
+      const at = m.pos * current.duration;
+      const key = `${m.kind}:${m.pos}`;
+      if (position < at || firedRef.current.has(key)) continue;
+      firedRef.current.add(key);
+      switch (m.kind) {
+        case "annotation":
+          if (m.note) toast.info(`📝 ${m.note}`);
+          break;
+        case "introEnd":
+          toast.message("Fim da introdução — locutor liberado.");
+          break;
+        case "locStart":
+          toast.message("🎙️ Início de locução.");
+          break;
+        case "carimbo":
+          eng.fire(current.freq > 0 ? current.freq : 330, 0.5);
+          toast.message("Carimbo (Hora Certa) disparado.");
+          break;
+        case "fadeOutStart": {
+          preFade.current = volume;
+          const startVol = volume;
+          const remaining = Math.max(0.4, current.duration - at);
+          let t = 0;
+          if (fadeTimer.current) clearInterval(fadeTimer.current);
+          fadeTimer.current = setInterval(() => {
+            t += 0.1;
+            const f = Math.max(0, 1 - t / remaining);
+            setVolume(startVol * f);
+            if (f <= 0 && fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
+          }, 100);
+          break;
+        }
+        case "nextEntry":
+          next();
+          break;
+        default:
+          break;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, position]);
+
   return null;
 }
 
@@ -67,6 +159,8 @@ export function PlayApp() {
     <PlayerProvider>
       <KeyboardShortcuts />
       <BeepController />
+      <MarkerController />
+      <TextoDoDiaAutoPlay onOpen={() => setActiveTab("Texto do dia")} />
       <LiveTextAutoOpen onOpen={() => setActiveTab("Textos ao vivo")} />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
         <TopBar
@@ -89,6 +183,8 @@ export function PlayApp() {
             <LiveTextPanel />
           ) : activeTab === "Texto do dia" ? (
             <TextoDoDiaPanel />
+          ) : activeTab === "Locuções" ? (
+            <LocucoesPanel />
           ) : activeTab === "Hoje" ? (
             <TodayPanel />
           ) : activeTab === "Mini site" ? (
