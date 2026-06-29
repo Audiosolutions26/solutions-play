@@ -89,6 +89,35 @@ export function removeLocucao(id: string) {
   notify();
 }
 
+// Move uma locução uma posição para cima (-1) ou para baixo (+1).
+export function moveLocucao(id: string, dir: -1 | 1) {
+  const i = list.findIndex((l) => l.id === id);
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= list.length) return;
+  const next = [...list];
+  [next[i], next[j]] = [next[j], next[i]];
+  list = next;
+  persist();
+  notify();
+}
+
+// Reordena por arrastar-e-soltar: insere a locução `id` antes/depois de `targetId`.
+export function reorderLocucao(id: string, targetId: string, place: "before" | "after") {
+  if (id === targetId) return;
+  const from = list.findIndex((l) => l.id === id);
+  if (from < 0) return;
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  let to = next.findIndex((l) => l.id === targetId);
+  if (to < 0) return;
+  if (place === "after") to += 1;
+  next.splice(to, 0, moved);
+  list = next;
+  persist();
+  notify();
+}
+
 // Garante uma URL tocável: se a locução só tem caminho nativo (persistido),
 // recarrega via ponte do Windows e memoriza para esta sessão.
 export async function resolveLocucaoUrl(loc: Locucao): Promise<string | null> {
