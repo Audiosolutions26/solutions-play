@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
 import { DEFAULT_GRADE, DEFAULT_MAPA } from "@/lib/play-data";
-import { generateProgram, codeLegend } from "@/lib/play-gen";
 import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib/play-gen";
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
