@@ -15,6 +15,14 @@ const semis = (n: number) => Math.pow(2, n / 12);
 
 type Mode = "synth" | "url" | null;
 
+// Só usar crossOrigin="anonymous" para URLs http(s) remotas. Em data:/blob:/file:
+// (áudios locais e de pasta) definir crossOrigin "tainta" o MediaElementSource,
+// fazendo o AnalyserNode ler SILÊNCIO — o som toca, mas VU/waveform ficam zerados.
+function applyCrossOrigin(el: HTMLAudioElement, url: string) {
+  if (/^https?:/i.test(url)) el.crossOrigin = "anonymous";
+  else el.removeAttribute("crossorigin");
+}
+
 // Uma "voz" de reprodução de URL: elemento de áudio + nó de origem + ganho
 // próprio (para fade/crossfade independente das outras vozes).
 interface UrlVoice {
@@ -75,7 +83,7 @@ export class AudioEngine {
   private makeVoice(url: string): UrlVoice | null {
     if (!this.ctx || !this.master) return null;
     const el = new Audio();
-    el.crossOrigin = "anonymous";
+    applyCrossOrigin(el, url);
     el.src = url;
     const src = this.ctx.createMediaElementSource(el);
     const gain = this.ctx.createGain();
@@ -308,7 +316,7 @@ export class AudioEngine {
     if (!ctx || !master) return;
     if (ctx.state === "suspended") void ctx.resume();
     const el = new Audio();
-    el.crossOrigin = "anonymous";
+    applyCrossOrigin(el, url);
     el.src = url;
     try {
       const src = ctx.createMediaElementSource(el);
@@ -323,7 +331,7 @@ export class AudioEngine {
   // Toca um áudio one-shot diretamente em uma saída específica (setSinkId).
   private fireUrlOn(url: string, deviceId: string, duration = 2) {
     const el = new Audio() as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
-    el.crossOrigin = "anonymous";
+    applyCrossOrigin(el, url);
     el.src = url;
     const start = () => {
       void el.play();
