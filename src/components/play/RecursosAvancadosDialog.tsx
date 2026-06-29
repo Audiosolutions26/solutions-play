@@ -344,7 +344,7 @@ export function RecursosAvancadosDialog({
               <Wand2 className="h-4 w-4" /> Gerar programação automática
             </button>
             <button onClick={gerarEExportar}
-              disabled={errorCount > 0}
+              disabled={errorCount > 0 || iniErrors.length > 0}
               className="flex w-full items-center justify-center gap-2 rounded border border-pl-transport py-2.5 font-semibold text-pl-transport hover:bg-pl-transport/10 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
               <Download className="h-4 w-4" /> Gerar e exportar (Playlist.ini + arquivos)
             </button>
