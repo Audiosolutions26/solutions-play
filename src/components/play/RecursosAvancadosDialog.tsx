@@ -127,11 +127,21 @@ export function RecursosAvancadosDialog({
   const iniConfig = { comFormat, comFile, musFormat, musFile };
 
   const exportarIni = () => {
+    if (iniErrors.length) {
+      toast.error(iniErrors[0]);
+      return;
+    }
     downloadText("Playlist.ini", buildPlaylistIni(iniConfig));
     toast.success("Playlist.ini exportado");
   };
 
   const baixarResultado = (kind: "comercial" | "musical") => {
+    const fileErr = kind === "comercial" ? comFileErr : musFileErr;
+    const fmtErr = kind === "comercial" ? comFmtErr : musFmtErr;
+    if (fileErr || fmtErr) {
+      toast.error(fileErr || fmtErr!);
+      return;
+    }
     const blocks = currentBlocks.filter((b) => b.category === kind);
     if (!blocks.length) {
       toast.error("Programação vazia — gere a programação antes de baixar");
