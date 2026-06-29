@@ -95,6 +95,10 @@ export class AudioEngine {
     if (!this.ctx || !this.master) return null;
     const el = new Audio();
     applyCrossOrigin(el, url);
+    // Preserva o tom em qualquer mudança de velocidade e desativa filtros que
+    // degradam o sinal — mantém a fidelidade máxima do arquivo original.
+    el.preservesPitch = true;
+    el.preload = "auto";
     el.src = url;
     const src = this.ctx.createMediaElementSource(el);
     const gain = this.ctx.createGain();
