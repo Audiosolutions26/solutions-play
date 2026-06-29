@@ -178,7 +178,7 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
               M
             </span>
           )}
-          <span className={`relative z-10 flex-1 truncate ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}>
+          <span className={`relative z-10 flex-1 break-words ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}>
             {track.title}
             {track.artist ? <span className={isCurrent ? "opacity-80" : "opacity-70"}> — {track.artist}</span> : null}
             {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
@@ -241,7 +241,7 @@ function BlockView({ block, onMarkers, onClock, nextId }: { block: Block; onMark
           <CatIcon className="h-3.5 w-3.5" />
         </span>
         <span className="shrink-0 rounded-full bg-white/40 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide">{catLabel}</span>
-        <span className="truncate">{block.date}, {block.time} • {c?.name || block.title}</span>
+        <span className="break-words">{block.date}, {block.time} • {c?.name || block.title}</span>
         {c?.fixo && <span title="FIXO — não pode atrasar" className="grid h-4 w-4 place-items-center rounded-sm bg-yellow-400 text-[9px] text-black">F</span>}
         {c?.locked && <span title="Bloco bloqueado (LOCKED)"><Lock className="h-3.5 w-3.5 text-yellow-500" /></span>}
         {c?.mode && <span title={c.mode === "sat" ? "Bloco satélite" : "Bloco local"} className="rounded bg-pl-toolbar/30 px-1 text-[9px] uppercase">{c.mode}</span>}

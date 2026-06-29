@@ -247,7 +247,7 @@ function OutputsView({ onClose }: { onClose: () => void }) {
             return (
               <div key={sid} className="flex items-center gap-2 text-[12px]">
                 <span className="rounded bg-pl-toolbar px-1.5 py-0.5 font-mono text-[10px] text-white">{sid}</span>
-                <span className="truncate text-pl-text">{name}</span>
+                <span className="break-words text-pl-text">{name}</span>
               </div>
             );
           })}

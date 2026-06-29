@@ -413,7 +413,7 @@ function PreviewGrid({ blocks }: { blocks: Block[] }) {
                 <span className={`rounded border px-1 text-[10px] uppercase ${catStyle[t.category] ?? ""}`}>
                   {t.category.slice(0, 3)}
                 </span>
-                <span className="flex-1 truncate">
+                <span className="flex-1 break-words">
                   {t.title}
                   {t.artist ? <span className="text-muted-foreground"> — {t.artist}</span> : null}
                 </span>

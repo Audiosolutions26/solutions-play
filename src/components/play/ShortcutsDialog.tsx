@@ -124,7 +124,7 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
                           }`}
                         >
                           <Folder className="h-4 w-4 shrink-0" style={{ color: s.color, fill: s.color }} />
-                          <span className="flex-1 truncate text-pl-text">{s.name}</span>
+                          <span className="flex-1 break-words text-pl-text">{s.name}</span>
                           {s.registered && (
                             <span className="rounded bg-emerald-600 px-1 text-[9px] font-bold text-white">REG</span>
                           )}

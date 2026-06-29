@@ -78,7 +78,7 @@ export function TextoDoDiaPanel() {
               className={`flex items-center justify-between gap-1 border-b border-pl-panel-dark/20 px-2 py-1.5 text-left text-[12px] ${activeId === item.id ? "bg-pl-toolbar-light/40 font-semibold" : "hover:bg-muted"}`}
             >
               <span className="min-w-0">
-                <span className="block truncate">{item.title}</span>
+                <span className="block break-words">{item.title}</span>
                 <span className="block text-[10px] text-muted-foreground">{item.date}</span>
               </span>
               <Trash2 className="h-3 w-3 shrink-0 text-destructive opacity-60 hover:opacity-100" onClick={(e) => { e.stopPropagation(); remove(item.id); }} />
