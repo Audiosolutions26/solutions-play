@@ -279,9 +279,14 @@ export function OptionsDialog({
         </div>
 
         <DialogFooter className="border-t px-4 py-3">
+          {errorCount > 0 && (
+            <span className="mr-auto self-center text-[12px] font-medium text-red-600">
+              {errorCount} campo(s) inválido(s)
+            </span>
+          )}
           <button
             onClick={() => { reset(); toast.message("Padrões restaurados (não salvo até clicar em Salvar)."); }}
-            className="mr-auto rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+            className={cn("rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted", errorCount === 0 && "mr-auto")}
           >
             Restaurar padrões
           </button>
@@ -292,8 +297,9 @@ export function OptionsDialog({
             Cancelar
           </button>
           <button
-            onClick={() => { commit(); toast.success("Configurações salvas."); onOpenChange(false); }}
-            className="rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-[12px] font-semibold text-white hover:brightness-110"
+            onClick={handleSave}
+            disabled={errorCount > 0}
+            className="rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-[12px] font-semibold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Salvar
           </button>
