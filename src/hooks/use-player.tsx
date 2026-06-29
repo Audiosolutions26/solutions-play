@@ -53,7 +53,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
-  const [volume, setVolumeState] = useState(0.5);
+  // Volume em 1.0 (100%): reprodução no nível original do arquivo, sem ajuste
+  // de volume pelo usuário. Apenas os fades automáticos alteram este valor.
+  const [volume, setVolumeState] = useState(1);
   const [cue, setCue] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
