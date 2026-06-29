@@ -28,6 +28,7 @@ export interface Folder {
   name: string;
   color: string;
   category: Category;
+  code: string;
   tracks: Track[];
 }
 
@@ -88,7 +89,7 @@ export const initialBlocks: Block[] = [
 
 export const folders: Folder[] = [
   {
-    id: "f1", name: "Acervo de Vídeos", color: "#c0392b", category: "musical",
+    id: "f1", name: "Acervo de Vídeos", color: "#c0392b", category: "musical", code: "ACV",
     tracks: [
       mk("Africa", "Toto", 295, "musical", 220),
       mk("Billie Jean", "Michael Jackson", 294, "musical", 246),
@@ -96,7 +97,7 @@ export const folders: Folder[] = [
     ],
   },
   {
-    id: "f2", name: "MPB", color: "#27ae60", category: "musical",
+    id: "f2", name: "MPB", color: "#27ae60", category: "musical", code: "NAC",
     tracks: [
       mk("Águas de Março", "Elis & Tom", 210, "musical", 196),
       mk("Construção", "Chico Buarque", 380, "musical", 165),
@@ -104,7 +105,7 @@ export const folders: Folder[] = [
     ],
   },
   {
-    id: "f3", name: "Flash Back", color: "#2980b9", category: "musical",
+    id: "f3", name: "Flash Back", color: "#2980b9", category: "musical", code: "FB",
     tracks: [
       mk("September", "Earth, Wind & Fire", 215, "musical", 261),
       mk("Stayin' Alive", "Bee Gees", 285, "musical", 233),
@@ -112,7 +113,7 @@ export const folders: Folder[] = [
     ],
   },
   {
-    id: "f4", name: "Hit Parade", color: "#8e44ad", category: "musical",
+    id: "f4", name: "Hit Parade", color: "#8e44ad", category: "musical", code: "INTER",
     tracks: [
       mk("Blinding Lights", "The Weeknd", 200, "musical", 277),
       mk("Levitating", "Dua Lipa", 203, "musical", 246),
@@ -120,7 +121,7 @@ export const folders: Folder[] = [
     ],
   },
   {
-    id: "f5", name: "Vinhetas", color: "#f39c12", category: "vinheta",
+    id: "f5", name: "Vinhetas", color: "#f39c12", category: "vinheta", code: "VH",
     tracks: [
       mk("VH Carimbo 1", "Solutions", 6, "vinheta", 392),
       mk("VH Carimbo 2", "Solutions", 5, "vinheta", 440),
@@ -128,21 +129,21 @@ export const folders: Folder[] = [
     ],
   },
   {
-    id: "f6", name: "Comerciais", color: "#16a085", category: "comercial",
+    id: "f6", name: "Comerciais", color: "#16a085", category: "comercial", code: "COM",
     tracks: [
       mk("Spot Loja Central", "Comercial", 30, "comercial", 147),
       mk("Promo Verão", "Comercial", 25, "comercial", 165),
     ],
   },
   {
-    id: "f7", name: "Trilhas", color: "#34495e", category: "musical",
+    id: "f7", name: "Trilhas", color: "#34495e", category: "musical", code: "TRI",
     tracks: [
       mk("Trilha Notícias", "BED", 120, "musical", 110),
       mk("Trilha Esportes", "BED", 120, "musical", 130),
     ],
   },
   {
-    id: "f8", name: "Textos", color: "#7f8c8d", category: "texto",
+    id: "f8", name: "Textos", color: "#7f8c8d", category: "texto", code: "TXT",
     tracks: [
       mk("Testemunhal Patrocinador", "Texto ao vivo", 40, "texto", 0),
       mk("Nota Jornalística", "Texto ao vivo", 35, "texto", 0),
@@ -160,3 +161,40 @@ export function fmt(sec: number): string {
 export function cloneTrack(t: Track): Track {
   return { ...t, id: uid() };
 }
+
+// ---- Recursos Avançados (Grade / Mapa / Playlist.ini) ----
+
+const weekdays = [
+  "domingo", "segunda-feira", "terça-feira", "quarta-feira",
+  "quinta-feira", "sexta-feira", "sábado",
+];
+
+export function todayLabel(d = new Date()): string {
+  const dd = d.getDate().toString().padStart(2, "0");
+  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+  return `${dd}-${mm}-${d.getFullYear()} (${weekdays[d.getDay()]})`;
+}
+
+// Build a fresh track for generator output (codes that aren't real folders).
+export function makeTrack(
+  title: string, artist: string, duration: number, category: Category, freq: number,
+): Track {
+  return mk(title, artist, duration, category, freq);
+}
+
+export function folderByCode(code: string): Folder | undefined {
+  return folders.find((f) => f.code.toUpperCase() === code.trim().toUpperCase());
+}
+
+// Default Grade (musical) and Mapa (commercial) examples — faithful to manual p.85-86.
+export const DEFAULT_GRADE = `06:00 VH, NAC, VHC, HC, INTER, VH, FB
+06:15 VH, INTER, VHC, HC, FB, VH, INTER
+06:30 VH, FB, VHC, HC, NAC, VH, INTER
+06:45 VH, NAC, VHC, HC, INTER, VH, FB
+07:00 VH, INTER, VHC, HC, FB, VH, INTER`;
+
+export const DEFAULT_MAPA = `06:00 VH, 55, 23, VH, 62, 12, VH, 42, VHC, HC
+06:15 VH, 45, HC, 18, 03, VHC, HC
+06:30 VH, 23, 62, 12, 42, 55, VHC, HC
+06:45 VH, 62, 12, 42, 55, 23, VHC, HC
+07:00 VH, 12, 42, 55, 23, 62, VHC, HC`;
