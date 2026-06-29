@@ -20,6 +20,8 @@ interface Props {
   onOpenQuickStart: () => void;
   onOpenAdvanced: (tab: string) => void;
   onOpenBeep: () => void;
+  onOpenSecoes: () => void;
+  onOpenDevices: () => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -32,7 +34,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack } = usePlayer();
 
   const removeSelected = () => {
@@ -152,6 +154,9 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
           <MenubarItem onSelect={soon("Hora Certa")}>Hora Certa</MenubarItem>
           <MenubarItem onSelect={onOpenBeep}>Beep…</MenubarItem>
           <MenubarItem onSelect={soon("Mapas comerciais")}>Gerar mapas comerciais</MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem onSelect={onOpenSecoes}>Seções (Arduino/LPT/Satélite/RDS/Sensores)…</MenubarItem>
+          <MenubarItem onSelect={onOpenDevices}>Dispositivos de áudio…</MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
             <MenubarSubTrigger>Opções</MenubarSubTrigger>
