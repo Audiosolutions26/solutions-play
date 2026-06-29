@@ -14,6 +14,9 @@ export interface PanelVisibility {
 interface Props {
   panels: PanelVisibility;
   onTogglePanel: (key: keyof PanelVisibility) => void;
+  onOpenOptions: (tab: string) => void;
+  onLogout: () => void;
+  onOpenQuickStart: () => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -26,7 +29,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpenQuickStart }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack } = usePlayer();
 
   const removeSelected = () => {
@@ -57,8 +60,8 @@ export function AppMenu({ panels, onTogglePanel }: Props) {
           <MenubarSeparator />
           <MenubarItem onSelect={soon("Imprimir")}>Imprimir programação…</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Trocar operador")}>Trocar operador…</MenubarItem>
-          <MenubarItem onSelect={soon("Sair")}>Sair</MenubarItem>
+          <MenubarItem onSelect={onLogout}>Trocar operador…</MenubarItem>
+          <MenubarItem onSelect={onLogout}>Sair</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -100,7 +103,7 @@ export function AppMenu({ panels, onTogglePanel }: Props) {
           <MenubarSub>
             <MenubarSubTrigger>QuickStart</MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarItem onSelect={soon("QuickStart Padrão")}>Painel Padrão</MenubarItem>
+              <MenubarItem onSelect={onOpenQuickStart}>Abrir painel QuickStart</MenubarItem>
               <MenubarItem onSelect={soon("QuickStart Efeitos")}>Painel Efeitos</MenubarItem>
               <MenubarSeparator />
               <MenubarItem onSelect={soon("QuickStart Configurações")}>Configurações…</MenubarItem>
@@ -144,12 +147,12 @@ export function AppMenu({ panels, onTogglePanel }: Props) {
           <MenubarSub>
             <MenubarSubTrigger>Opções</MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarItem onSelect={soon("Opções: Licença")}>Licença</MenubarItem>
-              <MenubarItem onSelect={soon("Opções: Geral")}>Geral</MenubarItem>
-              <MenubarItem onSelect={soon("Opções: Operadores")}>Operadores</MenubarItem>
-              <MenubarItem onSelect={soon("Opções: Pastas")}>Pastas</MenubarItem>
-              <MenubarItem onSelect={soon("Opções: Inserções")}>Inserções</MenubarItem>
-              <MenubarItem onSelect={soon("Opções: Configurações")}>Configurações</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("licenca")}>Licença</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("geral")}>Geral</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("operadores")}>Operadores</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("pastas")}>Pastas</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("insercoes")}>Inserções</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("geral")}>Configurações</MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
           <MenubarItem onSelect={soon("Personalizar")}>Personalizar…</MenubarItem>
