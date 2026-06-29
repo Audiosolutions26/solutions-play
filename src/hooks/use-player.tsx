@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { getAudioEngine } from "@/lib/audio-engine";
-import { initialBlocks, type Block, type Track, cloneTrack } from "@/lib/play-data";
+import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
 import { getTrackAudioUrl, setTrackAudioUrl } from "@/lib/play-audio-files";
 
 interface PlayerState {
@@ -34,6 +34,7 @@ interface PlayerState {
   removeTrack: (blockId: string, trackId: string) => void;
   replaceBlocks: (blocks: Block[]) => void;
   setTrackAudio: (blockId: string, trackId: string, url: string, duration: number) => void;
+  setBlockClock: (blockId: string, clock: BlockClock) => void;
   getEngine: typeof getAudioEngine;
 }
 
