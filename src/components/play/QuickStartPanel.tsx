@@ -234,7 +234,7 @@ export function QuickStartPanel() {
             : "Clique no pad ou use a tecla de atalho (F1–F12) para disparar por cima do ar."}
         </p>
       </div>
-      <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
+      <input ref={fileRef} type="file" accept={AUDIO_ACCEPT} className="hidden" onChange={onPickFile} />
     </div>
   );
 }
