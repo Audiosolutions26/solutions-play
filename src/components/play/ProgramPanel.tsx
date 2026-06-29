@@ -188,7 +188,7 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
           <span className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold text-white" : isNext ? "text-[12px] font-bold text-emerald-700" : "text-[11px] opacity-80"}`}>
             {isCurrent ? pfmt(Math.max(0, track.duration - position), true) : pfmt(track.duration)}
           </span>
-          <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
+          <input ref={fileRef} type="file" accept={AUDIO_ACCEPT} className="hidden" onChange={onPickFile} />
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
