@@ -215,6 +215,12 @@ export function makeLocucao(title: string, audioUrl: string, duration: number): 
   });
 }
 
+// Áudio de uma pasta de trabalho (atalho do Windows): guarda o caminho do
+// arquivo, que é resolvido sob demanda quando o áudio vai tocar (manual p.145-149).
+export function makeFolderAudioTrack(name: string, filePath: string, category: Category): Track {
+  return mk(name || "Áudio", "", 0, category, 0, { filePath });
+}
+
 // ---- Recursos Avançados (Grade / Mapa / Playlist.ini) ----
 
 const weekdays = [
