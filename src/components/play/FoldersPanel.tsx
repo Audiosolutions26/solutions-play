@@ -11,7 +11,7 @@ import {
 import { cuePlay, cueStop, cueIsPlaying, cueCurrentId } from "@/lib/play-cue";
 import { useCue } from "@/hooks/use-cue";
 
-export function FoldersPanel({ onManage }: { onManage?: () => void }) {
+export function FoldersPanel({ onManage, embedded }: { onManage?: () => void; embedded?: boolean }) {
   const { addTrack, blocks, currentBlockId } = usePlayer();
   const { shortcuts: folders } = useShortcuts();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -73,9 +73,11 @@ export function FoldersPanel({ onManage }: { onManage?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
-        <Folder className="h-4 w-4" /> Pastas
-      </div>
+      {!embedded && (
+        <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
+          <Folder className="h-4 w-4" /> Pastas
+        </div>
+      )}
       {/* toolbar */}
       <div className="flex items-center gap-1 border-b border-pl-panel-dark bg-pl-panel px-2 py-1">
         <button
