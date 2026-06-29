@@ -40,7 +40,7 @@ export function useVuMode(): VuMode {
   // localStorage, então a primeira renderização do cliente também precisa
   // devolver "digital" para casar com o HTML do servidor. Após montar,
   // passamos a refletir o valor real persistido.
-  const value = useSyncExternalStore(subscribe, getVuMode, () => "digital");
+  const value = useSyncExternalStore(subscribe, getVuMode, (): VuMode => "digital");
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
   return isMounted ? value : "digital";
