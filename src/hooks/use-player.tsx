@@ -262,19 +262,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (cur) {
           const hasAudio = !!(getTrackAudioUrl(cur.id) || cur.audioUrl);
           const pos = hasAudio || cur.freq > 0 ? engine.position() : position + 0.2;
+          // Inserções de pasta começam sem duração conhecida (0): usa a duração
+          // real do arquivo assim que o navegador a conhece.
+          const dur = cur.duration > 0 ? cur.duration : (hasAudio ? engine.mediaDuration() : 0);
           // Mixagem real (crossfade): inicia a próxima inserção ANTES do fim
           // da atual, sobrepondo pelo tempo de mixagem do tipo (manual p.106).
           // Só vale para inserções com áudio real (URL).
           if (hasAudio && !transitioningRef.current) {
             const mixMs = mixTimeForTrack(cur);
             const mixSec = mixMs / 1000;
-            if (mixSec > 0.05 && pos >= cur.duration - mixSec) {
+            if (mixSec > 0.05 && dur > 0 && pos >= dur - mixSec) {
               transitioningRef.current = true;
               next(mixMs);
               return;
             }
           }
-          if (pos >= cur.duration) {
+          if (dur > 0 && pos >= dur) {
             next();
             return;
           }
