@@ -25,6 +25,10 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   // Lista os arquivos de áudio da pasta apontada pelo atalho.
   listFolderAudio: (dir) => ipcRenderer.invoke("sp:list-folder-audio", dir),
 
+  // --- RDS: gravar arquivos TXT (no ar + próximas) ---
+  // payload: { dir?, files: [{ name, content }] } -> devolve a pasta gravada.
+  writeRds: (payload) => ipcRenderer.invoke("sp:write-rds", payload),
+
   // --- AES67 TX (áudio sobre IP / RTP multicast) ---
   aes67: {
     // Validação ao vivo (faixa multicast, porta, MTU, interfaces, conflitos).
