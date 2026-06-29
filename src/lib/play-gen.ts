@@ -78,3 +78,93 @@ export function generateProgram(gradeText: string, mapaText: string): Block[] {
 
 // Folder code legend for the UI.
 export const codeLegend = folders.map((f) => ({ code: f.code, name: f.name }));
+
+// ---------- Validação em tempo real (Grade / Mapa) ----------
+
+export const SPECIAL_CODES = ["VH", "VHT", "VHC", "VHP", "HC"] as const;
+
+export interface CodeIssue {
+  line: number; // 1-based
+  code?: string;
+  severity: "error" | "warning";
+  message: string;
+}
+
+function folderByCodeLocal(code: string) {
+  return folders.find((f) => f.code.toUpperCase() === code.trim().toUpperCase());
+}
+
+// Valida o texto de uma Grade (musical) ou Mapa (comercial).
+export function validateGrid(
+  text: string,
+  kind: "musical" | "comercial",
+): CodeIssue[] {
+  const issues: CodeIssue[] = [];
+  const lines = text.split("\n");
+
+  lines.forEach((raw, idx) => {
+    const line = raw.trim();
+    const ln = idx + 1;
+    if (!line) return;
+
+    const m = line.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
+    if (!m) {
+      issues.push({
+        line: ln,
+        severity: "error",
+        message: "Linha sem horário válido (use HH:MM seguido dos códigos).",
+      });
+      return;
+    }
+
+    // Valida o horário (00:00–23:59)
+    const [hh, mm] = m[1].split(":").map(Number);
+    if (hh > 23 || mm > 59) {
+      issues.push({ line: ln, code: m[1], severity: "error", message: `Horário inválido "${m[1]}".` });
+    }
+
+    const codes = m[2].split(",").map((c) => c.trim()).filter(Boolean);
+    if (!codes.length) {
+      issues.push({ line: ln, severity: "warning", message: "Linha sem códigos após o horário." });
+      return;
+    }
+
+    for (const raw2 of codes) {
+      const c = raw2.toUpperCase();
+      const isSpecial = (SPECIAL_CODES as readonly string[]).includes(c);
+      const isNumeric = /^\d+$/.test(c);
+      const folder = folderByCodeLocal(c);
+
+      if (isSpecial) continue;
+
+      if (isNumeric) {
+        const com = folderByCodeLocal("COM");
+        if (!com || !com.tracks.length) {
+          issues.push({ line: ln, code: c, severity: "warning", message: `Código comercial "${c}" sem pasta Comerciais (COM) abastecida.` });
+        } else if (kind === "musical") {
+          issues.push({ line: ln, code: c, severity: "warning", message: `Código comercial "${c}" usado na Grade musical (inconsistente).` });
+        }
+        continue;
+      }
+
+      if (!folder) {
+        issues.push({ line: ln, code: c, severity: "error", message: `Código inexistente "${c}" — não corresponde a nenhuma pasta.` });
+        continue;
+      }
+
+      if (!folder.tracks.length) {
+        issues.push({ line: ln, code: c, severity: "warning", message: `Pasta "${folder.name}" (${c}) está vazia.` });
+      }
+
+      // Consistência de categoria por tipo de bloco.
+      if (kind === "musical" && folder.category === "comercial") {
+        issues.push({ line: ln, code: c, severity: "warning", message: `Pasta comercial "${c}" usada na Grade musical (inconsistente).` });
+      }
+      if (kind === "comercial" && folder.category === "musical") {
+        issues.push({ line: ln, code: c, severity: "warning", message: `Pasta musical "${c}" usada no Mapa comercial (inconsistente).` });
+      }
+    }
+  });
+
+  return issues;
+}

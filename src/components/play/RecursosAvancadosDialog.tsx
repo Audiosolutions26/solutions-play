@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Sliders, Wand2, FileCode2, Map, Download } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
 import { DEFAULT_GRADE, DEFAULT_MAPA } from "@/lib/play-data";
-import { generateProgram, codeLegend } from "@/lib/play-gen";
+import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib/play-gen";
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
 } from "@/lib/play-export";
@@ -49,7 +49,16 @@ export function RecursosAvancadosDialog({
   const [grade, setGrade] = useState(DEFAULT_GRADE);
   const [mapa, setMapa] = useState(DEFAULT_MAPA);
 
+  const gradeIssues = useMemo(() => validateGrid(grade, "musical"), [grade]);
+  const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
+  const errorCount = gradeIssues.filter((i) => i.severity === "error").length
+    + mapaIssues.filter((i) => i.severity === "error").length;
+
   const gerar = () => {
+    if (errorCount > 0) {
+      toast.error(`Corrija ${errorCount} erro(s) de código antes de gerar`);
+      return;
+    }
     const blocks = generateProgram(grade, mapa);
     if (!blocks.length) {
       toast.error("Nenhum bloco válido encontrado na Grade/Mapa");
@@ -157,6 +166,7 @@ export function RecursosAvancadosDialog({
           <TabsContent value="grade" className="space-y-2 py-2">
             <Label>Grade musical (HH:MM código, código, …)</Label>
             <textarea value={grade} onChange={(e) => setGrade(e.target.value)} className={textareaCls} spellCheck={false} />
+            <IssuesPanel issues={gradeIssues} />
             <CodeLegend />
           </TabsContent>
 
@@ -164,6 +174,7 @@ export function RecursosAvancadosDialog({
           <TabsContent value="mapa" className="space-y-2 py-2">
             <Label>Mapa comercial (HH:MM código, código, …)</Label>
             <textarea value={mapa} onChange={(e) => setMapa(e.target.value)} className={textareaCls} spellCheck={false} />
+            <IssuesPanel issues={mapaIssues} />
             <CodeLegend />
           </TabsContent>
 
@@ -178,8 +189,10 @@ export function RecursosAvancadosDialog({
               <div>Grade: {grade.split("\n").filter((l) => l.trim()).length} blocos musicais</div>
               <div>Mapa: {mapa.split("\n").filter((l) => l.trim()).length} blocos comerciais</div>
             </div>
+            <IssuesPanel issues={[...gradeIssues, ...mapaIssues]} />
             <button onClick={gerar}
-              className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px">
+              disabled={errorCount > 0}
+              className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
               <Wand2 className="h-4 w-4" /> Gerar programação automática
             </button>
           </TabsContent>
@@ -207,6 +220,33 @@ function CodeLegend() {
         <span key={c} className="mr-2 inline-block">
           <code className="rounded bg-muted px-1 font-mono">{c}</code> {d}
         </span>
+      ))}
+    </div>
+  );
+}
+
+function IssuesPanel({ issues }: { issues: CodeIssue[] }) {
+  if (!issues.length) {
+    return (
+      <div className="flex items-center gap-2 rounded border border-green-600/40 bg-green-50 px-3 py-2 text-[12px] text-green-700">
+        <CheckCircle2 className="h-4 w-4" /> Todos os códigos são válidos e consistentes.
+      </div>
+    );
+  }
+  const errors = issues.filter((i) => i.severity === "error");
+  const warnings = issues.filter((i) => i.severity === "warning");
+  return (
+    <div className="max-h-40 space-y-1 overflow-auto rounded border p-2 text-[12px]">
+      <div className="mb-1 font-semibold">
+        {errors.length} erro(s), {warnings.length} aviso(s)
+      </div>
+      {issues.map((i, idx) => (
+        <div key={idx} className={`flex items-start gap-2 ${i.severity === "error" ? "text-red-600" : "text-amber-600"}`}>
+          {i.severity === "error"
+            ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+          <span>Linha {i.line}: {i.message}</span>
+        </div>
       ))}
     </div>
   );
