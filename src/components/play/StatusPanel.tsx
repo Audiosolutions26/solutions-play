@@ -88,8 +88,8 @@ function StatBox({ label, value, sub, mono }: { label: string; value: string; su
       <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         <ClockIcon className="h-3 w-3" /> {label}
       </div>
-      <div className={`truncate text-[13px] font-bold text-pl-text ${mono ? "font-mono tabular-nums" : ""}`}>{value}</div>
-      {sub && <div className="truncate text-[10px] text-muted-foreground">{sub}</div>}
+      <div className={`break-words text-[13px] font-bold text-pl-text ${mono ? "font-mono tabular-nums" : ""}`}>{value}</div>
+      {sub && <div className="break-words text-[10px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }

@@ -32,7 +32,7 @@ export function LiveTextPanel() {
               onClick={() => setActive(item)}
               className={`flex w-full items-center justify-between gap-1 border-b border-pl-panel-dark/20 px-2 py-1.5 text-left text-[12px] ${active?.id === item.id ? "bg-pl-toolbar-light/40 font-semibold" : "hover:bg-muted"}`}
             >
-              <span className="truncate">{item.title}</span>
+              <span className="break-words">{item.title}</span>
               <Trash2 className="h-3 w-3 shrink-0 text-destructive opacity-60 hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItems((prev) => prev.filter((x) => x.id !== item.id)); }} />
             </button>
           ))}

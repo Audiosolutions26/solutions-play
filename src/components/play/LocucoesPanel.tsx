@@ -184,7 +184,7 @@ export function LocucoesPanel() {
                   <td className="px-2 py-1">
                     <span className="flex items-center gap-1">
                       <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
-                      <span className="truncate">{loc.name}</span>
+                      <span className="break-words">{loc.name}</span>
                     </span>
                     <span className="block text-[10px] text-muted-foreground">
                       {loc.date}{loc.path ? " • arquivo do Windows" : ""}

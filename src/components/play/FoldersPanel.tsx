@@ -92,7 +92,7 @@ export function FoldersPanel({ onManage }: { onManage?: () => void }) {
         {onManage && (
           <button onClick={onManage} title="Gerenciamento de atalhos" className="grid h-7 w-7 place-items-center rounded border border-pl-panel-dark bg-white/60 text-pl-text hover:bg-white"><Settings2 className="h-4 w-4" /></button>
         )}
-        <span className="ml-2 truncate text-[12px] font-semibold text-pl-text">
+        <span className="ml-2 break-words text-[12px] font-semibold text-pl-text">
           {results ? `Resultados: "${query}"` : open ? open.name : "Pastas de trabalho"}
         </span>
         {cuePlaying && cueId && (
@@ -152,7 +152,7 @@ function FolderTile({ folder, onOpen, onRandom }: { folder: FolderType; onOpen: 
     <div className="group relative flex flex-col items-center gap-1 rounded p-2 text-center hover:bg-pl-toolbar-light/30">
       <button onDoubleClick={onOpen} onClick={onOpen} className="flex flex-col items-center gap-1" title={`${folder.name} (abrir)`}>
         <Folder className="h-10 w-10" style={{ color: folder.color, fill: folder.color }} />
-        <span className="line-clamp-2 text-[11px] leading-tight text-pl-text">{folder.name}</span>
+        <span className="break-words text-[11px] leading-tight text-pl-text">{folder.name}</span>
       </button>
       <button
         onClick={onRandom}
@@ -199,7 +199,7 @@ function TrackList({ tracks, onAdd, onSelect, selId, onPreview, onStopPreview, c
               title="Clique direito para pré-escuta • arraste para a Programação"
             >
               {isCue ? <Headphones className="h-3.5 w-3.5 shrink-0 text-emerald-600" /> : <Music className="h-3.5 w-3.5 shrink-0 opacity-60" />}
-              <span className="flex-1 truncate">
+              <span className="flex-1 break-words">
                 {t.title}
                 {t.artist ? <span className="opacity-70"> — {t.artist}</span> : null}
               </span>

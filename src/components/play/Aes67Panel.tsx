@@ -391,7 +391,7 @@ function StatusCard({ title, kind, label, detail }: { title: string; kind: Statu
         </span>
         {label}
       </div>
-      {detail && <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{detail}</div>}
+      {detail && <div className="mt-0.5 break-words text-[10px] text-muted-foreground">{detail}</div>}
     </div>
   );
 }

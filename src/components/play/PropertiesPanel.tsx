@@ -6,7 +6,7 @@ function Field({ label, value }: { label: string; value?: string }) {
   return (
     <div className="flex gap-2 px-2 py-[3px] text-[12px] even:bg-pl-row-alt">
       <span className="w-24 shrink-0 font-semibold text-pl-text/70">{label}</span>
-      <span className="flex-1 truncate text-pl-text">{value || "—"}</span>
+      <span className="flex-1 break-words text-pl-text">{value || "—"}</span>
     </div>
   );
 }
