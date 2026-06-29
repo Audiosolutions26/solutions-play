@@ -2,7 +2,7 @@
 // Loads the bundled web app. In production it serves the static client build
 // from ../dist via a tiny local HTTP server (works fully offline); in dev it
 // points to the Vite dev server.
-const { app, BrowserWindow, Menu } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, dialog, session } = require("electron");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
@@ -16,6 +16,19 @@ const MIME = {
   ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2",
   ".woff": "font/woff", ".ttf": "font/ttf", ".map": "application/json",
 };
+
+const AUDIO_MIME = {
+  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg",
+  ".m4a": "audio/mp4", ".aac": "audio/aac", ".flac": "audio/flac",
+  ".webm": "audio/webm", ".wma": "audio/x-ms-wma",
+};
+
+function fileToDataUrl(file) {
+  const ext = path.extname(file).toLowerCase();
+  const mime = AUDIO_MIME[ext] || "application/octet-stream";
+  const buf = fs.readFileSync(file);
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
 
 // Serve the static client build (SPA fallback to index.html).
 function startStaticServer(root) {
@@ -37,7 +50,39 @@ function startStaticServer(root) {
   });
 }
 
+// ---- IPC: seletor de arquivos nativo + leitura por caminho ----------------
+ipcMain.handle("sp:pick-audio-files", async () => {
+  const result = await dialog.showOpenDialog({
+    title: "Selecionar áudios / locuções",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name: "Áudio", extensions: ["mp3", "wav", "ogg", "m4a", "aac", "flac", "webm", "wma"] },
+      { name: "Todos os arquivos", extensions: ["*"] },
+    ],
+  });
+  if (result.canceled) return [];
+  return result.filePaths.map((file) => ({
+    path: file,
+    name: path.basename(file).replace(/\.[^.]+$/, ""),
+    dataUrl: fileToDataUrl(file),
+  }));
+});
+
+ipcMain.handle("sp:read-audio-path", async (_evt, file) => {
+  try {
+    if (!file || !fs.existsSync(file)) return null;
+    return fileToDataUrl(file);
+  } catch {
+    return null;
+  }
+});
+
 async function createWindow() {
+  // Concede automaticamente acesso a microfone/saída de áudio (Windows).
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
+    cb(permission === "media" || permission === "audioCapture" ? true : true);
+  });
+
   const win = new BrowserWindow({
     width: 1366,
     height: 900,
