@@ -16,6 +16,7 @@ interface Props {
   onTogglePanel: (key: keyof PanelVisibility) => void;
   onOpenOptions: (tab: string) => void;
   onLogout: () => void;
+  onSwitchOperator: () => void;
   onOpenQuickStart: () => void;
   onOpenAdvanced: (tab: string) => void;
 }
@@ -30,7 +31,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpenQuickStart, onOpenAdvanced }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack } = usePlayer();
 
   const removeSelected = () => {
@@ -61,7 +62,7 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpen
           <MenubarSeparator />
           <MenubarItem onSelect={soon("Imprimir")}>Imprimir programação…</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={onLogout}>Trocar operador…</MenubarItem>
+          <MenubarItem onSelect={onSwitchOperator}>Trocar operador…</MenubarItem>
           <MenubarItem onSelect={onLogout}>Sair</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
