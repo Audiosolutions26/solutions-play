@@ -56,7 +56,10 @@ export class AudioEngine {
   private startedAt = 0;
   private offset = 0;
   private playing = false;
-  private volume = 0.5;
+  // Ganho de unidade (1.0): as faixas tocam exatamente no nível do arquivo
+  // original, sem atenuação de volume controlável pelo usuário. Continua
+  // sendo escalado apenas pelos fades/crossfade automáticos.
+  private volume = 1;
   private schedTimer: ReturnType<typeof setInterval> | null = null;
   private nextNoteTime = 0;
   private step = 0;
@@ -79,7 +82,7 @@ export class AudioEngine {
     // do hardware sem reamostragem desnecessária.
     this.ctx = new Ctx({ latencyHint: "playback" });
     this.master = this.ctx.createGain();
-    this.master.gain.value = this.volume * 0.5;
+    this.master.gain.value = this.volume;
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 1024;
     this.analyser.smoothingTimeConstant = 0.6;
