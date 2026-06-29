@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper } from "lucide-react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper, Disc3 } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makePause, makeHoraCerta, type Block, type Track } from "@/lib/play-data";
@@ -25,6 +25,16 @@ const catRowBg = {
   vinheta: "bg-pl-vinheta",
   texto: "bg-pl-texto",
 } as const;
+
+// Formato de tempo do rádio: M'SS (e M'SS.t com décimos para a contagem no ar).
+function pfmt(sec: number, tenths = false): string {
+  const s = Math.max(0, sec);
+  const m = Math.floor(s / 60);
+  const r = Math.floor(s % 60);
+  const base = `${m}'${r.toString().padStart(2, "0")}`;
+  if (!tenths) return base;
+  return `${base}.${Math.floor((s - Math.floor(s)) * 10)}`;
+}
 
 // Próxima inserção a entrar no ar, na mesma ordem usada pelo player.
 function findNextId(blocks: Block[], currentId: string | null): string | null {
@@ -130,9 +140,9 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
               : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]" : ""
           } ${
             isCurrent
-              ? "bg-pl-onair font-bold text-pl-onair-text"
+              ? "bg-pl-onair-bg font-bold text-white"
               : isNext
-                ? "bg-yellow-200 font-semibold"
+                ? "bg-pl-prox-bg font-semibold"
                 : isSelected
                   ? "bg-pl-toolbar-light/40"
                   : catRowBg[track.category]
@@ -140,19 +150,23 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
         >
           {/* Faixa vertical lateral: NO AR (no ar) / PRÓX (próxima) — modelo de referência. */}
           {isCurrent && (
-            <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-transport-dark">
+            <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-onair-band">
               <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">NO AR</span>
             </span>
           )}
           {!isCurrent && isNext && (
-            <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-comercial-accent">
+            <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-prox-band">
               <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">PRÓX</span>
             </span>
           )}
           {isCurrent && (
-            <div className="absolute inset-y-0 left-0 z-0 bg-white/30" style={{ width: `${pct}%` }} />
+            <div className="absolute inset-y-0 left-0 z-0 bg-white/15" style={{ width: `${pct}%` }} />
           )}
-          <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
+          {isCurrent || isNext ? (
+            <Disc3 className={`relative z-10 h-5 w-5 shrink-0 ${isCurrent ? "text-white/90 animate-[spin_3s_linear_infinite]" : "text-pl-text/70"}`} />
+          ) : (
+            <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
+          )}
           {mMarker && (
             <span
               title={mMarker === "blue" ? "Inserção manual" : "Inserção automática movida"}
@@ -163,15 +177,15 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
               M
             </span>
           )}
-          <span className={`relative z-10 flex-1 truncate ${isCurrent ? "text-[15px] font-extrabold" : ""}`}>
+          <span className={`relative z-10 flex-1 truncate ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}>
             {track.title}
-            {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
+            {track.artist ? <span className={isCurrent ? "opacity-80" : "opacity-70"}> — {track.artist}</span> : null}
             {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
             {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
             {realAudio && <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />}
           </span>
-          <span className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold opacity-100" : "text-[11px] opacity-80"}`}>
-            {isCurrent ? `-${fmt(Math.max(0, track.duration - position))}` : fmt(track.duration)}
+          <span className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold text-white" : isNext ? "text-[12px] font-bold text-emerald-700" : "text-[11px] opacity-80"}`}>
+            {isCurrent ? pfmt(Math.max(0, track.duration - position), true) : pfmt(track.duration)}
           </span>
           <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
         </div>
