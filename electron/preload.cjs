@@ -9,4 +9,11 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   pickAudioFiles: () => ipcRenderer.invoke("sp:pick-audio-files"),
   // Recarrega um áudio a partir de um caminho persistido (data URL).
   readAudioPath: (path) => ipcRenderer.invoke("sp:read-audio-path", path),
+  // AES67 TX (áudio sobre IP): validação ao vivo, TX real (RTP+SAP), loopback.
+  aes67: {
+    validate: (cfg) => ipcRenderer.invoke("aes67:tx:validate", cfg),
+    openTx: (cfg) => ipcRenderer.invoke("aes67:tx:open", cfg),
+    closeTx: () => ipcRenderer.invoke("aes67:tx:close"),
+    loopback: (cfg) => ipcRenderer.invoke("aes67:loopback:run", cfg),
+  },
 });
