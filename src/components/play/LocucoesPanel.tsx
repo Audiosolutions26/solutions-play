@@ -137,7 +137,7 @@ export function LocucoesPanel() {
             {isDesktop() ? "Abrir do Windows" : "Carregar"}
           </button>
         </div>
-        <input ref={fileRef} type="file" accept="audio/*" multiple className="hidden" onChange={onPick} />
+        <input ref={fileRef} type="file" accept={AUDIO_ACCEPT} multiple className="hidden" onChange={onPick} />
       </div>
 
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
