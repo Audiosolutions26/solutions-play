@@ -146,11 +146,23 @@ function FolderTile({ folder, onOpen, onRandom }: { folder: FolderType; onOpen: 
   );
 }
 
-function TrackList({ tracks, onAdd, onSelect, selId, onPreview, onStopPreview }: { tracks: Track[]; onAdd: (t: Track) => void; onSelect: (t: Track) => void; selId?: string; onPreview: (t: Track) => void; onStopPreview: () => void }) {
+function CueBars() {
+  return (
+    <span className="inline-flex items-end gap-[1px]" aria-hidden>
+      <span className="h-2 w-[2px] animate-[pulse_0.7s_ease-in-out_infinite] rounded-sm bg-white" />
+      <span className="h-3 w-[2px] animate-[pulse_0.5s_ease-in-out_infinite] rounded-sm bg-white" />
+      <span className="h-1.5 w-[2px] animate-[pulse_0.9s_ease-in-out_infinite] rounded-sm bg-white" />
+    </span>
+  );
+}
+
+function TrackList({ tracks, onAdd, onSelect, selId, onPreview, onStopPreview, cueId, cuePlaying }: { tracks: Track[]; onAdd: (t: Track) => void; onSelect: (t: Track) => void; selId?: string; onPreview: (t: Track) => void; onStopPreview: () => void; cueId: string | null; cuePlaying: boolean }) {
   if (!tracks.length) return <p className="p-4 text-center text-[12px] text-muted-foreground">Nada encontrado.</p>;
   return (
     <div className="overflow-hidden rounded border border-pl-panel-dark">
-      {tracks.map((t, i) => (
+      {tracks.map((t, i) => {
+        const isCue = cuePlaying && cueId === t.id;
+        return (
         <ContextMenu key={t.id}>
           <ContextMenuTrigger asChild>
             <div
@@ -163,15 +175,16 @@ function TrackList({ tracks, onAdd, onSelect, selId, onPreview, onStopPreview }:
               onClick={() => onSelect(t)}
               onDoubleClick={() => onAdd(t)}
               className={`group flex cursor-grab items-center gap-2 px-2 py-1 text-[12px] text-pl-text active:cursor-grabbing ${
-                selId === t.id ? "bg-pl-toolbar-light/40" : i % 2 ? "bg-pl-row-alt" : "bg-white"
+                isCue ? "bg-emerald-100 shadow-[inset_3px_0_0_0_#059669]" : selId === t.id ? "bg-pl-toolbar-light/40" : i % 2 ? "bg-pl-row-alt" : "bg-white"
               }`}
               title="Clique direito para pré-escuta • arraste para a Programação"
             >
-              <Music className="h-3.5 w-3.5 shrink-0 opacity-60" />
+              {isCue ? <Headphones className="h-3.5 w-3.5 shrink-0 text-emerald-600" /> : <Music className="h-3.5 w-3.5 shrink-0 opacity-60" />}
               <span className="flex-1 truncate">
                 {t.title}
                 {t.artist ? <span className="opacity-70"> — {t.artist}</span> : null}
               </span>
+              {isCue && <CueBars />}
               <span className="font-mono text-[11px] opacity-70">{fmt(t.duration)}</span>
               <button
                 onClick={() => onAdd(t)}
@@ -195,7 +208,8 @@ function TrackList({ tracks, onAdd, onSelect, selId, onPreview, onStopPreview }:
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
-      ))}
+        );
+      })}
     </div>
   );
 }
