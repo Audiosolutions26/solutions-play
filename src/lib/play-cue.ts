@@ -3,7 +3,7 @@
 // (no ar). Usa um <audio> independente do AudioContext do programa, com
 // setSinkId apontando para a placa/saída escolhida para pré-escuta.
 
-import { getTrackAudioUrl } from "./play-audio-files";
+import { getTrackAudioUrl, resolveTrackAudio } from "./play-audio-files";
 import { loadDevicePrefs } from "./play-audio-devices";
 import type { Track } from "./play-data";
 
@@ -76,7 +76,7 @@ export async function cuePlay(track: Track): Promise<void> {
   const el = ensureEl();
   if (!el) return;
   await applyCueSink(el);
-  const real = getTrackAudioUrl(track.id) || track.audioUrl;
+  const real = getTrackAudioUrl(track.id) || track.audioUrl || (await resolveTrackAudio(track));
   el.src = real || toneWav(track.freq || 220, 6);
   el.volume = 1;
   try { el.currentTime = 0; } catch { /* ignore */ }
