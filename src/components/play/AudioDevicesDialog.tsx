@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import {
   ensureMicPermission, listAudioDevices, loadDevicePrefs, saveDevicePrefs,
-  applyOutput, type MicPermission, type DeviceLists,
+  type MicPermission, type DeviceLists,
 } from "@/lib/play-audio-devices";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { platformLabel } from "@/lib/play-native";
