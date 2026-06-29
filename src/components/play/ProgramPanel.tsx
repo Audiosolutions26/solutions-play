@@ -163,14 +163,14 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
               M
             </span>
           )}
-          <span className="relative z-10 flex-1 truncate">
+          <span className={`relative z-10 flex-1 truncate ${isCurrent ? "text-[15px] font-extrabold" : ""}`}>
             {track.title}
             {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
             {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
             {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
             {realAudio && <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />}
           </span>
-          <span className={`relative z-10 font-mono text-[11px] tabular-nums ${isCurrent ? "font-bold opacity-100" : "opacity-80"}`}>
+          <span className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold opacity-100" : "text-[11px] opacity-80"}`}>
             {isCurrent ? `-${fmt(Math.max(0, track.duration - position))}` : fmt(track.duration)}
           </span>
           <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
