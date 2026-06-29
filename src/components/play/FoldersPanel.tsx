@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle } from "lucide-react";
+import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { folders, fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
+import {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import { cuePlay, cueStop } from "@/lib/play-cue";
 
 export function FoldersPanel() {
-  const { addTrack, blocks, currentBlockId, getEngine } = usePlayer();
+  const { addTrack, blocks, currentBlockId } = usePlayer();
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<Track | null>(null);
@@ -28,12 +32,15 @@ export function FoldersPanel() {
     toast.success(`Adicionado à programação: ${t.title}`);
   };
 
-  // Pré-escuta (CUE) do item selecionado (manual p.20, 30).
-  const preview = () => {
-    if (!sel) { toast.info("Selecione um áudio para pré-escuta."); return; }
-    getEngine().fire(sel.freq || 220, 1.4);
-    toast.message(`Pré-escuta: ${sel.title}`);
+  // Pré-escuta (CUE) FORA DO AR, na saída de pré-escuta (manual p.20, 30).
+  const preview = (t?: Track | null) => {
+    const track = t ?? sel;
+    if (!track) { toast.info("Selecione um áudio para pré-escuta."); return; }
+    setSel(track);
+    void cuePlay(track);
+    toast.message(`Pré-escuta (fora do ar): ${track.title}`);
   };
+  const stopPreview = () => cueStop();
 
   // Arrastar/soltar uma pasta adiciona um áudio aleatório (manual p.15, 26).
   const addRandom = (f: FolderType) => {
@@ -58,8 +65,8 @@ export function FoldersPanel() {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <button onClick={preview} title="Pré-escuta (Tocar)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
-        <button onClick={() => getEngine().stop()} title="Parar pré-escuta" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
+        <button onClick={() => preview()} title="Pré-escuta (Tocar)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
+        <button onClick={stopPreview} title="Parar pré-escuta" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
         <button onClick={() => sel && add(sel)} title="Adicionar à programação" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><SkipForward className="h-4 w-4" /></button>
         <span className="ml-2 truncate text-[12px] font-semibold text-pl-text">
           {results ? `Resultados: "${query}"` : open ? open.name : "Pastas de trabalho"}
@@ -70,9 +77,9 @@ export function FoldersPanel() {
       {/* content */}
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row p-2">
         {results ? (
-          <TrackList tracks={results} onAdd={add} onSelect={setSel} selId={sel?.id} />
+          <TrackList tracks={results} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} />
         ) : open ? (
-          <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} />
+          <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} />
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {folders.map((f) => (
@@ -116,40 +123,55 @@ function FolderTile({ folder, onOpen, onRandom }: { folder: FolderType; onOpen: 
   );
 }
 
-function TrackList({ tracks, onAdd, onSelect, selId }: { tracks: Track[]; onAdd: (t: Track) => void; onSelect: (t: Track) => void; selId?: string }) {
+function TrackList({ tracks, onAdd, onSelect, selId, onPreview, onStopPreview }: { tracks: Track[]; onAdd: (t: Track) => void; onSelect: (t: Track) => void; selId?: string; onPreview: (t: Track) => void; onStopPreview: () => void }) {
   if (!tracks.length) return <p className="p-4 text-center text-[12px] text-muted-foreground">Nada encontrado.</p>;
   return (
     <div className="overflow-hidden rounded border border-pl-panel-dark">
       {tracks.map((t, i) => (
-        <div
-          key={t.id}
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData("application/x-play-folder-track", JSON.stringify(t));
-            e.dataTransfer.effectAllowed = "copy";
-            onSelect(t);
-          }}
-          onClick={() => onSelect(t)}
-          onDoubleClick={() => onAdd(t)}
-          className={`group flex cursor-grab items-center gap-2 px-2 py-1 text-[12px] text-pl-text active:cursor-grabbing ${
-            selId === t.id ? "bg-pl-toolbar-light/40" : i % 2 ? "bg-pl-row-alt" : "bg-white"
-          }`}
-          title="Arraste para a posição desejada na Programação"
-        >
-          <Music className="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <span className="flex-1 truncate">
-            {t.title}
-            {t.artist ? <span className="opacity-70"> — {t.artist}</span> : null}
-          </span>
-          <span className="font-mono text-[11px] opacity-70">{fmt(t.duration)}</span>
-          <button
-            onClick={() => onAdd(t)}
-            className="grid h-5 w-5 place-items-center rounded bg-pl-transport text-white opacity-0 transition group-hover:opacity-100"
-            title="Adicionar à programação"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <ContextMenu key={t.id}>
+          <ContextMenuTrigger asChild>
+            <div
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("application/x-play-folder-track", JSON.stringify(t));
+                e.dataTransfer.effectAllowed = "copy";
+                onSelect(t);
+              }}
+              onClick={() => onSelect(t)}
+              onDoubleClick={() => onAdd(t)}
+              className={`group flex cursor-grab items-center gap-2 px-2 py-1 text-[12px] text-pl-text active:cursor-grabbing ${
+                selId === t.id ? "bg-pl-toolbar-light/40" : i % 2 ? "bg-pl-row-alt" : "bg-white"
+              }`}
+              title="Clique direito para pré-escuta • arraste para a Programação"
+            >
+              <Music className="h-3.5 w-3.5 shrink-0 opacity-60" />
+              <span className="flex-1 truncate">
+                {t.title}
+                {t.artist ? <span className="opacity-70"> — {t.artist}</span> : null}
+              </span>
+              <span className="font-mono text-[11px] opacity-70">{fmt(t.duration)}</span>
+              <button
+                onClick={() => onAdd(t)}
+                className="grid h-5 w-5 place-items-center rounded bg-pl-transport text-white opacity-0 transition group-hover:opacity-100"
+                title="Adicionar à programação"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent className="w-52">
+            <ContextMenuItem onSelect={() => onPreview(t)}>
+              <Headphones className="mr-2 h-4 w-4" /> Pré-escuta (fora do ar)
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => onStopPreview()}>
+              <Square className="mr-2 h-3.5 w-3.5" /> Parar pré-escuta
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={() => onAdd(t)}>
+              <Plus className="mr-2 h-4 w-4" /> Adicionar à programação
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       ))}
     </div>
   );

@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/select";
 import {
   ensureMicPermission, listAudioDevices, loadDevicePrefs, saveDevicePrefs,
-  applyOutput, type MicPermission, type DeviceLists,
+  type MicPermission, type DeviceLists,
 } from "@/lib/play-audio-devices";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
+import { cueTestTone, refreshCueSink } from "@/lib/play-cue";
 
 const ANY = "__default__";
 
@@ -24,6 +25,7 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
   const [devices, setDevices] = useState<DeviceLists>({ inputs: [], outputs: [] });
   const [inputId, setInputId] = useState<string>(ANY);
   const [outputId, setOutputId] = useState<string>(ANY);
+  const [cueId, setCueId] = useState<string>(ANY);
 
   const refresh = async () => {
     const p = await ensureMicPermission();
@@ -37,6 +39,7 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
     const prefs = loadDevicePrefs();
     setInputId(prefs.inputId || ANY);
     setOutputId(prefs.outputId || ANY);
+    setCueId(prefs.cueId || ANY);
     void refresh();
   }, [open]);
 
@@ -44,20 +47,25 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
     const eng = getAudioEngine();
     await eng.setOutputDevice(outputId === ANY ? "" : outputId);
     eng.fire(660, 0.5);
-    // pré-escuta também em elemento de áudio (setSinkId)
-    const a = new Audio();
-    await applyOutput(a, outputId === ANY ? undefined : outputId);
-    toast.info("Tom de teste enviado para a saída selecionada.");
+    toast.info("Tom de teste enviado para a saída NO AR.");
+  };
+
+  const testCue = async () => {
+    saveDevicePrefs({ ...loadDevicePrefs(), cueId: cueId === ANY ? undefined : cueId });
+    await cueTestTone(660);
+    toast.info("Tom de teste enviado para a saída de PRÉ-ESCUTA (CUE).");
   };
 
   const save = async () => {
     const prefs = {
       inputId: inputId === ANY ? undefined : inputId,
       outputId: outputId === ANY ? undefined : outputId,
+      cueId: cueId === ANY ? undefined : cueId,
     };
     saveDevicePrefs(prefs);
     await getAudioEngine().setOutputDevice(prefs.outputId || "");
-    logEvent("sistema", "Dispositivos de áudio salvos", `Mic: ${inputId === ANY ? "padrão" : "selecionado"} • Saída: ${outputId === ANY ? "padrão" : "selecionada"}`);
+    await refreshCueSink();
+    logEvent("sistema", "Dispositivos de áudio salvos", `Mic: ${inputId === ANY ? "padrão" : "selecionado"} • No ar: ${outputId === ANY ? "padrão" : "selecionada"} • CUE: ${cueId === ANY ? "padrão" : "selecionada"}`);
     toast.success("Dispositivos de áudio salvos.");
     onOpenChange(false);
   };
@@ -93,7 +101,7 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
           </div>
 
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-1"><Volume2 className="h-4 w-4" /> Saída (pré-escuta)</Label>
+            <Label className="flex items-center gap-1"><Volume2 className="h-4 w-4" /> Saída principal (NO AR)</Label>
             <Select value={outputId} onValueChange={setOutputId}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -104,7 +112,23 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
               </SelectContent>
             </Select>
             <Button type="button" variant="outline" size="sm" className="mt-1" onClick={testOutput}>
-              <Volume2 className="mr-1 h-4 w-4" /> Testar saída
+              <Volume2 className="mr-1 h-4 w-4" /> Testar saída no ar
+            </Button>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1"><Headphones className="h-4 w-4" /> Saída de pré-escuta (CUE — fora do ar)</Label>
+            <Select value={cueId} onValueChange={setCueId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Padrão do sistema</SelectItem>
+                {devices.outputs.map((d, i) => (
+                  <SelectItem key={`cue-${d.deviceId || i}`} value={d.deviceId || `out-${i}`}>{d.label || `Saída ${i + 1}`}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button type="button" variant="outline" size="sm" className="mt-1" onClick={testCue}>
+              <Headphones className="mr-1 h-4 w-4" /> Testar pré-escuta (CUE)
             </Button>
           </div>
         </div>
