@@ -23,11 +23,11 @@ function cfg(): Record<string, unknown> {
 }
 
 function enabled(): boolean {
-  return cfg()["saidas.rds.rdsGerarArquivos"] !== false; // padrão ligado
+  return cfg()["configuracoes.rds.rdsGerarArquivos"] !== false; // padrão ligado
 }
 
 function rdsDir(): string | undefined {
-  const v = cfg()["saidas.rds.rdsPasta"];
+  const v = cfg()["configuracoes.rds.rdsPasta"];
   return typeof v === "string" && v.trim() ? v.trim() : undefined; // undefined -> padrão no main
 }
 
