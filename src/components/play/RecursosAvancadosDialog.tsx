@@ -196,6 +196,17 @@ export function RecursosAvancadosDialog({
               <div>Mapa: {mapa.split("\n").filter((l) => l.trim()).length} blocos comerciais</div>
             </div>
             <IssuesPanel issues={[...gradeIssues, ...mapaIssues]} />
+            {errorCount === 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Pré-visualização da programação</Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {preview.length} blocos · {previewTotal} inserções
+                  </span>
+                </div>
+                <PreviewGrid blocks={preview} />
+              </div>
+            )}
             <button onClick={gerar}
               disabled={errorCount > 0}
               className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
