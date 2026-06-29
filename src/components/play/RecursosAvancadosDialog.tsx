@@ -242,6 +242,55 @@ function CodeLegend() {
   );
 }
 
+const catStyle: Record<string, string> = {
+  musical: "bg-blue-50 text-blue-700 border-blue-200",
+  comercial: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  vinheta: "bg-amber-50 text-amber-700 border-amber-200",
+  texto: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+function PreviewGrid({ blocks }: { blocks: Block[] }) {
+  if (!blocks.length) {
+    return (
+      <div className="rounded border p-3 text-[12px] text-muted-foreground">
+        Nenhum bloco para pré-visualizar.
+      </div>
+    );
+  }
+  return (
+    <div className="max-h-64 space-y-2 overflow-auto rounded border p-2">
+      {blocks.map((b) => (
+        <div key={b.id} className="rounded border border-pl-panel-dark/40">
+          <div className="flex items-center justify-between gap-2 border-b bg-muted/60 px-2 py-1 text-[12px] font-semibold">
+            <span className="flex items-center gap-2">
+              <span className="font-mono">{b.time}</span>
+              <span className={`rounded border px-1.5 text-[10px] uppercase ${catStyle[b.category] ?? ""}`}>
+                {b.category}
+              </span>
+            </span>
+            <span className="text-[10px] font-normal text-muted-foreground">{b.items.length} inserções</span>
+          </div>
+          <ol className="divide-y text-[12px]">
+            {b.items.map((t, i) => (
+              <li key={t.id} className="flex items-center gap-2 px-2 py-1">
+                <span className="w-5 text-right font-mono text-[10px] text-muted-foreground">{i + 1}</span>
+                <span className={`rounded border px-1 text-[10px] uppercase ${catStyle[t.category] ?? ""}`}>
+                  {t.category.slice(0, 3)}
+                </span>
+                <span className="flex-1 truncate">
+                  {t.title}
+                  {t.artist ? <span className="text-muted-foreground"> — {t.artist}</span> : null}
+                </span>
+                <span className="font-mono text-[10px] text-muted-foreground">{fmt(t.duration)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function IssuesPanel({ issues }: { issues: CodeIssue[] }) {
   if (!issues.length) {
     return (
