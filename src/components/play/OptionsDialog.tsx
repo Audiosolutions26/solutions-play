@@ -317,9 +317,22 @@ export function OptionsDialog({
               {errorCount} campo(s) inválido(s)
             </span>
           )}
+          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportFile} />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className={cn("flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted", errorCount === 0 && "mr-auto")}
+          >
+            <Upload className="h-4 w-4" /> Importar
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+          >
+            <Download className="h-4 w-4" /> Exportar
+          </button>
           <button
             onClick={() => { reset(); toast.message("Padrões restaurados (não salvo até clicar em Salvar)."); }}
-            className={cn("rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted", errorCount === 0 && "mr-auto")}
+            className="rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
           >
             Restaurar padrões
           </button>
