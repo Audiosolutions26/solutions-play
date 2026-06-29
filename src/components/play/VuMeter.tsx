@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { usePlayer } from "@/hooks/use-player";
-import { useVuMode } from "@/lib/play-vu";
+import { useVuMode, toggleVuMode } from "@/lib/play-vu";
 
 const SEGS = 24;
 
@@ -54,7 +54,11 @@ export function VuMeter({ label }: { label: string }) {
 
   if (mode === "analogico") {
     return (
-      <div className="flex flex-col items-center gap-0.5">
+      <div
+        className="flex cursor-pointer flex-col items-center gap-0.5"
+        onDoubleClick={toggleVuMode}
+        title="Duplo clique para alternar Digital/Analógico"
+      >
         <AnalogFace needleRef={needleRef} />
         <span className="text-[9px] font-semibold leading-none text-white/90">{label}</span>
       </div>
@@ -62,7 +66,11 @@ export function VuMeter({ label }: { label: string }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div
+      className="flex cursor-pointer flex-col items-center gap-0.5"
+      onDoubleClick={toggleVuMode}
+      title="Duplo clique para alternar Digital/Analógico"
+    >
       <div ref={barsRef} className="flex h-3 items-center gap-px rounded-sm bg-black/40 px-1 py-0.5">
         {Array.from({ length: SEGS }).map((_, i) => (
           <div key={i} className="h-2 w-1 rounded-[1px]" />
