@@ -7,12 +7,13 @@ import { ProgramPanel } from "./ProgramPanel";
 import { FoldersPanel } from "./FoldersPanel";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { QuickStartPanel } from "./QuickStartPanel";
+import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel } from "./BottomPanels";
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
 import { OperatorLogin, type Operator } from "./OperatorLogin";
 import type { PanelVisibility } from "./AppMenu";
 
-const tabs = ["Programação", "QuickStart", "Músicas executadas", "Hoje", "Mini site", "Anotações"];
+const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Hoje", "Mini site", "Anotações"];
 
 export function PlayApp() {
   const [operator, setOperator] = useState<Operator | null>(null);
@@ -44,6 +45,16 @@ export function PlayApp() {
         <div className="flex min-h-0 flex-1">
           {activeTab === "QuickStart" ? (
             <QuickStartPanel />
+          ) : activeTab === "Músicas executadas" ? (
+            <PlayedPanel />
+          ) : activeTab === "Textos ao vivo" ? (
+            <LiveTextPanel />
+          ) : activeTab === "Hoje" ? (
+            <TodayPanel />
+          ) : activeTab === "Mini site" ? (
+            <MiniSitePanel />
+          ) : activeTab === "Anotações" ? (
+            <NotesPanel />
           ) : (
             <>
               {/* left: programação */}
