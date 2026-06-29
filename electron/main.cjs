@@ -129,6 +129,28 @@ ipcMain.handle("sp:open-folder", async (_evt, dir) => {
   }
 });
 
+// ---- IPC: listar os áudios de uma pasta (carrega as músicas do atalho) -----
+// Lê o diretório e devolve a lista de arquivos de áudio { path, name } para
+// que o atalho mostre as músicas reais da pasta apontada.
+ipcMain.handle("sp:list-folder-audio", async (_evt, dir) => {
+  try {
+    if (!dir || typeof dir !== "string") return [];
+    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return [];
+    const out = [];
+    for (const entry of fs.readdirSync(dir)) {
+      const ext = path.extname(entry).toLowerCase();
+      if (!AUDIO_MIME[ext]) continue;
+      const full = path.join(dir, entry);
+      try { if (!fs.statSync(full).isFile()) continue; } catch { continue; }
+      out.push({ path: full, name: entry.replace(/\.[^.]+$/, "") });
+    }
+    out.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    return out;
+  } catch {
+    return [];
+  }
+});
+
 // ---- IPC: validar se um diretório existe (atalho não pode apontar p/ vazio) -
 ipcMain.handle("sp:folder-exists", async (_evt, dir) => {
   try {
