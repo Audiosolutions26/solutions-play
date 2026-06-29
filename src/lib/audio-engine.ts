@@ -232,6 +232,9 @@ export class AudioEngine {
     this.ensure();
     if (!this.ctx) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
+    // Garante o nível base original (1.0) caso um fade-out anterior tenha
+    // baixado o master.
+    if (this.master) this.master.gain.setValueAtTime(1, this.ctx.currentTime);
     this.teardownMedia();
     this.stopScheduler();
     this.mode = "synth";
