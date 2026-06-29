@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
@@ -6,13 +6,15 @@ import { folders, fmt, type Folder as FolderType, type Track } from "@/lib/play-
 import {
   ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 } from "@/components/ui/context-menu";
-import { cuePlay, cueStop } from "@/lib/play-cue";
+import { cuePlay, cueStop, cueIsPlaying, cueCurrentId } from "@/lib/play-cue";
+import { useCue } from "@/hooks/use-cue";
 
 export function FoldersPanel() {
   const { addTrack, blocks, currentBlockId } = usePlayer();
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<Track | null>(null);
+  const { cueId, playing: cuePlaying } = useCue();
 
   const open = folders.find((f) => f.id === openId) ?? null;
 
@@ -42,6 +44,22 @@ export function FoldersPanel() {
   };
   const stopPreview = () => cueStop();
 
+  // Atalho de teclado: tecla "C" inicia/para a pré-escuta do item selecionado.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "c" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = document.activeElement as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || el?.isContentEditable) return;
+      e.preventDefault();
+      if (cueIsPlaying() && (!sel || cueCurrentId() === sel.id)) stopPreview();
+      else preview();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel]);
+
   // Arrastar/soltar uma pasta adiciona um áudio aleatório (manual p.15, 26).
   const addRandom = (f: FolderType) => {
     if (!targetBlock || !f.tracks.length) return;
@@ -65,21 +83,26 @@ export function FoldersPanel() {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <button onClick={() => preview()} title="Pré-escuta (Tocar)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
-        <button onClick={stopPreview} title="Parar pré-escuta" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
+        <button onClick={() => preview()} title="Pré-escuta (atalho: C)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
+        <button onClick={stopPreview} title="Parar pré-escuta (atalho: C)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
         <button onClick={() => sel && add(sel)} title="Adicionar à programação" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><SkipForward className="h-4 w-4" /></button>
         <span className="ml-2 truncate text-[12px] font-semibold text-pl-text">
           {results ? `Resultados: "${query}"` : open ? open.name : "Pastas de trabalho"}
         </span>
-        <Clock3 className="ml-auto h-5 w-5 text-pl-toolbar" />
+        {cuePlaying && cueId && (
+          <span className="ml-auto mr-1 inline-flex items-center gap-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            <CueBars /> CUE
+          </span>
+        )}
+        <Clock3 className={`${cuePlaying && cueId ? "" : "ml-auto"} h-5 w-5 text-pl-toolbar`} />
       </div>
 
       {/* content */}
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row p-2">
         {results ? (
-          <TrackList tracks={results} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} />
+          <TrackList tracks={results} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} cueId={cueId} cuePlaying={cuePlaying} />
         ) : open ? (
-          <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} />
+          <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} cueId={cueId} cuePlaying={cuePlaying} />
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {folders.map((f) => (
