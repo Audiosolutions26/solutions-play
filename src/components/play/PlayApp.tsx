@@ -22,6 +22,7 @@ import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { getMarkers } from "@/lib/play-markers";
 import { logEvent } from "@/lib/play-events";
+import { applyRouting } from "@/lib/play-outputs";
 import type { PanelVisibility } from "./AppMenu";
 
 const tabs = ["Programação", "QuickStart", "Status", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
@@ -177,6 +178,9 @@ export function PlayApp() {
     setPanels((p) => ({ ...p, [key]: !p[key] }));
   const openOptions = (tab: string) => setOptions({ open: true, tab });
   const openAdvanced = (tab: string) => setAdvanced({ open: true, tab });
+
+  // Aplica o roteamento de saídas salvo ao iniciar (manual p.111).
+  useEffect(() => { void applyRouting(); }, []);
 
   return (
     <ConfigProvider>

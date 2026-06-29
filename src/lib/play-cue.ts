@@ -106,6 +106,11 @@ export async function refreshCueSink(): Promise<void> {
   if (cueEl) await applyCueSink(cueEl);
 }
 
+// Gera uma data URL de tom (reutilizável por testes de saída por placa).
+export function makeToneUrl(freq = 660, seconds = 1.2): string {
+  return toneWav(freq, seconds);
+}
+
 // Tom de teste na saída de pré-escuta.
 export async function cueTestTone(freq = 660): Promise<void> {
   const el = ensureEl();

@@ -3,6 +3,7 @@ import { Zap, Pencil, Plus, X, Check, Shuffle, FileAudio } from "lucide-react";
 import { toast } from "sonner";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { readAudioFile } from "@/lib/play-audio-files";
+import { deviceForFunction } from "@/lib/play-outputs";
 
 // QuickStart / Instant replay — botões personalizáveis (manual p.27-35).
 interface Pad {
@@ -60,7 +61,7 @@ export function QuickStartPanel() {
   }, [pads]);
 
   const fire = useCallback((p: Pad) => {
-    if (p.url) getAudioEngine().fireUrl(p.url, p.dur);
+    if (p.url) getAudioEngine().fireUrl(p.url, p.dur, deviceForFunction("quickstart"));
     else getAudioEngine().fire(p.freq, p.dur);
     setActive(p.id);
     window.setTimeout(() => setActive((cur) => (cur === p.id ? null : cur)), p.dur * 1000);

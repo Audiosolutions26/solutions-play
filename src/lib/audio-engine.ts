@@ -245,9 +245,12 @@ export class AudioEngine {
   }
 
   // One-shot real-audio playback for QuickStart pads (over the air, doesn't
-  // interrupt the main program). Plays through the shared analyser so VU/wave
-  // reflect it too.
-  fireUrl(url: string, duration = 2) {
+  // interrupt the main program).
+  // Sem deviceId: toca através do analyser compartilhado (VU/waveform refletem).
+  // Com deviceId: roteia para a saída escolhida (manual p.111 — saída QuickStart)
+  // usando setSinkId em um elemento dedicado, fora do AudioContext.
+  fireUrl(url: string, duration = 2, deviceId?: string) {
+    if (deviceId) { this.fireUrlOn(url, deviceId, duration); return; }
     this.ensure();
     const ctx = this.ctx;
     const master = this.master;
@@ -263,6 +266,24 @@ export class AudioEngine {
     void el.play();
     if (duration > 0) {
       window.setTimeout(() => { try { el.pause(); } catch { /* ignore */ } }, duration * 1000);
+    }
+  }
+
+  // Toca um áudio one-shot diretamente em uma saída específica (setSinkId).
+  private fireUrlOn(url: string, deviceId: string, duration = 2) {
+    const el = new Audio() as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
+    el.crossOrigin = "anonymous";
+    el.src = url;
+    const start = () => {
+      void el.play();
+      if (duration > 0) {
+        window.setTimeout(() => { try { el.pause(); } catch { /* ignore */ } }, duration * 1000);
+      }
+    };
+    if (typeof el.setSinkId === "function") {
+      el.setSinkId(deviceId).then(start).catch(start);
+    } else {
+      start();
     }
   }
 
