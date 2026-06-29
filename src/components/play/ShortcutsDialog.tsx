@@ -291,6 +291,17 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
         >
           <FolderOpen className="h-4 w-4" /> Abrir no Explorer
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={rescanFolder}
+          disabled={!sel.directory || dirStatus === "missing" || scanning}
+          className="mt-1.5 h-8 w-full gap-1 text-[11px]"
+          title="Reler a pasta e carregar as músicas"
+        >
+          <RefreshCw className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`} /> {scanning ? "Lendo pasta…" : "Reler pasta (carregar músicas)"}
+        </Button>
 
         {/* Validação clara do caminho do diretório */}
         {desktop && dirStatus === "missing" && (
