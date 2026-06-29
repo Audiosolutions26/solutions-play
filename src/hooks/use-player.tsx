@@ -21,7 +21,6 @@ interface PlayerState {
   currentBlockId: string | null;
   isPlaying: boolean;
   position: number;
-  volume: number;
   onAir: boolean;
   cue: boolean;
   selectedId: string | null;
@@ -30,7 +29,6 @@ interface PlayerState {
   stop: () => void;
   next: () => void;
   nextManual: () => void;
-  setVolume: (v: number) => void;
   setCue: (v: boolean) => void;
   select: (id: string) => void;
   addTrack: (blockId: string, track: Track) => void;
