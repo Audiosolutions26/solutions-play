@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ensureMicPermission, listAudioDevices, loadDevicePrefs, saveDevicePrefs,
   type MicPermission, type DeviceLists,
@@ -17,6 +18,8 @@ import { getAudioEngine } from "@/lib/audio-engine";
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
 import { cueTestTone, refreshCueSink } from "@/lib/play-cue";
+import { Aes67Panel } from "./Aes67Panel";
+import { Network } from "lucide-react";
 
 const ANY = "__default__";
 
@@ -72,7 +75,7 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Headphones className="h-5 w-5" /> Dispositivos de áudio</DialogTitle>
           <DialogDescription>
@@ -80,6 +83,13 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
           </DialogDescription>
         </DialogHeader>
 
+        <Tabs defaultValue="dispositivos">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="dispositivos"><Headphones className="mr-1 h-4 w-4" /> Dispositivos</TabsTrigger>
+            <TabsTrigger value="aes67"><Network className="mr-1 h-4 w-4" /> AES67 TX</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dispositivos">
         <div className="space-y-4 py-2">
           <div className={`flex items-center gap-2 rounded border p-2 text-[12px] ${perm === "granted" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : perm === "denied" ? "border-red-300 bg-red-50 text-red-700" : "border-border text-muted-foreground"}`}>
             {perm === "granted" ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
@@ -133,10 +143,16 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={save}>Salvar</Button>
-        </DialogFooter>
+            <DialogFooter className="mt-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button onClick={save}>Salvar</Button>
+            </DialogFooter>
+          </TabsContent>
+
+          <TabsContent value="aes67">
+            <Aes67Panel />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

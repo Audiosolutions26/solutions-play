@@ -6,6 +6,7 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, session } = require("electron
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
+const aes67 = require("./aes67.cjs");
 
 const DEV_URL = process.env.SP_DEV_URL || "http://localhost:8080";
 const isDev = !app.isPackaged;
@@ -76,6 +77,10 @@ ipcMain.handle("sp:read-audio-path", async (_evt, file) => {
     return null;
   }
 });
+
+// ---- IPC: AES67 TX (RTP/SAP) + loopback -----------------------------------
+aes67.register(ipcMain);
+app.on("before-quit", () => { try { aes67.closeTx(); } catch { /* ignore */ } });
 
 async function createWindow() {
   // Concede automaticamente acesso a microfone/saída de áudio (Windows).
