@@ -344,6 +344,16 @@ export class AudioEngine {
     return this.ctx.currentTime - this.startedAt;
   }
 
+  // Duração real do áudio de URL em reprodução (0 quando indisponível).
+  // Usado para inserções de pasta que ainda não têm duração conhecida.
+  mediaDuration(): number {
+    if (this.mode === "url" && this.mainVoice) {
+      const d = this.mainVoice.el.duration;
+      return Number.isFinite(d) ? d : 0;
+    }
+    return 0;
+  }
+
   isPlaying() {
     return this.playing;
   }
