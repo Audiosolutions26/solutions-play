@@ -37,6 +37,7 @@ export function TopBar({
   onOpenDevices: () => void;
   onOpenShortcuts: () => void;
 }) {
+  const vuMode = useVuMode();
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
       {/* title bar */}
