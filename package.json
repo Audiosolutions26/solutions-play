@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "desktop:web": "vite build --config vite.electron.config.ts",
     "desktop:start": "electron .",
-    "desktop:build": "vite build --config vite.electron.config.ts && electron-packager . Solutions-Play --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=\"^/src\" --ignore=\"^/electron/renderer\" --ignore=\"^/electron-release\" --ignore=\"^/node_modules\" --ignore=\"^/.git\""
+    "desktop:pack": "node electron/pack.cjs",
+    "desktop:build": "vite build --config vite.electron.config.ts && node electron/pack.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
