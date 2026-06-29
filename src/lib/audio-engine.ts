@@ -56,10 +56,6 @@ export class AudioEngine {
   private startedAt = 0;
   private offset = 0;
   private playing = false;
-  // Ganho de unidade (1.0): as faixas tocam exatamente no nível do arquivo
-  // original, sem atenuação de volume controlável pelo usuário. Continua
-  // sendo escalado apenas pelos fades/crossfade automáticos.
-  private volume = 1;
   private schedTimer: ReturnType<typeof setInterval> | null = null;
   private nextNoteTime = 0;
   private step = 0;
@@ -82,7 +78,10 @@ export class AudioEngine {
     // do hardware sem reamostragem desnecessária.
     this.ctx = new Ctx({ latencyHint: "playback" });
     this.master = this.ctx.createGain();
-    this.master.gain.value = this.volume;
+    // Ganho de saída SEMPRE unitário (1.0): a reprodução fica exatamente no
+    // nível original do arquivo. Não há controle de volume do usuário — apenas
+    // os fades e crossfades automáticos alteram o ganho, sempre voltando a 1.0.
+    this.master.gain.value = 1;
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 1024;
     this.analyser.smoothingTimeConstant = 0.6;
@@ -233,6 +232,9 @@ export class AudioEngine {
     this.ensure();
     if (!this.ctx) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
+    // Garante o nível base original (1.0) caso um fade-out anterior tenha
+    // baixado o master.
+    if (this.master) this.master.gain.setValueAtTime(1, this.ctx.currentTime);
     this.teardownMedia();
     this.stopScheduler();
     this.mode = "synth";
@@ -255,6 +257,9 @@ export class AudioEngine {
     this.ensure();
     if (!this.ctx || !this.master) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
+    // Master sempre em 1.0: o nível de cada faixa é o do próprio arquivo.
+    this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.master.gain.setValueAtTime(1, this.ctx.currentTime);
     this.stopScheduler();
     this.mode = "url";
 
@@ -411,11 +416,22 @@ export class AudioEngine {
     return this.playing;
   }
 
-  setVolume(v: number) {
-    this.volume = v;
-    if (this.master && this.ctx) {
-      this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
-    }
+  // Fade-out AUTOMÁTICO (marcador de Início do Fade-Out, manual p.113-119).
+  // Atua sobre o ganho da própria inserção em reprodução (url) ou sobre o
+  // master (synth de demonstração), sem nunca mexer no nível base do arquivo.
+  // Em url, é descartável: a próxima faixa cria uma nova voz com ganho 1.0.
+  fadeOutCurrent(durationSec: number) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const dur = Math.max(0.05, durationSec);
+    const param =
+      this.mode === "url" && this.mainVoice
+        ? this.mainVoice.gain.gain
+        : this.master?.gain;
+    if (!param) return;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(param.value, now);
+    param.linearRampToValueAtTime(0.0001, now + dur);
   }
 
   // Define o dispositivo de saída (setSinkId — Chromium/Electron no Windows).

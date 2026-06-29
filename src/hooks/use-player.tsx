@@ -21,7 +21,6 @@ interface PlayerState {
   currentBlockId: string | null;
   isPlaying: boolean;
   position: number;
-  volume: number;
   onAir: boolean;
   cue: boolean;
   selectedId: string | null;
@@ -30,7 +29,6 @@ interface PlayerState {
   stop: () => void;
   next: () => void;
   nextManual: () => void;
-  setVolume: (v: number) => void;
   setCue: (v: boolean) => void;
   select: (id: string) => void;
   addTrack: (blockId: string, track: Track) => void;
@@ -53,9 +51,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
-  // Volume em 1.0 (100%): reprodução no nível original do arquivo, sem ajuste
-  // de volume pelo usuário. Apenas os fades automáticos alteram este valor.
-  const [volume, setVolumeState] = useState(1);
   const [cue, setCue] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -212,11 +207,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     engine.stop();
     setIsPlaying(false);
     setPosition(0);
-  }, [engine]);
-
-  const setVolume = useCallback((v: number) => {
-    setVolumeState(v);
-    engine.setVolume(v);
   }, [engine]);
 
   const select = useCallback((id: string) => setSelectedId(id), []);
@@ -389,11 +379,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [isPlaying, next, engine]);
 
   const value = useMemo<PlayerState>(() => ({
-    blocks, current, currentBlockId, isPlaying, position, volume,
+    blocks, current, currentBlockId, isPlaying, position,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, nextManual, setVolume, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
+    playAt, togglePlay, stop, next, nextManual, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, nextManual, setVolume, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
+  }), [blocks, current, currentBlockId, isPlaying, position, cue, selectedId, playAt, togglePlay, stop, next, nextManual, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
