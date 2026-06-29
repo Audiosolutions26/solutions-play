@@ -178,6 +178,9 @@ export function PlayApp() {
   const openOptions = (tab: string) => setOptions({ open: true, tab });
   const openAdvanced = (tab: string) => setAdvanced({ open: true, tab });
 
+  // Aplica o roteamento de saídas salvo ao iniciar (manual p.111).
+  useEffect(() => { void applyRouting(); }, []);
+
   return (
     <ConfigProvider>
     <ShortcutsProvider>
