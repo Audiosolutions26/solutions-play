@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { readAudioFile } from "@/lib/play-audio-files";
 import { deviceForFunction } from "@/lib/play-outputs";
+import { AUDIO_ACCEPT } from "@/lib/audio-formats";
 
 // QuickStart / Instant replay — botões personalizáveis (manual p.27-35).
 interface Pad {
