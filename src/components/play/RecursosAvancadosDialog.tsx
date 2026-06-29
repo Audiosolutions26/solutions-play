@@ -248,7 +248,10 @@ export function RecursosAvancadosDialog({
                   <option>AUTO</option><option>TXT1</option>
                 </select>
                 <Label htmlFor="cfile">ARQUIVO</Label>
-                <Input id="cfile" value={comFile} onChange={(e) => setComFile(e.target.value)} className="font-mono text-xs" />
+                <Input id="cfile" value={comFile} onChange={(e) => setComFile(e.target.value)}
+                  aria-invalid={!!comFileErr}
+                  className={`font-mono text-xs ${comFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`} />
+                {comFileErr && <p className="text-[11px] text-red-600">{comFileErr}</p>}
               </div>
               <div className="space-y-2 rounded border p-3">
                 <div className="text-sm font-semibold">[BLOCO MUSICAL]</div>
@@ -258,7 +261,10 @@ export function RecursosAvancadosDialog({
                   <option>AUTO</option><option>TXT1</option>
                 </select>
                 <Label htmlFor="mfile">ARQUIVO</Label>
-                <Input id="mfile" value={musFile} onChange={(e) => setMusFile(e.target.value)} className="font-mono text-xs" />
+                <Input id="mfile" value={musFile} onChange={(e) => setMusFile(e.target.value)}
+                  aria-invalid={!!musFileErr}
+                  className={`font-mono text-xs ${musFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`} />
+                {musFileErr && <p className="text-[11px] text-red-600">{musFileErr}</p>}
               </div>
             </div>
             <div className="rounded border p-3">
