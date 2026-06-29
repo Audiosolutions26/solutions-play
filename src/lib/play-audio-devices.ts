@@ -3,7 +3,8 @@
 
 export interface AudioDevicePrefs {
   inputId?: string;  // microfone (entrada)
-  outputId?: string; // saída (alto-falante / placa de pré-escuta)
+  outputId?: string; // saída PRINCIPAL (no ar)
+  cueId?: string;    // saída de PRÉ-ESCUTA (CUE / fora do ar)
 }
 
 const KEY = "solutions-play-audio-devices";
