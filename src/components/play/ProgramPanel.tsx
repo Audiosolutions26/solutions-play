@@ -280,6 +280,21 @@ export function ProgramPanel() {
   const [markersOpen, setMarkersOpen] = useState(false);
   const [clockBlock, setClockBlock] = useState<Block | null>(null);
   const [clockOpen, setClockOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sempre que a inserção no ar muda, rola a grade para que ela fique logo
+  // abaixo das últimas faixas tocadas (mantendo ~5 linhas acima visíveis).
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const onAirRow = container.querySelector<HTMLElement>('[data-onair="true"]');
+    if (!onAirRow) return;
+    const containerTop = container.getBoundingClientRect().top;
+    const rowTop = onAirRow.getBoundingClientRect().top;
+    const offset = VISIBLE_PLAYED_ROWS * APPROX_ROW_HEIGHT;
+    const target = container.scrollTop + (rowTop - containerTop) - offset;
+    container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  }, [current?.id]);
 
   const openMarkers = (t: Track) => { setMarkerTrack(t); setMarkersOpen(true); };
   const openClock = (b: Block) => { setClockBlock(b); setClockOpen(true); };
@@ -309,7 +324,7 @@ export function ProgramPanel() {
         </div>
       </div>
       <TransportBar />
-      <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
+      <div ref={scrollRef} className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {blocks.map((b) => (
           <BlockView key={b.id} block={b} onMarkers={openMarkers} onClock={openClock} nextId={nextId} />
         ))}
