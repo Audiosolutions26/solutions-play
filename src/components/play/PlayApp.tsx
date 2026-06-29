@@ -94,5 +94,6 @@ export function PlayApp() {
         onGenerated={() => setActiveTab("Programação")}
       />
     </PlayerProvider>
+    </ConfigProvider>
   );
 }
