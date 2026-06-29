@@ -196,7 +196,7 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
   );
 }
 
-function BlockView({ block, onMarkers, onClock }: { block: Block; onMarkers: (t: Track) => void; onClock: (b: Block) => void }) {
+function BlockView({ block, onMarkers, onClock, nextId }: { block: Block; onMarkers: (t: Track) => void; onClock: (b: Block) => void; nextId: string | null }) {
   const total = block.items.reduce((s, t) => s + t.duration, 0);
   const isMusical = block.category === "musical";
   const head = isMusical
@@ -240,14 +240,15 @@ function BlockView({ block, onMarkers, onClock }: { block: Block; onMarkers: (t:
         )}
       </div>
       {block.items.map((t) => (
-        <Row key={t.id} block={block} track={t} onMarkers={onMarkers} />
+        <Row key={t.id} block={block} track={t} onMarkers={onMarkers} isNext={t.id === nextId} />
       ))}
     </div>
   );
 }
 
 export function ProgramPanel() {
-  const { blocks, currentBlockId, addTrack } = usePlayer();
+  const { blocks, currentBlockId, current, addTrack } = usePlayer();
+  const nextId = findNextId(blocks, current?.id ?? null);
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [markersOpen, setMarkersOpen] = useState(false);
   const [clockBlock, setClockBlock] = useState<Block | null>(null);
@@ -283,7 +284,7 @@ export function ProgramPanel() {
       <TransportBar />
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {blocks.map((b) => (
-          <BlockView key={b.id} block={b} onMarkers={openMarkers} onClock={openClock} />
+          <BlockView key={b.id} block={b} onMarkers={openMarkers} onClock={openClock} nextId={nextId} />
         ))}
       </div>
       <MarkersDialog track={markerTrack} open={markersOpen} onOpenChange={setMarkersOpen} />
