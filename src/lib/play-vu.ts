@@ -1,6 +1,6 @@
 // Preferência do estilo do VU: "digital" (barras de LED) x "analogico"
 // (ponteiro/agulha clássico). Persistida e compartilhada entre os medidores.
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export type VuMode = "digital" | "analogico";
 const KEY = "solutions-play-vu-mode";
@@ -36,5 +36,12 @@ function subscribe(cb: () => void): () => void {
 }
 
 export function useVuMode(): VuMode {
-  return useSyncExternalStore(subscribe, getVuMode, getVuMode);
+  // Durante a hidratação, o servidor não conhece a preferência salva em
+  // localStorage, então a primeira renderização do cliente também precisa
+  // devolver "digital" para casar com o HTML do servidor. Após montar,
+  // passamos a refletir o valor real persistido.
+  const value = useSyncExternalStore(subscribe, getVuMode, () => "digital");
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+  return isMounted ? value : "digital";
 }
