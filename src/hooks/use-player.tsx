@@ -61,6 +61,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const currentRef = useRef<{ track: Track | null; blockId: string | null }>({ track: null, blockId: null });
   // Evita disparar a mixagem (crossfade) mais de uma vez na mesma transição.
   const transitioningRef = useRef(false);
+  // Pontos de mixagem (cue-in/cue-out) detectados para a faixa atual.
+  const cueRef = useRef<CuePoints | null>(null);
 
   const findNext = useCallback((blockId: string, trackId: string): { block: Block; track: Track } | null => {
     const bs = blocksRef.current;
