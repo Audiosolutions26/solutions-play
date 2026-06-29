@@ -127,7 +127,7 @@ export class AudioEngine {
   // RMS level 0..1 for VU meters
   getLevel(): number {
     if (!this.analyser) return 0;
-    const buf = new Uint8Array(this.analyser.fftSize);
+    const buf = new Uint8Array(new ArrayBuffer(this.analyser.fftSize));
     this.analyser.getByteTimeDomainData(buf);
     let sum = 0;
     for (let i = 0; i < buf.length; i++) {
@@ -137,7 +137,7 @@ export class AudioEngine {
     return Math.min(1, Math.sqrt(sum / buf.length) * 2.4);
   }
 
-  getWaveform(out: Uint8Array): Uint8Array {
+  getWaveform(out: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
     if (this.analyser) this.analyser.getByteTimeDomainData(out);
     return out;
   }
