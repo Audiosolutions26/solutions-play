@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown } from "lucide-react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makePause, makeHoraCerta, type Block, type Track } from "@/lib/play-data";
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/context-menu";
 import { TransportBar } from "./TransportBar";
 import { MarkersDialog } from "./MarkersDialog";
+import { BlockClockDialog } from "./BlockClockDialog";
 import { saveMarkers, getMarkers, hasRefrao, hasCarimbo } from "@/lib/play-markers";
 import { hasTrackAudio, readAudioFile } from "@/lib/play-audio-files";
 
@@ -128,14 +129,38 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
   );
 }
 
-function BlockView({ block, onMarkers }: { block: Block; onMarkers: (t: Track) => void }) {
+function BlockView({ block, onMarkers, onClock }: { block: Block; onMarkers: (t: Track) => void; onClock: (b: Block) => void }) {
   const total = block.items.reduce((s, t) => s + t.duration, 0);
   const head = block.category === "musical" ? "bg-pl-musical-head" : "bg-pl-comercial-head";
+  const c = block.clock;
+  // Indicador DUR (manual p.140): verde=igual, amarelo=excedido, vermelho=abaixo.
+  const durColor = c?.dur
+    ? Math.round(total / 60) === c.dur
+      ? "text-emerald-600"
+      : total / 60 > c.dur
+        ? "text-yellow-600"
+        : "text-red-600"
+    : "";
   return (
     <div className="mb-1">
-      <div className={`flex items-center justify-between px-2 py-1 text-[11px] font-bold text-pl-text ${head}`}>
-        <span>{block.date}, {block.time} • {block.title}</span>
-        <span className="font-mono">{fmt(total)}</span>
+      <div className={`flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-pl-text ${head}`}>
+        <span className="truncate">{block.date}, {block.time} • {c?.name || block.title}</span>
+        {c?.fixo && <span title="FIXO — não pode atrasar" className="grid h-4 w-4 place-items-center rounded-sm bg-yellow-400 text-[9px] text-black">F</span>}
+        {c?.locked && <span title="Bloco bloqueado (LOCKED)"><Lock className="h-3.5 w-3.5 text-yellow-500" /></span>}
+        {c?.mode && <span title={c.mode === "sat" ? "Bloco satélite" : "Bloco local"} className="rounded bg-pl-toolbar/30 px-1 text-[9px] uppercase">{c.mode}</span>}
+        {c?.descarte && <span title="Descarte aplicado" className="rounded bg-pl-toolbar/30 px-1 text-[9px]">DESC</span>}
+        <button
+          onClick={() => onClock(block)}
+          title="Relógio operacional do bloco"
+          className="ml-auto grid h-5 w-5 place-items-center rounded hover:bg-black/10"
+        >
+          <Timer className="h-3.5 w-3.5" />
+        </button>
+        {c?.dur ? (
+          <span className={`font-mono ${durColor}`}>{fmt(total)}/{c.dur}min</span>
+        ) : (
+          <span className="font-mono">{fmt(total)}</span>
+        )}
       </div>
       {block.items.map((t) => (
         <Row key={t.id} block={block} track={t} onMarkers={onMarkers} />
@@ -148,8 +173,11 @@ export function ProgramPanel() {
   const { blocks, currentBlockId, addTrack } = usePlayer();
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [markersOpen, setMarkersOpen] = useState(false);
+  const [clockBlock, setClockBlock] = useState<Block | null>(null);
+  const [clockOpen, setClockOpen] = useState(false);
 
   const openMarkers = (t: Track) => { setMarkerTrack(t); setMarkersOpen(true); };
+  const openClock = (b: Block) => { setClockBlock(b); setClockOpen(true); };
   const targetBlock = currentBlockId ?? blocks[0]?.id;
   const insertPause = () => {
     if (!targetBlock) return;
@@ -178,10 +206,11 @@ export function ProgramPanel() {
       <TransportBar />
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {blocks.map((b) => (
-          <BlockView key={b.id} block={b} onMarkers={openMarkers} />
+          <BlockView key={b.id} block={b} onMarkers={openMarkers} onClock={openClock} />
         ))}
       </div>
       <MarkersDialog track={markerTrack} open={markersOpen} onOpenChange={setMarkersOpen} />
+      <BlockClockDialog block={clockBlock} open={clockOpen} onOpenChange={setClockOpen} />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { getAudioEngine } from "@/lib/audio-engine";
-import { initialBlocks, type Block, type Track, cloneTrack } from "@/lib/play-data";
+import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
 import { getTrackAudioUrl, setTrackAudioUrl } from "@/lib/play-audio-files";
 
 interface PlayerState {
@@ -34,6 +34,7 @@ interface PlayerState {
   removeTrack: (blockId: string, trackId: string) => void;
   replaceBlocks: (blocks: Block[]) => void;
   setTrackAudio: (blockId: string, trackId: string, url: string, duration: number) => void;
+  setBlockClock: (blockId: string, clock: BlockClock) => void;
   getEngine: typeof getAudioEngine;
 }
 
@@ -125,6 +126,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const select = useCallback((id: string) => setSelectedId(id), []);
 
   const addTrack = useCallback((blockId: string, track: Track) => {
+    const block = blocksRef.current.find((b) => b.id === blockId);
+    if (block?.clock?.locked) return; // bloco LOCKED (manual p.141)
     const t = { ...cloneTrack(track), origin: "manual" as const, moved: false };
     setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: [...b.items, t] } : b)));
   }, []);
@@ -134,6 +137,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const moveTrack = useCallback((trackId: string, dir: -1 | 1) => {
     setBlocks((bs) =>
       bs.map((b) => {
+        if (b.clock?.locked) return b; // bloco LOCKED (manual p.141)
         const i = b.items.findIndex((t) => t.id === trackId);
         if (i < 0) return b;
         const j = i + dir;
@@ -148,7 +152,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeTrack = useCallback((blockId: string, trackId: string) => {
-    setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: b.items.filter((t) => t.id !== trackId) } : b)));
+    setBlocks((bs) =>
+      bs.map((b) =>
+        b.id === blockId && !b.clock?.locked
+          ? { ...b, items: b.items.filter((t) => t.id !== trackId) }
+          : b,
+      ),
+    );
   }, []);
 
   const setTrackAudio = useCallback((blockId: string, trackId: string, url: string, duration: number) => {
@@ -172,6 +182,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIsPlaying(false);
     setPosition(0);
   }, [engine]);
+
+  // Relógio Operacional (manual p.137-142): define parâmetros do bloco.
+  const setBlockClock = useCallback((blockId: string, clock: BlockClock) => {
+    setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, clock: { ...b.clock, ...clock } } : b)));
+  }, []);
 
   // progress + auto-advance loop
   useEffect(() => {
@@ -202,9 +217,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio,
+    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
