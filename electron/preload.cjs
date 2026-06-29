@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   openFolder: (dir) => ipcRenderer.invoke("sp:open-folder", dir),
   // Valida se o diretório do atalho existe (evita atalho quebrado).
   folderExists: (dir) => ipcRenderer.invoke("sp:folder-exists", dir),
+  // Lista os arquivos de áudio da pasta apontada pelo atalho.
+  listFolderAudio: (dir) => ipcRenderer.invoke("sp:list-folder-audio", dir),
 
   // --- AES67 TX (áudio sobre IP / RTP multicast) ---
   aes67: {

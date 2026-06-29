@@ -15,12 +15,18 @@ interface NativeBridge {
   pickFolder?: (current?: string) => Promise<NativePickedFolder | null>;
   openFolder?: (dir: string) => Promise<boolean>;
   folderExists?: (dir: string) => Promise<boolean>;
+  listFolderAudio?: (dir: string) => Promise<NativeFolderAudio[]>;
 }
 
 export interface NativePickedFolder {
   path: string;
   name: string;
   audioCount: number;
+}
+
+export interface NativeFolderAudio {
+  path: string;
+  name: string;
 }
 
 export function nativeBridge(): NativeBridge | null {
@@ -95,5 +101,17 @@ export async function folderExistsNative(dir: string): Promise<boolean | null> {
     return await b.folderExists(dir);
   } catch {
     return false;
+  }
+}
+
+// Lista os áudios de uma pasta (carrega as músicas reais do atalho).
+// Retorna null em modo web (não há acesso ao sistema de arquivos).
+export async function listFolderAudioNative(dir: string): Promise<NativeFolderAudio[] | null> {
+  const b = nativeBridge();
+  if (!b?.listFolderAudio) return null;
+  try {
+    return await b.listFolderAudio(dir);
+  } catch {
+    return [];
   }
 }

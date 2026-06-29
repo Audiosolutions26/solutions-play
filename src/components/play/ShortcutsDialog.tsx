@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Folder, FolderPlus, Trash2, Save, Music, Megaphone, Clock, FileText, Disc3, ListMusic, Check,
-  FolderSearch, FolderOpen, AlertTriangle, CheckCircle2,
+  FolderSearch, FolderOpen, AlertTriangle, CheckCircle2, RefreshCw,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -16,7 +16,8 @@ import {
   SHORTCUT_TYPES, PALETTE, makeShortcut, typeMeta,
   type ShortcutType, type Shortcut,
 } from "@/lib/play-shortcuts";
-import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative } from "@/lib/play-native";
+import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative, listFolderAudioNative } from "@/lib/play-native";
+import { makeFolderAudioTrack, type Track } from "@/lib/play-data";
 
 const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   musicas: Music,
@@ -156,6 +157,7 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
   const desktop = isDesktop();
   // Estado de validação do diretório: "checking" | "ok" | "missing" | "idle".
   const [dirStatus, setDirStatus] = useState<"idle" | "checking" | "ok" | "missing">("idle");
+  const [scanning, setScanning] = useState(false);
 
   // Valida o caminho sempre que o atalho ou o diretório mudar (debounced).
   useEffect(() => {
@@ -172,15 +174,46 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
     return () => { active = false; clearTimeout(t); };
   }, [sel.id, sel.directory, desktop]);
 
+  // Lê os áudios da pasta e popula as músicas do atalho (manual p.145-149).
+  const loadTracksFrom = async (dir: string): Promise<number> => {
+    const files = await listFolderAudioNative(dir);
+    if (!files) return -1; // modo web: não há acesso ao sistema de arquivos
+    const tracks: Track[] = files.map((f) =>
+      makeFolderAudioTrack(f.name, f.path, sel.category),
+    );
+    onChange({ tracks });
+    return tracks.length;
+  };
+
   // Abre a árvore de pastas do Windows e aponta o atalho para a pasta escolhida.
   const browseFolder = async () => {
     const picked = await pickFolderNative(sel.directory);
     if (!picked) return; // cancelado
     onChange({ directory: picked.path });
     setDirStatus("ok");
+    setScanning(true);
+    const n = await loadTracksFrom(picked.path);
+    setScanning(false);
     toast.success(
-      `Atalho apontado para "${picked.name}" — ${picked.audioCount} áudio(s).`,
+      `Atalho apontado para "${picked.name}" — ${n >= 0 ? n : picked.audioCount} música(s) carregada(s).`,
     );
+  };
+
+  // Relê a pasta atual (útil quando o caminho foi digitado manualmente ou
+  // novos arquivos foram adicionados à pasta no Windows).
+  const rescanFolder = async () => {
+    const dir = sel.directory?.trim();
+    if (!dir) { toast.info("Defina um diretório primeiro."); return; }
+    if (desktop) {
+      const exists = await folderExistsNative(dir);
+      if (exists === false) { setDirStatus("missing"); toast.error(`A pasta não existe: ${dir}`); return; }
+    }
+    setScanning(true);
+    const n = await loadTracksFrom(dir);
+    setScanning(false);
+    if (n < 0) { toast.info("A leitura da pasta só funciona no app desktop."); return; }
+    setDirStatus("ok");
+    toast.success(`${n} música(s) carregada(s) da pasta.`);
   };
 
   // Abre a pasta apontada pelo atalho no Explorer do Windows, no local exato.
@@ -257,6 +290,17 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
           title="Abrir a pasta deste atalho no Explorer do Windows"
         >
           <FolderOpen className="h-4 w-4" /> Abrir no Explorer
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={rescanFolder}
+          disabled={!sel.directory || dirStatus === "missing" || scanning}
+          className="mt-1.5 h-8 w-full gap-1 text-[11px]"
+          title="Reler a pasta e carregar as músicas"
+        >
+          <RefreshCw className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`} /> {scanning ? "Lendo pasta…" : "Reler pasta (carregar músicas)"}
         </Button>
 
         {/* Validação clara do caminho do diretório */}

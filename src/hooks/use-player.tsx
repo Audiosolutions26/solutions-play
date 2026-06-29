@@ -10,7 +10,7 @@ import {
 } from "react";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
-import { getTrackAudioUrl, setTrackAudioUrl } from "@/lib/play-audio-files";
+import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
 
 interface PlayerState {
@@ -87,6 +87,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPosition(0);
     const url = getTrackAudioUrl(trackId) || track.audioUrl;
     if (url) engine.playUrl(url, 0, fadeMs);
+    else if (track.filePath) {
+      void resolveTrackAudio(track).then((u) => {
+        if (u && currentRef.current.track?.id === trackId) engine.playUrl(u, 0, fadeMs);
+        else if (!u && track.freq > 0) engine.play(track.freq, 0);
+      });
+    }
     else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
     setIsPlaying(true);
@@ -256,19 +262,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (cur) {
           const hasAudio = !!(getTrackAudioUrl(cur.id) || cur.audioUrl);
           const pos = hasAudio || cur.freq > 0 ? engine.position() : position + 0.2;
+          // Inserções de pasta começam sem duração conhecida (0): usa a duração
+          // real do arquivo assim que o navegador a conhece.
+          const dur = cur.duration > 0 ? cur.duration : (hasAudio ? engine.mediaDuration() : 0);
           // Mixagem real (crossfade): inicia a próxima inserção ANTES do fim
           // da atual, sobrepondo pelo tempo de mixagem do tipo (manual p.106).
           // Só vale para inserções com áudio real (URL).
           if (hasAudio && !transitioningRef.current) {
             const mixMs = mixTimeForTrack(cur);
             const mixSec = mixMs / 1000;
-            if (mixSec > 0.05 && pos >= cur.duration - mixSec) {
+            if (mixSec > 0.05 && dur > 0 && pos >= dur - mixSec) {
               transitioningRef.current = true;
               next(mixMs);
               return;
             }
           }
-          if (pos >= cur.duration) {
+          if (dur > 0 && pos >= dur) {
             next();
             return;
           }

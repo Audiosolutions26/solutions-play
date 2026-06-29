@@ -22,6 +22,7 @@ export interface Track {
   moved?: boolean;
   body?: string;     // Texto do dia (manual p.36): conteúdo lido automaticamente.
   audioUrl?: string; // Locução gravada / áudio embutido na inserção (manual p.111-112).
+  filePath?: string; // Caminho no Windows (atalho de pasta) — resolvido sob demanda.
 }
 
 export interface Block {
@@ -212,6 +213,12 @@ export function makeLocucao(title: string, audioUrl: string, duration: number): 
     origin: "manual",
     audioUrl,
   });
+}
+
+// Áudio de uma pasta de trabalho (atalho do Windows): guarda o caminho do
+// arquivo, que é resolvido sob demanda quando o áudio vai tocar (manual p.145-149).
+export function makeFolderAudioTrack(name: string, filePath: string, category: Category): Track {
+  return mk(name || "Áudio", "", 0, category, 0, { filePath });
 }
 
 // ---- Recursos Avançados (Grade / Mapa / Playlist.ini) ----
