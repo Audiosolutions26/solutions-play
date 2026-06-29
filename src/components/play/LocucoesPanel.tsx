@@ -8,6 +8,7 @@ import {
   getLocucoes, subscribeLocucoes, addLocucao, removeLocucao, moveLocucao, reorderLocucao, resolveLocucaoUrl, type Locucao,
 } from "@/lib/play-locucoes";
 import { isDesktop, pickAudioFilesNative } from "@/lib/play-native";
+import { AUDIO_ACCEPT } from "@/lib/audio-formats";
 import { ensureMicPermission, loadDevicePrefs, micConstraints, applyOutput } from "@/lib/play-audio-devices";
 import { logEvent } from "@/lib/play-events";
 
