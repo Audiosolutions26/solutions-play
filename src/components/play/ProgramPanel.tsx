@@ -27,7 +27,7 @@ const catRowBg = {
 } as const;
 
 function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarkers: (t: Track) => void }) {
-  const { current, position, selectedId, select, playAt, removeTrack, moveTrack, reorderTrack, getEngine, setTrackAudio } = usePlayer();
+  const { current, position, selectedId, select, playAt, removeTrack, moveTrack, reorderTrack, addTrackAt, getEngine, setTrackAudio } = usePlayer();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState<"top" | "bottom" | null>(null);
   const locked = !!block.clock?.locked;
@@ -81,16 +81,27 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
           onDragOver={(e) => {
             if (locked) return;
             e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
+            e.dataTransfer.dropEffect = e.dataTransfer.types.includes("application/x-play-folder-track") ? "copy" : "move";
             const r = e.currentTarget.getBoundingClientRect();
             setDragOver(e.clientY - r.top < r.height / 2 ? "top" : "bottom");
           }}
           onDragLeave={() => setDragOver(null)}
           onDrop={(e) => {
             e.preventDefault();
-            const sourceId = e.dataTransfer.getData("text/plain");
             const place = dragOver === "bottom" ? "after" : "before";
             setDragOver(null);
+            // Áudio arrastado das Pastas de trabalho: insere nova inserção na posição.
+            const folderData = e.dataTransfer.getData("application/x-play-folder-track");
+            if (folderData) {
+              try {
+                const t = JSON.parse(folderData) as Track;
+                addTrackAt(track.id, t, place);
+                toast.success(`Adicionado à programação: ${t.title}`);
+              } catch { /* ignore */ }
+              return;
+            }
+            // Reposicionamento de inserção existente.
+            const sourceId = e.dataTransfer.getData("text/plain");
             if (sourceId && sourceId !== track.id) reorderTrack(sourceId, track.id, place);
           }}
           onClick={() => select(track.id)}
