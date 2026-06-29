@@ -22,6 +22,7 @@ export interface Track {
   moved?: boolean;
   body?: string;     // Texto do dia (manual p.36): conteúdo lido automaticamente.
   audioUrl?: string; // Locução gravada / áudio embutido na inserção (manual p.111-112).
+  filePath?: string; // Caminho no Windows (atalho de pasta) — resolvido sob demanda.
 }
 
 export interface Block {
