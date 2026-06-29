@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle } from "lucide-react";
+import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { folders, fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
