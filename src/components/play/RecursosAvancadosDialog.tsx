@@ -166,6 +166,7 @@ export function RecursosAvancadosDialog({
           <TabsContent value="grade" className="space-y-2 py-2">
             <Label>Grade musical (HH:MM código, código, …)</Label>
             <textarea value={grade} onChange={(e) => setGrade(e.target.value)} className={textareaCls} spellCheck={false} />
+            <IssuesPanel issues={gradeIssues} />
             <CodeLegend />
           </TabsContent>
 
@@ -173,6 +174,7 @@ export function RecursosAvancadosDialog({
           <TabsContent value="mapa" className="space-y-2 py-2">
             <Label>Mapa comercial (HH:MM código, código, …)</Label>
             <textarea value={mapa} onChange={(e) => setMapa(e.target.value)} className={textareaCls} spellCheck={false} />
+            <IssuesPanel issues={mapaIssues} />
             <CodeLegend />
           </TabsContent>
 
@@ -187,8 +189,10 @@ export function RecursosAvancadosDialog({
               <div>Grade: {grade.split("\n").filter((l) => l.trim()).length} blocos musicais</div>
               <div>Mapa: {mapa.split("\n").filter((l) => l.trim()).length} blocos comerciais</div>
             </div>
+            <IssuesPanel issues={[...gradeIssues, ...mapaIssues]} />
             <button onClick={gerar}
-              className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px">
+              disabled={errorCount > 0}
+              className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
               <Wand2 className="h-4 w-4" /> Gerar programação automática
             </button>
           </TabsContent>
