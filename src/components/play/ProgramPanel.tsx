@@ -145,16 +145,35 @@ function BlockView({ block, onMarkers }: { block: Block; onMarkers: (t: Track) =
 }
 
 export function ProgramPanel() {
-  const { blocks } = usePlayer();
+  const { blocks, currentBlockId, addTrack } = usePlayer();
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [markersOpen, setMarkersOpen] = useState(false);
 
   const openMarkers = (t: Track) => { setMarkerTrack(t); setMarkersOpen(true); };
+  const targetBlock = currentBlockId ?? blocks[0]?.id;
+  const insertPause = () => {
+    if (!targetBlock) return;
+    addTrack(targetBlock, makePause());
+    toast.success("Pausa inserida na programação.");
+  };
+  const insertHoraCerta = () => {
+    if (!targetBlock) return;
+    addTrack(targetBlock, makeHoraCerta());
+    toast.success("Hora Certa inserida na programação.");
+  };
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
         <Music className="h-4 w-4" /> Programação
+        <div className="ml-auto flex items-center gap-1">
+          <button onClick={insertPause} title="Inserir Pausa" className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30">
+            <Pause className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={insertHoraCerta} title="Inserir Hora Certa" className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30">
+            <Clock className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
       <TransportBar />
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
