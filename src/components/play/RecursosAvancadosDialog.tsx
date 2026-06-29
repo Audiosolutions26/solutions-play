@@ -251,21 +251,3 @@ function IssuesPanel({ issues }: { issues: CodeIssue[] }) {
     </div>
   );
 }
-
-function CodeLegendOld() {
-  return (
-    <div className="rounded border p-2 text-[11px]">
-      <span className="font-semibold">Códigos: </span>
-      {codeLegend.map((c) => (
-        <span key={c.code} className="mr-2 inline-block">
-          <code className="rounded bg-muted px-1 font-mono">{c.code}</code> {c.name}
-        </span>
-      ))}
-      {specialCodes.map(([c, d]) => (
-        <span key={c} className="mr-2 inline-block">
-          <code className="rounded bg-muted px-1 font-mono">{c}</code> {d}
-        </span>
-      ))}
-    </div>
-  );
-}
