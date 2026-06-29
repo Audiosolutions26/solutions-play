@@ -176,6 +176,9 @@ export function QuickStartPanel() {
                   </button>
                 )}
                 {editMode && (
+                  <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 text-white/80"><GripVertical className="h-3.5 w-3.5 drop-shadow" /></span>
+                )}
+                {editMode && (
                   <div className="mt-1 space-y-1 rounded border border-pl-panel-dark/30 bg-white/70 p-1.5 text-[10px]">
                     <input
                       value={p.label}
@@ -183,6 +186,14 @@ export function QuickStartPanel() {
                       className="w-full rounded border border-pl-panel-dark/40 px-1 py-0.5"
                       placeholder="Nome"
                     />
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => move(p.id, -1)} title="Mover para trás" className="grid h-6 flex-1 place-items-center rounded bg-muted hover:brightness-95">
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => move(p.id, 1)} title="Mover para frente" className="grid h-6 flex-1 place-items-center rounded bg-muted hover:brightness-95">
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <div className="flex items-center gap-1">
                       <select value={p.key ?? ""} onChange={(e) => update(p.id, { key: e.target.value || undefined })} className="flex-1 rounded border border-pl-panel-dark/40 px-1 py-0.5">
                         <option value="">sem tecla</option>
