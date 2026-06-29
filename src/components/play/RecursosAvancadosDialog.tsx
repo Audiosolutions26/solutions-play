@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Sliders, Wand2, FileCode2, Map, Download } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
 import { DEFAULT_GRADE, DEFAULT_MAPA } from "@/lib/play-data";
 import { generateProgram, codeLegend } from "@/lib/play-gen";
+import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib/play-gen";
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
 } from "@/lib/play-export";
@@ -49,7 +50,16 @@ export function RecursosAvancadosDialog({
   const [grade, setGrade] = useState(DEFAULT_GRADE);
   const [mapa, setMapa] = useState(DEFAULT_MAPA);
 
+  const gradeIssues = useMemo(() => validateGrid(grade, "musical"), [grade]);
+  const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
+  const errorCount = gradeIssues.filter((i) => i.severity === "error").length
+    + mapaIssues.filter((i) => i.severity === "error").length;
+
   const gerar = () => {
+    if (errorCount > 0) {
+      toast.error(`Corrija ${errorCount} erro(s) de código antes de gerar`);
+      return;
+    }
     const blocks = generateProgram(grade, mapa);
     if (!blocks.length) {
       toast.error("Nenhum bloco válido encontrado na Grade/Mapa");
