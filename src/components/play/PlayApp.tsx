@@ -63,7 +63,7 @@ function TextoDoDiaAutoPlay({ onOpen }: { onOpen: () => void }) {
         synth.cancel();
         const u = new SpeechSynthesisUtterance(current.body || current.title);
         u.lang = "pt-BR";
-        synth.rate = 1;
+        u.rate = 1;
         synth.speak(u);
       } catch { /* ignore */ }
     } else {
