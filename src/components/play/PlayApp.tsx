@@ -10,13 +10,14 @@ import { QuickStartPanel } from "./QuickStartPanel";
 import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel } from "./BottomPanels";
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
-import { OperatorLogin, type Operator } from "./OperatorLogin";
+import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import type { PanelVisibility } from "./AppMenu";
 
 const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Hoje", "Mini site", "Anotações"];
 
 export function PlayApp() {
-  const [operator, setOperator] = useState<Operator | null>(null);
+  const [operator, setOperator] = useState<Operator>(operators[0]);
+  const [loginMode, setLoginMode] = useState<null | "switch" | "logout">(null);
   const [panels, setPanels] = useState<PanelVisibility>({ pastas: true, propriedades: true });
   const [activeTab, setActiveTab] = useState("Programação");
   const [options, setOptions] = useState<{ open: boolean; tab: string }>({ open: false, tab: "geral" });
@@ -27,8 +28,6 @@ export function PlayApp() {
   const openOptions = (tab: string) => setOptions({ open: true, tab });
   const openAdvanced = (tab: string) => setAdvanced({ open: true, tab });
 
-  if (!operator) return <OperatorLogin onLogin={setOperator} />;
-
   return (
     <ConfigProvider>
     <PlayerProvider>
@@ -37,7 +36,8 @@ export function PlayApp() {
           panels={panels}
           onTogglePanel={togglePanel}
           onOpenOptions={openOptions}
-          onLogout={() => setOperator(null)}
+          onLogout={() => setLoginMode("logout")}
+          onSwitchOperator={() => setLoginMode("switch")}
           onOpenQuickStart={() => setActiveTab("QuickStart")}
           onOpenAdvanced={openAdvanced}
         />
@@ -104,6 +104,13 @@ export function PlayApp() {
         defaultTab={advanced.tab}
         onGenerated={() => setActiveTab("Programação")}
       />
+      {loginMode && (
+        <OperatorLogin
+          current={loginMode === "switch" ? operator : null}
+          onLogin={(op) => { setOperator(op); setLoginMode(null); }}
+          onCancel={loginMode === "switch" ? () => setLoginMode(null) : undefined}
+        />
+      )}
     </PlayerProvider>
     </ConfigProvider>
   );
