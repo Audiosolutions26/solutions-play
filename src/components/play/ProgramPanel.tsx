@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio } from "lucide-react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
-import { fmt, type Block, type Track } from "@/lib/play-data";
+import { fmt, makePause, makeHoraCerta, type Block, type Track } from "@/lib/play-data";
 import {
   ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 } from "@/components/ui/context-menu";
@@ -26,15 +26,17 @@ const catRowBg = {
 } as const;
 
 function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarkers: (t: Track) => void }) {
-  const { current, position, selectedId, select, playAt, removeTrack, getEngine, setTrackAudio } = usePlayer();
+  const { current, position, selectedId, select, playAt, removeTrack, moveTrack, getEngine, setTrackAudio } = usePlayer();
   const fileRef = useRef<HTMLInputElement>(null);
   const isCurrent = current?.id === track.id;
   const isSelected = selectedId === track.id;
-  const Icon = catIcon[track.category];
+  const Icon = track.kind === "pausa" ? Pause : track.kind === "horacerta" ? Clock : catIcon[track.category];
   const pct = isCurrent ? Math.min(100, (position / track.duration) * 100) : 0;
   const refrao = hasRefrao(track.id);
   const carimbo = hasCarimbo(track.id);
   const realAudio = hasTrackAudio(track.id);
+  // M marker (manual p.14-15): blue = inserted manually; red = auto item moved.
+  const mMarker = track.origin === "manual" ? "blue" : track.origin === "auto" && track.moved ? "red" : null;
 
   const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,6 +80,16 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
             <div className="absolute inset-y-0 left-0 bg-white/30" style={{ width: `${pct}%` }} />
           )}
           <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
+          {mMarker && (
+            <span
+              title={mMarker === "blue" ? "Inserção manual" : "Inserção automática movida"}
+              className={`relative z-10 grid h-3.5 w-3.5 shrink-0 place-items-center rounded-sm text-[9px] font-bold text-white ${
+                mMarker === "blue" ? "bg-blue-600" : "bg-red-600"
+              }`}
+            >
+              M
+            </span>
+          )}
           <span className="relative z-10 flex-1 truncate">
             {track.title}
             {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
@@ -96,6 +108,9 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
         <ContextMenuItem onClick={() => { getEngine().fire(track.freq, 1.2); toast.message("Pré-escuta (CUE)"); }}>
           <Headphones className="mr-2 h-4 w-4" /> Pré-escuta (CUE)
         </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => moveTrack(track.id, -1)}><ChevronUp className="mr-2 h-4 w-4" /> Mover para cima</ContextMenuItem>
+        <ContextMenuItem onClick={() => moveTrack(track.id, 1)}><ChevronDown className="mr-2 h-4 w-4" /> Mover para baixo</ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => fileRef.current?.click()}>
           <FileAudio className="mr-2 h-4 w-4" /> {realAudio ? "Trocar áudio real…" : "Carregar áudio real…"}
