@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   pickFolder: (current) => ipcRenderer.invoke("sp:pick-folder", current),
   // Abre a pasta apontada pelo atalho no Explorer do Windows.
   openFolder: (dir) => ipcRenderer.invoke("sp:open-folder", dir),
+  // Valida se o diretório do atalho existe (evita atalho quebrado).
+  folderExists: (dir) => ipcRenderer.invoke("sp:folder-exists", dir),
 
   // --- AES67 TX (áudio sobre IP / RTP multicast) ---
   aes67: {
