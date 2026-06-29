@@ -61,7 +61,10 @@ export class AudioEngine {
     if (typeof window === "undefined") return;
     if (this.ctx) return;
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    this.ctx = new Ctx();
+    // latencyHint "playback" prioriza QUALIDADE sobre latência (ideal para
+    // playout de rádio), deixando o motor usar a taxa de amostragem nativa
+    // do hardware sem reamostragem desnecessária.
+    this.ctx = new Ctx({ latencyHint: "playback" });
     this.master = this.ctx.createGain();
     this.master.gain.value = this.volume * 0.5;
     this.analyser = this.ctx.createAnalyser();
