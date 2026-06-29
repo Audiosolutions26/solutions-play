@@ -5,6 +5,7 @@ import {
 import { VuMeter } from "./VuMeter";
 import { Clock } from "./Clock";
 import { AppMenu, type PanelVisibility } from "./AppMenu";
+import { useVuMode, toggleVuMode } from "@/lib/play-vu";
 
 const toolIcons = [
   FolderOpen, Save, Printer, Scissors, Copy, Clipboard, RefreshCw, Info,
