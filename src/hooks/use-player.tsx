@@ -182,6 +182,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     next(manualFadeMs());
   }, [next]);
 
+  // Gera/atualiza os arquivos de RDS (no ar + 3 próximas) sempre que a grade
+  // (blocks) ou a inserção no ar mudam. No desktop grava na pasta RDS; no
+  // modo web é silenciosamente ignorado.
+  useEffect(() => {
+    const up = upcomingFrom(currentBlockId, current?.id ?? null, 3);
+    updateRds(current, up);
+  }, [blocks, current, currentBlockId, upcomingFrom]);
+
   const togglePlay = useCallback(() => {
     const cur = currentRef.current;
     if (!cur.track) {
