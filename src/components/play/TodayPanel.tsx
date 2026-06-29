@@ -1,4 +1,5 @@
 import { CalendarDays } from "lucide-react";
+import { formatLongDate } from "@/lib/format";
 import { PanelHeader } from "./PanelHeader";
 
 const TODAY_FACTS = [
@@ -10,8 +11,7 @@ const TODAY_FACTS = [
 
 // ---- Hoje (efemérides / fatos do dia) ----
 export function TodayPanel() {
-  const today = new Date();
-  const formattedDate = today.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  const formattedDate = formatLongDate();
   return (
     <div className="flex h-full flex-col">
       <PanelHeader icon={CalendarDays} title="Hoje" />

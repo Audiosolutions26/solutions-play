@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { History } from "lucide-react";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt } from "@/lib/play-data";
+import { formatClockTime } from "@/lib/format";
 import { PanelHeader } from "./PanelHeader";
 
 interface PlayedEntry {
@@ -22,7 +23,7 @@ export function PlayedPanel() {
     if (!current) return;
     setLog((prev) => {
       if (prev[0]?.id === current.id) return prev;
-      const now = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const now = formatClockTime();
       return [{ id: current.id, title: current.title, artist: current.artist, cat: current.category, time: now, dur: current.duration }, ...prev].slice(0, 60);
     });
   }, [current]);

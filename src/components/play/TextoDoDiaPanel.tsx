@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { makeTextoDoDia } from "@/lib/play-data";
 import { readJson, writeJson } from "@/lib/storage";
+import { formatShortDate } from "@/lib/format";
 import { PanelHeader } from "./PanelHeader";
 
 interface DayText { id: string; date: string; title: string; body: string; }
@@ -36,7 +37,7 @@ export function TextoDoDiaPanel() {
 
   const save = () => {
     if (!title.trim() && !body.trim()) return;
-    const date = new Date().toLocaleDateString("pt-BR");
+    const date = formatShortDate();
     if (active) {
       persist(items.map((item) => (item.id === active.id ? { ...item, title: title || item.title, body } : item)));
     } else {
