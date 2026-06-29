@@ -440,3 +440,72 @@ export function saveConfig(state: ConfigState) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
 }
+
+// ---- Exportação / Importação de configurações em arquivo ----
+
+const EXPORT_VERSION = 1;
+const EXPORT_KIND = "solutions-play-config";
+
+// Conjunto de chaves válidas conhecidas pelo esquema atual.
+function knownKeys(): Set<string> {
+  return new Set(Object.keys(defaultConfig()));
+}
+
+// Gera o conteúdo (JSON) do arquivo de configurações.
+export function exportConfig(state: ConfigState): string {
+  const payload = {
+    kind: EXPORT_KIND,
+    version: EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    config: state,
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+export interface ImportResult {
+  state: ConfigState;
+  applied: number;
+  ignored: string[];
+}
+
+// Lê o conteúdo de um arquivo exportado e mescla sobre os padrões atuais.
+// Aceita tanto o formato com envelope { kind, version, config } quanto um
+// objeto plano de chaves -> valor (compatibilidade).
+export function importConfig(text: string): ImportResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("Arquivo inválido: não é um JSON válido.");
+  }
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Arquivo inválido: conteúdo inesperado.");
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  let raw: Record<string, unknown>;
+  if (obj.kind === EXPORT_KIND || obj.config) {
+    if (obj.kind && obj.kind !== EXPORT_KIND) {
+      throw new Error("Arquivo inválido: não é um arquivo de configurações do Solutions-Play.");
+    }
+    raw = (obj.config as Record<string, unknown>) ?? {};
+  } else {
+    raw = obj; // objeto plano (compatibilidade)
+  }
+
+  const valid = knownKeys();
+  const state = defaultConfig();
+  const ignored: string[] = [];
+  let applied = 0;
+  for (const [k, v] of Object.entries(raw)) {
+    if (!valid.has(k)) { ignored.push(k); continue; }
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      state[k] = v;
+      applied++;
+    } else {
+      ignored.push(k);
+    }
+  }
+  if (!applied) throw new Error("Nenhuma configuração compatível encontrada no arquivo.");
+  return { state, applied, ignored };
+}
