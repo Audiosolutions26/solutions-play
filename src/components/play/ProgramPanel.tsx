@@ -173,7 +173,13 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
 
 function BlockView({ block, onMarkers, onClock }: { block: Block; onMarkers: (t: Track) => void; onClock: (b: Block) => void }) {
   const total = block.items.reduce((s, t) => s + t.duration, 0);
-  const head = block.category === "musical" ? "bg-pl-musical-head" : "bg-pl-comercial-head";
+  const isMusical = block.category === "musical";
+  const head = isMusical
+    ? "bg-gradient-to-r from-pl-musical-head-2 to-pl-musical-head"
+    : "bg-gradient-to-r from-pl-comercial-head-2 to-pl-comercial-head";
+  const accent = isMusical ? "border-pl-musical-accent" : "border-pl-comercial-accent";
+  const CatIcon = isMusical ? Music : Megaphone;
+  const catLabel = isMusical ? "Musical" : "Comercial";
   const c = block.clock;
   // Indicador DUR (manual p.140): verde=igual, amarelo=excedido, vermelho=abaixo.
   const durColor = c?.dur
@@ -184,8 +190,12 @@ function BlockView({ block, onMarkers, onClock }: { block: Block; onMarkers: (t:
         : "text-red-600"
     : "";
   return (
-    <div className="mb-1">
-      <div className={`flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-pl-text ${head}`}>
+    <div className={`mb-2 overflow-hidden rounded-md border-l-[5px] shadow-sm ${accent}`}>
+      <div className={`flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-bold text-pl-text ${head}`}>
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-white/40">
+          <CatIcon className="h-3.5 w-3.5" />
+        </span>
+        <span className="shrink-0 rounded-full bg-white/40 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide">{catLabel}</span>
         <span className="truncate">{block.date}, {block.time} • {c?.name || block.title}</span>
         {c?.fixo && <span title="FIXO — não pode atrasar" className="grid h-4 w-4 place-items-center rounded-sm bg-yellow-400 text-[9px] text-black">F</span>}
         {c?.locked && <span title="Bloco bloqueado (LOCKED)"><Lock className="h-3.5 w-3.5 text-yellow-500" /></span>}
