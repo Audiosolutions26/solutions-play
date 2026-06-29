@@ -78,7 +78,10 @@ export class AudioEngine {
     // do hardware sem reamostragem desnecessária.
     this.ctx = new Ctx({ latencyHint: "playback" });
     this.master = this.ctx.createGain();
-    this.master.gain.value = this.volume;
+    // Ganho de saída SEMPRE unitário (1.0): a reprodução fica exatamente no
+    // nível original do arquivo. Não há controle de volume do usuário — apenas
+    // os fades e crossfades automáticos alteram o ganho, sempre voltando a 1.0.
+    this.master.gain.value = 1;
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 1024;
     this.analyser.smoothingTimeConstant = 0.6;
