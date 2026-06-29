@@ -15,7 +15,8 @@ import {
   CHANNEL_OPTS, RATE_OPTS, BITS_OPTS, PTIME_OPTS, DEFAULT_AES67,
   loadAes67, saveAes67, packetMetrics, buildSdp, validateAes67, aes67Supported,
   openTxAes67, closeTxAes67, loopbackAes67, downloadAccessFile, parseAccessFile,
-  type Aes67Input, loadAes67Rx, saveAes67Rx,
+  type Aes67Input, loadAes67Rx, saveAes67Rx, validateRxInput,
+  type ValidationIssue,
 } from "@/lib/play-aes67";
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
@@ -24,9 +25,13 @@ export function Aes67Panel() {
   const [cfg, setCfg] = useState<Aes67Config>(loadAes67);
   const [val, setVal] = useState<ValidationResult | null>(null);
   const [tx, setTx] = useState<{ active: boolean; sdp?: string; sourceIp?: string }>({ active: false });
+  const [txError, setTxError] = useState<string | null>(null);
   const [loop, setLoop] = useState<LoopbackResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [rx, setRx] = useState<Aes67Input | null>(loadAes67Rx);
+  const [rxPreview, setRxPreview] = useState<
+    { input: Aes67Input; issues: ValidationIssue[]; fileName: string } | null
+  >(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const supported = aes67Supported();
 
@@ -58,10 +63,12 @@ export function Aes67Panel() {
     const r = await openTxAes67(cfg);
     setBusy(false);
     if (r.ok) {
+      setTxError(null);
       setTx({ active: true, sdp: r.sdp, sourceIp: r.sourceIp });
       logEvent("secao", "AES67 TX iniciada", `${cfg.group}:${cfg.port} • ${cfg.bits}/${cfg.sampleRate}/${cfg.channels} • origem ${r.sourceIp}`);
       toast.success("TX AES67 no ar (SAP anunciado).");
     } else {
+      setTxError(r.error || "Falha ao iniciar a TX.");
       toast.error(r.error || "Não foi possível iniciar a TX.");
       if (r.sdp) setTx((t) => ({ ...t, sdp: r.sdp }));
     }
@@ -71,6 +78,7 @@ export function Aes67Panel() {
     setBusy(true);
     await closeTxAes67();
     setBusy(false);
+    setTxError(null);
     setTx({ active: false });
     logEvent("secao", "AES67 TX parada", "SAP withdraw enviado");
     toast.info("TX AES67 encerrada (SAP withdraw).");
@@ -99,17 +107,34 @@ export function Aes67Panel() {
     reader.onload = () => {
       const parsed = parseAccessFile(String(reader.result || ""));
       const sourceIp = parsed.sourceIp;
+      const { issues } = validateRxInput(parsed);
       delete parsed.sourceIp;
       const input: Aes67Input = { ...DEFAULT_AES67, ...parsed, sourceIp };
-      setRx(input);
-      toast.success(`Entrada AES67 importada de "${f.name}".`);
+      // Mostra preview com campos detectados e avisos ANTES de aplicar.
+      setRxPreview({ input, issues, fileName: f.name });
     };
     reader.readAsText(f);
     e.target.value = "";
   };
 
+  const applyRxPreview = () => {
+    if (!rxPreview) return;
+    setRx(rxPreview.input);
+    toast.success(`Entrada AES67 aplicada de "${rxPreview.fileName}".`);
+    logEvent("secao", "AES67 RX aplicada", `${rxPreview.input.group}:${rxPreview.input.port} • ${rxPreview.input.bits}/${rxPreview.input.sampleRate}/${rxPreview.input.channels}`);
+    setRxPreview(null);
+  };
+
   const errors = val?.issues.filter((i) => i.level === "error") ?? [];
   const warns = val?.issues.filter((i) => i.level === "warning") ?? [];
+
+  // Status em tempo real do TX e da entrada RX.
+  const txStatus: StatusKind = busy ? "running" : txError ? "error" : tx.active ? "running" : "stopped";
+  const txStatusLabel = busy ? "Processando…" : txError ? "Erro" : tx.active ? "No ar" : "Parado";
+  const rxIssues = rx ? validateRxInput(rx).issues : [];
+  const rxHasError = rxIssues.some((i) => i.level === "error");
+  const rxStatus: StatusKind = !rx ? "stopped" : rxHasError ? "error" : "running";
+  const rxStatusLabel = !rx ? "Sem entrada" : rxHasError ? "Erro" : "Ativa";
 
   return (
     <div className="space-y-4 py-1">
@@ -119,6 +144,12 @@ export function Aes67Panel() {
           TX/loopback reais rodam no app desktop ({platformLabel()} atual). Aqui você configura, valida e gera o arquivo de acesso.
         </div>
       )}
+
+      {/* Status em tempo real */}
+      <div className="grid grid-cols-2 gap-2">
+        <StatusCard title="AES67 TX (saída)" kind={txStatus} label={txStatusLabel} detail={tx.active && tx.sourceIp ? `origem ${tx.sourceIp}` : txError || undefined} />
+        <StatusCard title="AES67 RX (entrada)" kind={rxStatus} label={rxStatusLabel} detail={rx ? `${rx.group}:${rx.port}` : undefined} />
+      </div>
 
       {/* Configuração */}
       <div className="grid grid-cols-2 gap-3">
