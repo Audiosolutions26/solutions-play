@@ -38,6 +38,16 @@ function KeyboardShortcuts() {
   return null;
 }
 
+// Quando a inserção no ar é um texto, abre o painel Textos ao vivo (manual p.36).
+function LiveTextAutoOpen({ onOpen }: { onOpen: () => void }) {
+  const { current } = usePlayer();
+  useEffect(() => {
+    if (current && current.category === "texto") onOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id]);
+  return null;
+}
+
 export function PlayApp() {
   const [operator, setOperator] = useState<Operator>(operators[0]);
   const [loginMode, setLoginMode] = useState<null | "switch" | "logout">(null);
