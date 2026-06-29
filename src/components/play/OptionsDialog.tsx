@@ -215,8 +215,24 @@ export function OptionsDialog({
   onOpenChange: (v: boolean) => void;
   tab: string;
 }) {
-  const { commit, cancel, reset } = useConfig();
+  const { commit, cancel, reset, draft } = useConfig();
   const [active, setActive] = useState(tab);
+
+  const errors = validateConfigState(draft);
+  const errorKeys = Object.keys(errors);
+  const errorCount = errorKeys.length;
+
+  const handleSave = () => {
+    if (errorCount > 0) {
+      const firstGuide = errorKeys[0].split(".")[0];
+      setActive(firstGuide);
+      toast.error(`Corrija ${errorCount} campo(s) inválido(s) antes de salvar.`);
+      return;
+    }
+    commit();
+    toast.success("Configurações salvas.");
+    onOpenChange(false);
+  };
 
   // sync requested tab when dialog opens
   const handleOpen = (v: boolean) => {
