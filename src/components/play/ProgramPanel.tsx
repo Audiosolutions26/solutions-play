@@ -27,8 +27,10 @@ const catRowBg = {
 } as const;
 
 function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarkers: (t: Track) => void }) {
-  const { current, position, selectedId, select, playAt, removeTrack, moveTrack, getEngine, setTrackAudio } = usePlayer();
+  const { current, position, selectedId, select, playAt, removeTrack, moveTrack, reorderTrack, getEngine, setTrackAudio } = usePlayer();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState<"top" | "bottom" | null>(null);
+  const locked = !!block.clock?.locked;
   const isCurrent = current?.id === track.id;
   const isSelected = selectedId === track.id;
   const Icon = track.kind === "pausa" ? Pause
@@ -71,9 +73,34 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
+          draggable={!locked}
+          onDragStart={(e) => {
+            e.dataTransfer.setData("text/plain", track.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            if (locked) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            const r = e.currentTarget.getBoundingClientRect();
+            setDragOver(e.clientY - r.top < r.height / 2 ? "top" : "bottom");
+          }}
+          onDragLeave={() => setDragOver(null)}
+          onDrop={(e) => {
+            e.preventDefault();
+            const sourceId = e.dataTransfer.getData("text/plain");
+            const place = dragOver === "bottom" ? "after" : "before";
+            setDragOver(null);
+            if (sourceId && sourceId !== track.id) reorderTrack(sourceId, track.id, place);
+          }}
           onClick={() => select(track.id)}
           onDoubleClick={() => playAt(block.id, track.id)}
-          className={`relative flex cursor-default items-center gap-2 border-b border-black/5 px-2 py-[3px] text-[12px] text-pl-text ${
+          className={`relative flex items-center gap-2 border-b border-black/5 px-2 py-[3px] text-[12px] text-pl-text ${
+            locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+          } ${
+            dragOver === "top" ? "shadow-[inset_0_2px_0_0_var(--color-pl-transport)]"
+              : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]" : ""
+          } ${
             isCurrent
               ? "bg-pl-onair font-semibold text-pl-onair-text"
               : isSelected
