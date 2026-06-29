@@ -29,7 +29,7 @@ export function OptionsDialog({
           <DialogDescription>Configurações da estação (modo demonstração).</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={tab} value={undefined} className="w-full">
+        <Tabs key={tab} defaultValue={tab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="geral">Geral</TabsTrigger>
             <TabsTrigger value="operadores">Operadores</TabsTrigger>
