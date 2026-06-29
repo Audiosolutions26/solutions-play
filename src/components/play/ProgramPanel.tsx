@@ -104,6 +104,7 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
       <ContextMenuTrigger asChild>
         <div
           draggable={!locked}
+          data-onair={isCurrent ? "true" : undefined}
           onDragStart={(e) => {
             e.dataTransfer.setData("text/plain", track.id);
             e.dataTransfer.effectAllowed = "move";
