@@ -16,6 +16,7 @@ export function TopBar({
   onTogglePanel,
   onOpenOptions,
   onLogout,
+  onSwitchOperator,
   onOpenQuickStart,
   onOpenAdvanced,
 }: {
@@ -23,6 +24,7 @@ export function TopBar({
   onTogglePanel: (key: keyof PanelVisibility) => void;
   onOpenOptions: (tab: string) => void;
   onLogout: () => void;
+  onSwitchOperator: () => void;
   onOpenQuickStart: () => void;
   onOpenAdvanced: (tab: string) => void;
 }) {
@@ -47,6 +49,7 @@ export function TopBar({
           onTogglePanel={onTogglePanel}
           onOpenOptions={onOpenOptions}
           onLogout={onLogout}
+          onSwitchOperator={onSwitchOperator}
           onOpenQuickStart={onOpenQuickStart}
           onOpenAdvanced={onOpenAdvanced}
         />
