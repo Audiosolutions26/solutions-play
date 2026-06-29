@@ -244,6 +244,28 @@ export class AudioEngine {
     });
   }
 
+  // One-shot real-audio playback for QuickStart pads (over the air, doesn't
+  // interrupt the main program). Plays through the shared analyser so VU/wave
+  // reflect it too.
+  fireUrl(url: string, duration = 2) {
+    this.ensure();
+    const ctx = this.ctx;
+    const master = this.master;
+    if (!ctx || !master) return;
+    if (ctx.state === "suspended") void ctx.resume();
+    const el = new Audio();
+    el.crossOrigin = "anonymous";
+    el.src = url;
+    try {
+      const src = ctx.createMediaElementSource(el);
+      src.connect(master);
+    } catch { /* ignore */ }
+    void el.play();
+    if (duration > 0) {
+      window.setTimeout(() => { try { el.pause(); } catch { /* ignore */ } }, duration * 1000);
+    }
+  }
+
   position(): number {
     if (this.mode === "url" && this.audioEl) return this.audioEl.currentTime || this.offset;
     if (!this.ctx || !this.playing) return this.offset;
