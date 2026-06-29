@@ -410,11 +410,22 @@ export class AudioEngine {
     return this.playing;
   }
 
-  setVolume(v: number) {
-    this.volume = v;
-    if (this.master && this.ctx) {
-      this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
-    }
+  // Fade-out AUTOMÁTICO (marcador de Início do Fade-Out, manual p.113-119).
+  // Atua sobre o ganho da própria inserção em reprodução (url) ou sobre o
+  // master (synth de demonstração), sem nunca mexer no nível base do arquivo.
+  // Em url, é descartável: a próxima faixa cria uma nova voz com ganho 1.0.
+  fadeOutCurrent(durationSec: number) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const dur = Math.max(0.05, durationSec);
+    const param =
+      this.mode === "url" && this.mainVoice
+        ? this.mainVoice.gain.gain
+        : this.master?.gain;
+    if (!param) return;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(param.value, now);
+    param.linearRampToValueAtTime(0.0001, now + dur);
   }
 
   // Define o dispositivo de saída (setSinkId — Chromium/Electron no Windows).
