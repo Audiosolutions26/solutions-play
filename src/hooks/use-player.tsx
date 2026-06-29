@@ -379,11 +379,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [isPlaying, next, engine]);
 
   const value = useMemo<PlayerState>(() => ({
-    blocks, current, currentBlockId, isPlaying, position, volume,
+    blocks, current, currentBlockId, isPlaying, position,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, nextManual, setVolume, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
+    playAt, togglePlay, stop, next, nextManual, setCue, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, nextManual, setVolume, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
+  }), [blocks, current, currentBlockId, isPlaying, position, cue, selectedId, playAt, togglePlay, stop, next, nextManual, select, addTrack, addTrackAt, moveTrack, reorderTrack, removeTrack, replaceBlocks, setTrackAudio, setBlockClock]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
