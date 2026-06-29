@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Mic, Square, FileAudio, Play, Pause, Trash2, ListPlus, Circle, HardDrive } from "lucide-react";
+import { Mic, Square, FileAudio, Play, Pause, Trash2, ListPlus, Circle, HardDrive, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makeLocucao } from "@/lib/play-data";
 import { readAudioFile } from "@/lib/play-audio-files";
 import {
-  getLocucoes, subscribeLocucoes, addLocucao, removeLocucao, resolveLocucaoUrl, type Locucao,
+  getLocucoes, subscribeLocucoes, addLocucao, removeLocucao, moveLocucao, reorderLocucao, resolveLocucaoUrl, type Locucao,
 } from "@/lib/play-locucoes";
 import { isDesktop, pickAudioFilesNative } from "@/lib/play-native";
 import { ensureMicPermission, loadDevicePrefs, micConstraints, applyOutput } from "@/lib/play-audio-devices";
@@ -17,6 +17,8 @@ export function LocucoesPanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<{ id: string; place: "before" | "after" } | null>(null);
 
   // gravação
   const [recording, setRecording] = useState(false);
@@ -153,10 +155,36 @@ export function LocucoesPanel() {
               </tr>
             </thead>
             <tbody>
-              {locucoes.map((loc) => (
-                <tr key={loc.id} className="border-t border-pl-panel-dark/20">
+              {locucoes.map((loc, i) => (
+                <tr
+                  key={loc.id}
+                  draggable
+                  onDragStart={(e) => { setDragId(loc.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", loc.id); }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setDragOver({ id: loc.id, place: e.clientY - r.top < r.height / 2 ? "before" : "after" });
+                  }}
+                  onDragLeave={() => setDragOver((d) => (d?.id === loc.id ? null : d))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const src = dragId ?? e.dataTransfer.getData("text/plain");
+                    const place = dragOver?.place ?? "before";
+                    setDragOver(null); setDragId(null);
+                    if (src && src !== loc.id) reorderLocucao(src, loc.id, place);
+                  }}
+                  onDragEnd={() => { setDragOver(null); setDragId(null); }}
+                  className={`border-t border-pl-panel-dark/20 ${dragId === loc.id ? "opacity-50" : ""} ${
+                    dragOver?.id === loc.id && dragOver.place === "before" ? "shadow-[inset_0_2px_0_0_var(--color-pl-toolbar)]"
+                      : dragOver?.id === loc.id && dragOver.place === "after" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-toolbar)]" : ""
+                  }`}
+                >
                   <td className="px-2 py-1">
-                    <span className="block truncate">{loc.name}</span>
+                    <span className="flex items-center gap-1">
+                      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
+                      <span className="truncate">{loc.name}</span>
+                    </span>
                     <span className="block text-[10px] text-muted-foreground">
                       {loc.date}{loc.path ? " • arquivo do Windows" : ""}
                     </span>
@@ -165,6 +193,12 @@ export function LocucoesPanel() {
                   <td className="px-2 py-1 text-right font-mono tabular-nums">{fmt(loc.duration)}</td>
                   <td className="px-2 py-1">
                     <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => moveLocucao(loc.id, -1)} disabled={i === 0} title="Mover para cima" className="grid h-6 w-6 place-items-center rounded hover:bg-muted disabled:opacity-30">
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => moveLocucao(loc.id, 1)} disabled={i === locucoes.length - 1} title="Mover para baixo" className="grid h-6 w-6 place-items-center rounded hover:bg-muted disabled:opacity-30">
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
                       <button onClick={() => preview(loc)} title="Pré-escuta" className="grid h-6 w-6 place-items-center rounded hover:bg-muted">
                         {playingId === loc.id ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
                       </button>

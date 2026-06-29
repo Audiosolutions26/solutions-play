@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Zap, Pencil, Plus, X, Check, Shuffle, FileAudio } from "lucide-react";
+import { Zap, Pencil, Plus, X, Check, Shuffle, FileAudio, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { readAudioFile } from "@/lib/play-audio-files";
@@ -49,6 +49,8 @@ export function QuickStartPanel() {
   const [active, setActive] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [cols, setCols] = useState(4);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const fileTarget = useRef<string | null>(null);
   const padsRef = useRef(pads);
@@ -82,6 +84,24 @@ export function QuickStartPanel() {
 
   const update = (id: string, patch: Partial<Pad>) => setPads((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   const remove = (id: string) => setPads((ps) => ps.filter((p) => p.id !== id));
+  const move = (id: string, dir: -1 | 1) => setPads((ps) => {
+    const i = ps.findIndex((p) => p.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= ps.length) return ps;
+    const next = [...ps];
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
+  });
+  const reorder = (srcId: string, targetId: string) => setPads((ps) => {
+    if (srcId === targetId) return ps;
+    const from = ps.findIndex((p) => p.id === srcId);
+    const to = ps.findIndex((p) => p.id === targetId);
+    if (from < 0 || to < 0) return ps;
+    const next = [...ps];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next;
+  });
   const addPad = () => {
     const id = `p${Date.now()}`;
     setPads((ps) => [...ps, { id, label: "Novo botão", freq: 300, dur: 1, color: PALETTE[ps.length % PALETTE.length] }]);
@@ -123,7 +143,16 @@ export function QuickStartPanel() {
           {pads.map((p) => {
             const isActive = active === p.id;
             return (
-              <div key={p.id} className="relative">
+              <div
+                key={p.id}
+                draggable={editMode}
+                onDragStart={(e) => { if (!editMode) return; setDragId(p.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", p.id); }}
+                onDragOver={(e) => { if (!editMode) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverId(p.id); }}
+                onDragLeave={() => setDragOverId((d) => (d === p.id ? null : d))}
+                onDrop={(e) => { if (!editMode) return; e.preventDefault(); const src = dragId ?? e.dataTransfer.getData("text/plain"); setDragOverId(null); setDragId(null); if (src) reorder(src, p.id); }}
+                onDragEnd={() => { setDragOverId(null); setDragId(null); }}
+                className={`relative ${dragId === p.id ? "opacity-50" : ""} ${dragOverId === p.id ? "ring-2 ring-pl-toolbar rounded-lg" : ""}`}
+              >
                 <button
                   onClick={() => (editMode ? undefined : fire(p))}
                   className={`group relative flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-lg border-b-4 text-center text-white shadow-md transition active:translate-y-0.5 ${
@@ -147,6 +176,9 @@ export function QuickStartPanel() {
                   </button>
                 )}
                 {editMode && (
+                  <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 text-white/80"><GripVertical className="h-3.5 w-3.5 drop-shadow" /></span>
+                )}
+                {editMode && (
                   <div className="mt-1 space-y-1 rounded border border-pl-panel-dark/30 bg-white/70 p-1.5 text-[10px]">
                     <input
                       value={p.label}
@@ -154,6 +186,14 @@ export function QuickStartPanel() {
                       className="w-full rounded border border-pl-panel-dark/40 px-1 py-0.5"
                       placeholder="Nome"
                     />
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => move(p.id, -1)} title="Mover para trás" className="grid h-6 flex-1 place-items-center rounded bg-muted hover:brightness-95">
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => move(p.id, 1)} title="Mover para frente" className="grid h-6 flex-1 place-items-center rounded bg-muted hover:brightness-95">
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <div className="flex items-center gap-1">
                       <select value={p.key ?? ""} onChange={(e) => update(p.id, { key: e.target.value || undefined })} className="flex-1 rounded border border-pl-panel-dark/40 px-1 py-0.5">
                         <option value="">sem tecla</option>
