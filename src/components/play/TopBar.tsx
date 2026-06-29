@@ -23,6 +23,7 @@ export function TopBar({
   onOpenSecoes,
   onOpenDevices,
   onOpenShortcuts,
+  onDockQuickStart,
 }: {
   panels: PanelVisibility;
   onTogglePanel: (key: keyof PanelVisibility) => void;
@@ -35,6 +36,7 @@ export function TopBar({
   onOpenSecoes: () => void;
   onOpenDevices: () => void;
   onOpenShortcuts: () => void;
+  onDockQuickStart?: () => void;
 }) {
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
@@ -64,6 +66,7 @@ export function TopBar({
           onOpenSecoes={onOpenSecoes}
           onOpenDevices={onOpenDevices}
           onOpenShortcuts={onOpenShortcuts}
+          onDockQuickStart={onDockQuickStart}
         />
       </div>
       {/* toolbar row */}

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { Folder, Info, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { PlayerProvider } from "@/hooks/use-player";
 import { ConfigProvider } from "@/hooks/use-config";
 import { ShortcutsProvider } from "@/hooks/use-shortcuts";
@@ -20,6 +22,9 @@ import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { PlayerControllers } from "./PlayerControllers";
 import { useAppUiState } from "@/hooks/use-app-ui-state";
+import { useDockLayout, type DockId } from "@/hooks/use-dock-layout";
+import { DockFrame } from "./DockFrame";
+import { ResizeHandle } from "./ResizeHandle";
 import { applyRouting } from "@/lib/play-outputs";
 
 const tabs = ["Programação", "QuickStart", "Status", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
@@ -28,7 +33,54 @@ export function PlayApp() {
   const [operator, setOperator] = useState<Operator>(operators[0]);
   const [loginMode, setLoginMode] = useState<null | "switch" | "logout">(null);
   const ui = useAppUiState();
-  const { activeTab, setActiveTab, panels, togglePanel } = ui;
+  const { activeTab, setActiveTab } = ui;
+  const dock = useDockLayout();
+  const splitRef = useRef<HTMLDivElement>(null);
+  const rightColRef = useRef<HTMLDivElement>(null);
+
+  const DOCK_DATA = "application/x-solplay-dock";
+
+  // Conteúdo de cada grid encaixável (sem o cabeçalho próprio — o DockFrame
+  // fornece o cabeçalho padrão com os controles de tamanho/fechar).
+  const dockMeta: Record<DockId, { title: string; icon: typeof Folder; node: React.ReactNode }> = {
+    pastas: { title: "Pastas de trabalho", icon: Folder, node: <FoldersPanel embedded onManage={() => ui.setShortcutsOpen(true)} /> },
+    propriedades: { title: "Propriedades", icon: Info, node: <PropertiesPanel embedded /> },
+    quickstart: { title: "QuickStart", icon: Zap, node: <QuickStartPanel embedded /> },
+  };
+
+  // Arrastar a divisória vertical (largura da coluna direita).
+  const onVDrag = (clientX: number) => {
+    const r = splitRef.current?.getBoundingClientRect();
+    if (!r) return;
+    dock.setRightWidth(((r.right - clientX) / r.width) * 100);
+  };
+
+  // Arrastar a divisória horizontal entre os grids open[i] e open[i+1].
+  const onHDrag = (i: number, _x: number, clientY: number) => {
+    const r = rightColRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const ids = dock.open;
+    const a = ids[i], b = ids[i + 1];
+    const sum = ids.reduce((s, id) => s + dock.weights[id], 0) || 1;
+    const H = r.height;
+    let top = 0;
+    for (let k = 0; k < i; k++) top += (H * dock.weights[ids[k]]) / sum;
+    const combinedPx = (H * (dock.weights[a] + dock.weights[b])) / sum;
+    const minPx = 72;
+    const newA = Math.min(Math.max(clientY - r.top - top, minPx), Math.max(minPx, combinedPx - minPx));
+    const newB = combinedPx - newA;
+    const combinedW = dock.weights[a] + dock.weights[b];
+    dock.setWeights({ [a]: (combinedW * newA) / combinedPx, [b]: (combinedW * newB) / combinedPx });
+  };
+
+  const onDockDrop = (e: React.DragEvent) => {
+    const id = e.dataTransfer.getData(DOCK_DATA) as DockId;
+    if (!id) return;
+    e.preventDefault();
+    if (dock.open.includes(id)) return;
+    dock.openPanel(id);
+    toast.success("QuickStart fixado nos painéis");
+  };
 
   // Aplica o roteamento de saídas salvo ao iniciar (manual p.111).
   useEffect(() => { void applyRouting(); }, []);
@@ -43,8 +95,8 @@ export function PlayApp() {
       />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
         <TopBar
-          panels={panels}
-          onTogglePanel={togglePanel}
+          panels={{ pastas: dock.open.includes("pastas"), propriedades: dock.open.includes("propriedades") }}
+          onTogglePanel={(k) => dock.togglePanel(k)}
           onOpenOptions={ui.openOptions}
           onLogout={() => setLoginMode("logout")}
           onSwitchOperator={() => setLoginMode("switch")}
@@ -54,9 +106,10 @@ export function PlayApp() {
           onOpenSecoes={() => ui.setSecoesOpen(true)}
           onOpenDevices={() => ui.setDevicesOpen(true)}
           onOpenShortcuts={() => ui.setShortcutsOpen(true)}
+          onDockQuickStart={() => { dock.openPanel("quickstart"); toast.success("QuickStart fixado nos painéis"); }}
         />
         <OnAirBar />
-        <div className="flex min-h-0 flex-1">
+        <div ref={splitRef} className="flex min-h-0 flex-1">
           {activeTab === "QuickStart" ? (
             <QuickStartPanel />
           ) : activeTab === "Status" ? (
@@ -78,23 +131,39 @@ export function PlayApp() {
           ) : (
             <>
               {/* left: programação */}
-              <div className="flex min-w-0 flex-[1.6] flex-col border-r border-pl-toolbar-dark">
+              <div className="flex min-w-0 flex-1 flex-col border-r border-pl-toolbar-dark">
                 <ProgramPanel />
               </div>
-              {/* right: pastas + propriedades */}
-              {(panels.pastas || panels.propriedades) && (
-                <div className="flex w-[40%] min-w-[320px] flex-col">
-                  {panels.pastas && (
-                    <div className="min-h-0 flex-[1.4] border-b border-pl-toolbar-dark">
-                      <FoldersPanel onManage={() => ui.setShortcutsOpen(true)} />
-                    </div>
-                  )}
-                  {panels.propriedades && (
-                    <div className="min-h-0 flex-1">
-                      <PropertiesPanel />
-                    </div>
-                  )}
-                </div>
+              {/* right: grids encaixáveis (redimensionáveis / fecháveis) */}
+              {dock.open.length > 0 && (
+                <>
+                  <ResizeHandle orientation="vertical" onDrag={(x) => onVDrag(x)} />
+                  <div
+                    ref={rightColRef}
+                    style={{ width: `${dock.rightWidth}%` }}
+                    className="flex min-w-[300px] flex-col"
+                    onDragOver={(e) => { if (e.dataTransfer.types.includes(DOCK_DATA)) e.preventDefault(); }}
+                    onDrop={onDockDrop}
+                  >
+                    {dock.open.map((id, i) => (
+                      <Fragment key={id}>
+                        <DockFrame
+                          title={dockMeta[id].title}
+                          icon={dockMeta[id].icon}
+                          grow={dock.weights[id]}
+                          onGrow={() => dock.grow(id)}
+                          onShrink={() => dock.shrink(id)}
+                          onClose={() => dock.closePanel(id)}
+                        >
+                          {dockMeta[id].node}
+                        </DockFrame>
+                        {i < dock.open.length - 1 && (
+                          <ResizeHandle orientation="horizontal" onDrag={(x, y) => onHDrag(i, x, y)} />
+                        )}
+                      </Fragment>
+                    ))}
+                  </div>
+                </>
               )}
             </>
           )}
@@ -105,6 +174,12 @@ export function PlayApp() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              draggable={tab === "QuickStart"}
+              onDragStart={tab === "QuickStart" ? (e) => {
+                e.dataTransfer.setData(DOCK_DATA, "quickstart");
+                e.dataTransfer.effectAllowed = "copy";
+              } : undefined}
+              title={tab === "QuickStart" ? "Clique para abrir, ou arraste para fixar como grid nos painéis" : undefined}
               className={`rounded-t px-3 py-1 text-[11px] font-medium ${
                 activeTab === tab ? "bg-pl-row text-pl-text" : "bg-pl-toolbar text-white/90 hover:bg-pl-toolbar-light"
               }`}
