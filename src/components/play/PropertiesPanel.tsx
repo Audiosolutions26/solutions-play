@@ -11,16 +11,18 @@ function Field({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function PropertiesPanel() {
+export function PropertiesPanel({ embedded }: { embedded?: boolean } = {}) {
   const { blocks, selectedId, current } = usePlayer();
   const track =
     blocks.flatMap((b) => b.items).find((t) => t.id === selectedId) ?? current ?? null;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
-        <Info className="h-4 w-4" /> Propriedades
-      </div>
+      {!embedded && (
+        <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
+          <Info className="h-4 w-4" /> Propriedades
+        </div>
+      )}
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {track ? (
           <>
