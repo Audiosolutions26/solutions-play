@@ -34,7 +34,7 @@ export function Waveform() {
       ctx.stroke();
       if (isPlaying) {
         engine.getWaveform(buf);
-        ctx.strokeStyle = "var(--color-pl-wave)";
+        ctx.strokeStyle = "#e8821e";
         ctx.fillStyle = "rgba(232,130,30,0.35)";
         ctx.lineWidth = 1;
         ctx.beginPath();
