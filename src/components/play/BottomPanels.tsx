@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { History, CalendarDays, StickyNote, Mic2, Globe, Music, Megaphone, Trash2, Plus, Newspaper } from "lucide-react";
+import { History, CalendarDays, StickyNote, Mic2, Globe, Music, Megaphone, Trash2, Plus, Newspaper, ListPlus } from "lucide-react";
+import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
-import { fmt } from "@/lib/play-data";
+import { fmt, makeTextoDoDia } from "@/lib/play-data";
 
 function PanelHeader({ icon: Icon, title }: { icon: typeof History; title: string }) {
   return (
@@ -173,6 +174,7 @@ interface DayText { id: string; date: string; title: string; body: string; }
 const DAYTEXT_STORE = "solutions-play-textodia";
 
 export function TextoDoDiaPanel() {
+  const { blocks, currentBlockId, addTrack } = usePlayer();
   const [items, setItems] = useState<DayText[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -217,6 +219,15 @@ export function TextoDoDiaPanel() {
     if (activeId === id) startNew();
   };
 
+  // Insere o texto na programação para ser lido automaticamente (manual p.36).
+  const insertProgram = () => {
+    if (!body.trim()) { toast.info("Escreva o texto antes de inserir."); return; }
+    const blockId = currentBlockId ?? blocks[0]?.id;
+    if (!blockId) { toast.error("Nenhum bloco disponível."); return; }
+    addTrack(blockId, makeTextoDoDia(title || "Texto do dia", body));
+    toast.success("Texto do dia inserido na programação (leitura automática).");
+  };
+
   return (
     <div className="flex h-full flex-col">
       <PanelHeader icon={Newspaper} title="Texto do dia" />
@@ -254,6 +265,9 @@ export function TextoDoDiaPanel() {
             className="flex-1 resize-none rounded border border-pl-panel-dark/40 p-2 text-[13px] outline-none"
           />
           <div className="flex justify-end">
+            <button onClick={insertProgram} className="mr-auto inline-flex items-center gap-1 rounded border border-pl-toolbar px-3 py-1.5 text-[12px] font-semibold text-pl-toolbar hover:bg-pl-toolbar/10">
+              <ListPlus className="h-3.5 w-3.5" /> Inserir na programação
+            </button>
             <button onClick={save} className="inline-flex items-center gap-1 rounded bg-pl-toolbar px-4 py-1.5 text-[12px] font-semibold text-white hover:brightness-110">
               {active ? "Atualizar" : "Salvar"}
             </button>

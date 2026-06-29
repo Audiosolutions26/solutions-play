@@ -3,7 +3,7 @@
 export type Category = "musical" | "comercial" | "vinheta" | "texto";
 
 // Special program items that are not normal audio (manual p.15).
-export type TrackKind = "audio" | "pausa" | "horacerta";
+export type TrackKind = "audio" | "pausa" | "horacerta" | "textodia" | "locucao";
 // Origin of an insertion, used to show the M marker (manual p.14-15).
 export type TrackOrigin = "auto" | "manual";
 
@@ -20,6 +20,8 @@ export interface Track {
   kind?: TrackKind;
   origin?: TrackOrigin; // "manual" = blue M; auto + moved = red M
   moved?: boolean;
+  body?: string;     // Texto do dia (manual p.36): conteúdo lido automaticamente.
+  audioUrl?: string; // Locução gravada / áudio embutido na inserção (manual p.111-112).
 }
 
 export interface Block {
@@ -189,6 +191,27 @@ export function makePause(): Track {
 
 export function makeHoraCerta(): Track {
   return mk("Hora Certa", "Hora gravada", 9, "vinheta", 330, { kind: "horacerta", origin: "manual" });
+}
+
+// Texto do dia (manual p.36): inserção que é lida automaticamente (TTS) quando
+// chega a sua vez na programação. A duração é estimada pelo tamanho do texto.
+export function makeTextoDoDia(title: string, body: string): Track {
+  const words = body.trim().split(/\s+/).filter(Boolean).length;
+  const dur = Math.max(8, Math.round(words / 2.6)); // ~2.6 palavras/seg
+  return mk(title || "Texto do dia", "Texto do dia", dur, "texto", 0, {
+    kind: "textodia",
+    origin: "manual",
+    body,
+  });
+}
+
+// Locução gravada (manual p.111-112): inserção com áudio real embutido.
+export function makeLocucao(title: string, audioUrl: string, duration: number): Track {
+  return mk(title || "Locução", "Locução gravada", Math.max(1, Math.round(duration)), "texto", 0, {
+    kind: "locucao",
+    origin: "manual",
+    audioUrl,
+  });
 }
 
 // ---- Recursos Avançados (Grade / Mapa / Playlist.ini) ----

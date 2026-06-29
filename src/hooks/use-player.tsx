@@ -78,7 +78,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentBlockId(blockId);
     setSelectedId(trackId);
     setPosition(0);
-    const url = getTrackAudioUrl(trackId);
+    const url = getTrackAudioUrl(trackId) || track.audioUrl;
     if (url) engine.playUrl(url, 0);
     else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
@@ -107,7 +107,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       engine.pause();
       setIsPlaying(false);
     } else {
-      if (getTrackAudioUrl(cur.track.id) || cur.track.freq > 0) engine.resume(cur.track.freq);
+      if (getTrackAudioUrl(cur.track.id) || cur.track.audioUrl || cur.track.freq > 0) engine.resume(cur.track.freq);
       setIsPlaying(true);
     }
   }, [isPlaying, engine, playAt]);
@@ -198,7 +198,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         last = ts;
         const cur = currentRef.current.track;
         if (cur) {
-          const hasAudio = !!(currentRef.current.track && getTrackAudioUrl(cur.id));
+          const hasAudio = !!(getTrackAudioUrl(cur.id) || cur.audioUrl);
           const pos = hasAudio || cur.freq > 0 ? engine.position() : position + 0.2;
           if (pos >= cur.duration) {
             next();
