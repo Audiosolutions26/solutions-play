@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Folder, FolderPlus, Trash2, Save, Music, Megaphone, Clock, FileText, Disc3, ListMusic, Check,
-  FolderSearch, FolderOpen,
+  FolderSearch, FolderOpen, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -16,7 +16,7 @@ import {
   SHORTCUT_TYPES, PALETTE, makeShortcut, typeMeta,
   type ShortcutType, type Shortcut,
 } from "@/lib/play-shortcuts";
-import { isDesktop, pickFolderNative, openFolderNative } from "@/lib/play-native";
+import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative } from "@/lib/play-native";
 
 const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   musicas: Music,
