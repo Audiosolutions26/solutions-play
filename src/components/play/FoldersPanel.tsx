@@ -3,9 +3,13 @@ import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Mus
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { folders, fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
+import {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import { cuePlay, cueStop } from "@/lib/play-cue";
 
 export function FoldersPanel() {
-  const { addTrack, blocks, currentBlockId, getEngine } = usePlayer();
+  const { addTrack, blocks, currentBlockId } = usePlayer();
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<Track | null>(null);
@@ -28,12 +32,15 @@ export function FoldersPanel() {
     toast.success(`Adicionado à programação: ${t.title}`);
   };
 
-  // Pré-escuta (CUE) do item selecionado (manual p.20, 30).
-  const preview = () => {
-    if (!sel) { toast.info("Selecione um áudio para pré-escuta."); return; }
-    getEngine().fire(sel.freq || 220, 1.4);
-    toast.message(`Pré-escuta: ${sel.title}`);
+  // Pré-escuta (CUE) FORA DO AR, na saída de pré-escuta (manual p.20, 30).
+  const preview = (t?: Track | null) => {
+    const track = t ?? sel;
+    if (!track) { toast.info("Selecione um áudio para pré-escuta."); return; }
+    setSel(track);
+    void cuePlay(track);
+    toast.message(`Pré-escuta (fora do ar): ${track.title}`);
   };
+  const stopPreview = () => cueStop();
 
   // Arrastar/soltar uma pasta adiciona um áudio aleatório (manual p.15, 26).
   const addRandom = (f: FolderType) => {
@@ -59,7 +66,7 @@ export function FoldersPanel() {
           <ArrowLeft className="h-4 w-4" />
         </button>
         <button onClick={preview} title="Pré-escuta (Tocar)" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Play className="h-4 w-4" /></button>
-        <button onClick={() => getEngine().stop()} title="Parar pré-escuta" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
+        <button onClick={stopPreview} title="Parar pré-escuta" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><Square className="h-3.5 w-3.5" /></button>
         <button onClick={() => sel && add(sel)} title="Adicionar à programação" className="grid h-7 w-7 place-items-center rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark text-white hover:brightness-110"><SkipForward className="h-4 w-4" /></button>
         <span className="ml-2 truncate text-[12px] font-semibold text-pl-text">
           {results ? `Resultados: "${query}"` : open ? open.name : "Pastas de trabalho"}
@@ -70,9 +77,9 @@ export function FoldersPanel() {
       {/* content */}
       <div className="pl-scroll flex-1 overflow-y-auto bg-pl-row p-2">
         {results ? (
-          <TrackList tracks={results} onAdd={add} onSelect={setSel} selId={sel?.id} />
+          <TrackList tracks={results} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} />
         ) : open ? (
-          <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} />
+          <TrackList tracks={open.tracks} onAdd={add} onSelect={setSel} selId={sel?.id} onPreview={preview} onStopPreview={stopPreview} />
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {folders.map((f) => (
