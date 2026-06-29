@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2, Save, FolderOpen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -13,6 +13,9 @@ import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
 } from "@/lib/play-export";
+import {
+  loadPresets, savePreset, deletePreset, getPreset, type GenPreset,
+} from "@/lib/play-presets";
 
 const variables = [
   ["%d", "dia do mês (31)"],
@@ -48,6 +51,43 @@ export function RecursosAvancadosDialog({
   const [musFile, setMusFile] = useState("Grades\\Grade%d.txt");
   const [grade, setGrade] = useState(DEFAULT_GRADE);
   const [mapa, setMapa] = useState(DEFAULT_MAPA);
+
+  const [presets, setPresets] = useState<GenPreset[]>(() => loadPresets());
+  const [presetName, setPresetName] = useState("");
+
+  const salvarPreset = () => {
+    const name = presetName.trim();
+    if (!name) {
+      toast.error("Informe um nome para o preset");
+      return;
+    }
+    setPresets(savePreset({ name, grade, mapa, comFormat, comFile, musFormat, musFile }));
+    toast.success(`Preset "${name}" salvo`);
+  };
+
+  const carregarPreset = (name: string) => {
+    const p = getPreset(name);
+    if (!p) return;
+    setGrade(p.grade);
+    setMapa(p.mapa);
+    setComFormat(p.comFormat);
+    setComFile(p.comFile);
+    setMusFormat(p.musFormat);
+    setMusFile(p.musFile);
+    setPresetName(p.name);
+    toast.success(`Preset "${p.name}" carregado`);
+  };
+
+  const excluirPreset = () => {
+    const name = presetName.trim();
+    if (!getPreset(name)) {
+      toast.error("Selecione um preset existente para excluir");
+      return;
+    }
+    setPresets(deletePreset(name));
+    setPresetName("");
+    toast.success(`Preset "${name}" excluído`);
+  };
 
   const gradeIssues = useMemo(() => validateGrid(grade, "musical"), [grade]);
   const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
@@ -144,6 +184,29 @@ export function RecursosAvancadosDialog({
             Configuração de leitura (Playlist.ini), Grade musical, Mapa comercial e geração automática.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex flex-wrap items-end gap-2 rounded border bg-muted/40 p-2">
+          <div className="flex-1 min-w-[160px] space-y-1">
+            <Label htmlFor="presetName" className="text-[11px]">Preset (Grade + Mapa + regras)</Label>
+            <Input id="presetName" list="preset-list" value={presetName} placeholder="Nome do preset…"
+              onChange={(e) => setPresetName(e.target.value)} className="h-9 text-sm" />
+            <datalist id="preset-list">
+              {presets.map((p) => <option key={p.name} value={p.name} />)}
+            </datalist>
+          </div>
+          <button onClick={salvarPreset}
+            className="flex h-9 items-center gap-1 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-3 text-sm font-semibold text-white hover:brightness-110">
+            <Save className="h-4 w-4" /> Salvar
+          </button>
+          <button onClick={() => carregarPreset(presetName)}
+            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium hover:bg-muted">
+            <FolderOpen className="h-4 w-4" /> Carregar
+          </button>
+          <button onClick={excluirPreset}
+            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium text-red-600 hover:bg-red-50">
+            <Trash2 className="h-4 w-4" /> Excluir
+          </button>
+        </div>
 
         <Tabs key={defaultTab} defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
