@@ -16,7 +16,28 @@ const path = require("path");
 const fs = require("fs");
 
 function rmrf(p) { if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true }); }
-function copy(src, dst) { fs.cpSync(src, dst, { recursive: true, dereference: true }); }
+function copy(src, dst) {
+  const stat = fs.statSync(src);
+  if (stat.isDirectory()) {
+    fs.mkdirSync(dst, { recursive: true });
+    for (const entry of fs.readdirSync(src)) {
+      copy(path.join(src, entry), path.join(dst, entry));
+    }
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(dst), { recursive: true });
+  fs.copyFileSync(src, dst);
+}
+
+function countFiles(dir) {
+  let count = 0;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    count += entry.isDirectory() ? countFiles(full) : 1;
+  }
+  return count;
+}
 
 function findElectronBinary(dir) {
   const wanted = new Set(["electron.exe", "Electron.exe", "electron"]);
@@ -40,10 +61,24 @@ function findElectronBinary(dir) {
 function main() {
   const root = path.resolve(__dirname, "..");
   const electronPkgDir = path.dirname(require.resolve("electron/package.json"));
-  const distSrc = path.join(electronPkgDir, "dist");
+  let electronSrcBin;
 
-  if (!fs.existsSync(distSrc)) {
-    console.error("[pack] Electron local não encontrado em:\n  " + distSrc + "\nRode `npm install`.");
+  try {
+    electronSrcBin = require("electron");
+  } catch (err) {
+    console.error("[pack] A instalação local do Electron está incompleta.");
+    console.error("[pack] Rode: npm rebuild electron");
+    console.error("[pack] Se não resolver, rode: npm install");
+    console.error("[pack] Detalhe: " + (err && err.message ? err.message : err));
+    process.exit(1);
+  }
+
+  const distSrc = path.dirname(electronSrcBin);
+
+  if (!fs.existsSync(electronSrcBin)) {
+    console.error("[pack] Binário local do Electron não existe em:\n  " + electronSrcBin);
+    console.error("[pack] Rode: npm rebuild electron");
+    console.error("[pack] Se não resolver, apague node_modules e rode: npm install");
     process.exit(1);
   }
   if (!fs.existsSync(path.join(root, "dist", "index.html"))) {
@@ -54,6 +89,8 @@ function main() {
   const ev = require(path.join(electronPkgDir, "package.json")).version;
   const outDir = path.join(root, "electron-release", "Solutions-Play-win32-x64");
   console.log("[pack] Electron local v" + ev + " (offline, sem download)");
+  console.log("[pack] Origem: " + distSrc);
+  console.log("[pack] Arquivos do runtime: " + countFiles(distSrc));
   console.log("[pack] Copiando runtime do Electron...");
 
   rmrf(outDir);
