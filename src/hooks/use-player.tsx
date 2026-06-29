@@ -78,28 +78,64 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
+  // Resolve a URL tocável de uma faixa (cache, audioUrl ou arquivo de pasta).
+  const trackUrl = useCallback(async (t: Track): Promise<string | undefined> => {
+    const direct = getTrackAudioUrl(t.id) || t.audioUrl;
+    if (direct) return direct;
+    if (t.filePath) return (await resolveTrackAudio(t)) ?? undefined;
+    return undefined;
+  }, []);
+
+  // Pré-analisa a próxima faixa para que o "segue" (cue-in/cue-out) já esteja
+  // pronto no momento da transição — mixagem firme, sem buracos no ar.
+  const prefetchCue = useCallback((blockId: string, trackId: string) => {
+    if (!cueDetectionEnabled()) return;
+    const nx = findNext(blockId, trackId);
+    if (!nx) return;
+    void trackUrl(nx.track).then((u) => { if (u) void analyzeCuePoints(u); });
+  }, [findNext, trackUrl]);
+
   const playAt = useCallback((blockId: string, trackId: string, fadeMs = 0) => {
     const block = blocksRef.current.find((b) => b.id === blockId);
     const track = block?.items.find((t) => t.id === trackId);
     if (!track) return;
     currentRef.current = { track, blockId };
     transitioningRef.current = false;
+    cueRef.current = null;
     setCurrent(track);
     setCurrentBlockId(blockId);
     setSelectedId(trackId);
     setPosition(0);
+    // Inicia uma URL aplicando os pontos de mixagem detectados (corta o
+    // silêncio inicial) e a curva de potência constante na passagem.
+    const startUrl = (u: string) => {
+      const detect = cueDetectionEnabled();
+      const ep = equalPowerEnabled();
+      const cached = detect ? getCachedCuePoints(u) : undefined;
+      const startAt = cached && cached.cueIn > 0 ? cached.cueIn : 0;
+      cueRef.current = cached && cached.cueOut > 0 ? cached : null;
+      engine.playUrl(u, startAt, fadeMs, ep);
+      if (detect) {
+        void analyzeCuePoints(u).then((cp) => {
+          if (currentRef.current.track?.id === trackId) {
+            cueRef.current = cp.cueOut > 0 ? cp : null;
+          }
+        });
+      }
+      prefetchCue(blockId, trackId);
+    };
     const url = getTrackAudioUrl(trackId) || track.audioUrl;
-    if (url) engine.playUrl(url, 0, fadeMs);
+    if (url) startUrl(url);
     else if (track.filePath) {
       void resolveTrackAudio(track).then((u) => {
-        if (u && currentRef.current.track?.id === trackId) engine.playUrl(u, 0, fadeMs);
+        if (u && currentRef.current.track?.id === trackId) startUrl(u);
         else if (!u && track.freq > 0) engine.play(track.freq, 0);
       });
     }
     else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
     setIsPlaying(true);
-  }, [engine]);
+  }, [engine, prefetchCue]);
 
   const next = useCallback((fadeMs = 0) => {
     const cur = currentRef.current;
