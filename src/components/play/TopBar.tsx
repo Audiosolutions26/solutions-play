@@ -4,15 +4,20 @@ import {
 } from "lucide-react";
 import { VuMeter } from "./VuMeter";
 import { Clock } from "./Clock";
-
-const menus = ["Solutions", "Editar", "Exibir", "Ferramentas", "Ajuda"];
+import { AppMenu, type PanelVisibility } from "./AppMenu";
 
 const toolIcons = [
   FolderOpen, Save, Printer, Scissors, Copy, Clipboard, RefreshCw, Info,
   ListMusic, Radio, Calendar, Mic2, Wand2, Zap, Settings, Search, HelpCircle,
 ];
 
-export function TopBar() {
+export function TopBar({
+  panels,
+  onTogglePanel,
+}: {
+  panels: PanelVisibility;
+  onTogglePanel: (key: keyof PanelVisibility) => void;
+}) {
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
       {/* title bar */}
@@ -28,10 +33,8 @@ export function TopBar() {
         </div>
       </div>
       {/* menu */}
-      <div className="flex items-center gap-4 px-3 py-0.5 text-[12px]">
-        {menus.map((m) => (
-          <button key={m} className="rounded px-1 hover:bg-white/15">{m}</button>
-        ))}
+      <div className="flex items-center gap-1 px-2 py-0.5">
+        <AppMenu panels={panels} onTogglePanel={onTogglePanel} />
       </div>
       {/* toolbar row */}
       <div className="flex items-center gap-2 border-t border-white/15 px-2 py-1">
