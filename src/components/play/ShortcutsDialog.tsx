@@ -154,22 +154,50 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
 
 function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Partial<Shortcut>) => void }) {
   const desktop = isDesktop();
+  // Estado de validação do diretório: "checking" | "ok" | "missing" | "idle".
+  const [dirStatus, setDirStatus] = useState<"idle" | "checking" | "ok" | "missing">("idle");
+
+  // Valida o caminho sempre que o atalho ou o diretório mudar (debounced).
+  useEffect(() => {
+    const dir = sel.directory?.trim();
+    if (!desktop) { setDirStatus("idle"); return; }
+    if (!dir) { setDirStatus("missing"); return; }
+    let active = true;
+    setDirStatus("checking");
+    const t = setTimeout(async () => {
+      const exists = await folderExistsNative(dir);
+      if (!active) return;
+      setDirStatus(exists ? "ok" : "missing");
+    }, 350);
+    return () => { active = false; clearTimeout(t); };
+  }, [sel.id, sel.directory, desktop]);
 
   // Abre a árvore de pastas do Windows e aponta o atalho para a pasta escolhida.
   const browseFolder = async () => {
     const picked = await pickFolderNative(sel.directory);
     if (!picked) return; // cancelado
     onChange({ directory: picked.path });
+    setDirStatus("ok");
     toast.success(
       `Atalho apontado para "${picked.name}" — ${picked.audioCount} áudio(s).`,
     );
   };
 
-  // Abre a pasta apontada pelo atalho no Explorer do Windows.
+  // Abre a pasta apontada pelo atalho no Explorer do Windows, no local exato.
   const openInExplorer = async () => {
-    if (!sel.directory) { toast.info("Defina um diretório primeiro."); return; }
-    const ok = await openFolderNative(sel.directory);
-    if (!ok) toast.error("Não foi possível abrir a pasta no Windows.");
+    const dir = sel.directory?.trim();
+    if (!dir) { toast.info("Defina um diretório primeiro."); return; }
+    // Revalida antes de abrir para dar uma mensagem clara em caso de erro.
+    if (desktop) {
+      const exists = await folderExistsNative(dir);
+      if (exists === false) {
+        setDirStatus("missing");
+        toast.error(`A pasta não existe: ${dir}`);
+        return;
+      }
+    }
+    const ok = await openFolderNative(dir);
+    if (!ok) toast.error(`Não foi possível abrir a pasta no Explorer: ${dir}`);
   };
 
   return (
@@ -201,7 +229,9 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
         <Label className="text-[11px] font-semibold">Diretório</Label>
         <div className="mt-1 flex gap-1">
           <Input
-            className="h-8 flex-1 font-mono text-[11px]"
+            className={`h-8 flex-1 font-mono text-[11px] ${
+              dirStatus === "missing" ? "border-red-500 focus-visible:ring-red-500" : ""
+            }`}
             value={sel.directory}
             onChange={(e) => onChange({ directory: e.target.value })}
             placeholder="C:\Playlist\Pgm\Pastas\..."
@@ -216,18 +246,36 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
           >
             <FolderSearch className="h-4 w-4" /> Procurar
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={openInExplorer}
-            disabled={!sel.directory}
-            className="h-8 px-2"
-            title="Abrir pasta no Explorer do Windows"
-          >
-            <FolderOpen className="h-4 w-4" />
-          </Button>
         </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={openInExplorer}
+          disabled={!sel.directory || dirStatus === "missing"}
+          className="mt-1.5 h-8 w-full gap-1 text-[11px]"
+          title="Abrir a pasta deste atalho no Explorer do Windows"
+        >
+          <FolderOpen className="h-4 w-4" /> Abrir no Explorer
+        </Button>
+
+        {/* Validação clara do caminho do diretório */}
+        {desktop && dirStatus === "missing" && (
+          <p className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-red-600">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            {sel.directory?.trim()
+              ? "Pasta não encontrada — o atalho está apontando para um local inexistente."
+              : "Defina um diretório — o atalho não pode ficar sem pasta."}
+          </p>
+        )}
+        {desktop && dirStatus === "checking" && (
+          <p className="mt-1.5 text-[10px] text-muted-foreground">Verificando o caminho…</p>
+        )}
+        {desktop && dirStatus === "ok" && (
+          <p className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Pasta encontrada.
+          </p>
+        )}
         {!desktop && (
           <p className="mt-1 text-[10px] text-muted-foreground">
             A árvore de pastas do Windows abre no app desktop. No navegador, digite o caminho manualmente.
