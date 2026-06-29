@@ -160,6 +160,10 @@ export function RecursosAvancadosDialog({
       toast.error(`Corrija ${errorCount} erro(s) de código antes de gerar`);
       return;
     }
+    if (iniErrors.length) {
+      toast.error(iniErrors[0]);
+      return;
+    }
     const blocks = generateProgram(grade, mapa);
     if (!blocks.length) {
       toast.error("Nenhum bloco válido encontrado na Grade/Mapa");
