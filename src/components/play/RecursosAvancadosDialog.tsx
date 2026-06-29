@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sliders, Wand2, FileCode2, Map } from "lucide-react";
+import { Sliders, Wand2, FileCode2, Map, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
 import { DEFAULT_GRADE, DEFAULT_MAPA } from "@/lib/play-data";
 import { generateProgram, codeLegend } from "@/lib/play-gen";
+import {
+  buildPlaylistIni, serializeResult, downloadText, baseName,
+} from "@/lib/play-export";
 
 const variables = [
   ["%d", "dia do mês (31)"],
@@ -38,7 +41,7 @@ export function RecursosAvancadosDialog({
   defaultTab: string;
   onGenerated: () => void;
 }) {
-  const { replaceBlocks } = usePlayer();
+  const { replaceBlocks, blocks: currentBlocks } = usePlayer();
   const [comFormat, setComFormat] = useState("AUTO");
   const [musFormat, setMusFormat] = useState("AUTO");
   const [comFile, setComFile] = useState("Mapas\\Mapa%d-%m-%Y.txt");
@@ -57,6 +60,26 @@ export function RecursosAvancadosDialog({
     toast.success(`Programação gerada: ${blocks.length} blocos, ${total} inserções`);
     onOpenChange(false);
     onGenerated();
+  };
+
+  const iniConfig = { comFormat, comFile, musFormat, musFile };
+
+  const exportarIni = () => {
+    downloadText("Playlist.ini", buildPlaylistIni(iniConfig));
+    toast.success("Playlist.ini exportado");
+  };
+
+  const baixarResultado = (kind: "comercial" | "musical") => {
+    const blocks = currentBlocks.filter((b) => b.category === kind);
+    if (!blocks.length) {
+      toast.error("Programação vazia — gere a programação antes de baixar");
+      return;
+    }
+    const format = kind === "comercial" ? comFormat : musFormat;
+    const template = kind === "comercial" ? comFile : musFile;
+    const name = baseName(template);
+    downloadText(name, serializeResult(blocks, format));
+    toast.success(`${name} baixado (${format})`);
   };
 
   const textareaCls =
@@ -113,6 +136,20 @@ export function RecursosAvancadosDialog({
                   <div key={v}><code className="rounded bg-muted px-1 font-mono">{v}</code> — {d}</div>
                 ))}
               </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={exportarIni}
+                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px">
+                <FileCode2 className="h-4 w-4" /> Exportar Playlist.ini
+              </button>
+              <button onClick={() => baixarResultado("comercial")}
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted">
+                <Download className="h-4 w-4" /> Baixar resultado comercial
+              </button>
+              <button onClick={() => baixarResultado("musical")}
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted">
+                <Download className="h-4 w-4" /> Baixar resultado musical
+              </button>
             </div>
           </TabsContent>
 
