@@ -14,11 +14,15 @@ import { PlayedPanel, TodayPanel, NotesPanel, LiveTextPanel, MiniSitePanel, Text
 import { OptionsDialog } from "./OptionsDialog";
 import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
 import { BeepDialog, BeepController } from "./BeepDialog";
+import { SecoesDialog } from "./SecoesDialog";
+import { AudioDevicesDialog } from "./AudioDevicesDialog";
+import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { getMarkers } from "@/lib/play-markers";
+import { logEvent } from "@/lib/play-events";
 import type { PanelVisibility } from "./AppMenu";
 
-const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
+const tabs = ["Programação", "QuickStart", "Status", "Músicas executadas", "Textos ao vivo", "Texto do dia", "Locuções", "Hoje", "Mini site", "Anotações"];
 
 // Atalhos de teclado (manual p.16, 18, 30): Espaço = Tocar/Passar, Delete = Remover.
 function KeyboardShortcuts() {
@@ -46,6 +50,16 @@ function LiveTextAutoOpen({ onOpen }: { onOpen: () => void }) {
   const { current } = usePlayer();
   useEffect(() => {
     if (current && current.category === "texto" && current.kind !== "textodia") onOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id]);
+  return null;
+}
+
+// Registra no log de status cada inserção que entra no ar (manual p.113).
+function ProgramLogger() {
+  const { current } = usePlayer();
+  useEffect(() => {
+    if (current) logEvent("programa", `No ar: ${current.title}`, current.artist);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
   return null;
@@ -101,17 +115,20 @@ function MarkerController() {
       firedRef.current.add(key);
       switch (m.kind) {
         case "annotation":
-          if (m.note) toast.info(`📝 ${m.note}`);
+          if (m.note) { toast.info(`📝 ${m.note}`); logEvent("marcador", "Anotação", m.note); }
           break;
         case "introEnd":
           toast.message("Fim da introdução — locutor liberado.");
+          logEvent("marcador", "Fim da introdução", current.title);
           break;
         case "locStart":
           toast.message("🎙️ Início de locução.");
+          logEvent("locucao", "Início de locução", current.title);
           break;
         case "carimbo":
           eng.fire(current.freq > 0 ? current.freq : 330, 0.5);
           toast.message("Carimbo (Hora Certa) disparado.");
+          logEvent("carimbo", "Carimbo disparado", current.title);
           break;
         case "fadeOutStart": {
           preFade.current = volume;
@@ -125,9 +142,11 @@ function MarkerController() {
             setVolume(startVol * f);
             if (f <= 0 && fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
           }, 100);
+          logEvent("marcador", "Início do Fade-Out", current.title);
           break;
         }
         case "nextEntry":
+          logEvent("marcador", "Entrada do próximo", current.title);
           next();
           break;
         default:
@@ -148,6 +167,8 @@ export function PlayApp() {
   const [options, setOptions] = useState<{ open: boolean; tab: string }>({ open: false, tab: "geral" });
   const [advanced, setAdvanced] = useState<{ open: boolean; tab: string }>({ open: false, tab: "ini" });
   const [beepOpen, setBeepOpen] = useState(false);
+  const [secoesOpen, setSecoesOpen] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
 
   const togglePanel = (key: keyof PanelVisibility) =>
     setPanels((p) => ({ ...p, [key]: !p[key] }));
@@ -160,6 +181,7 @@ export function PlayApp() {
       <KeyboardShortcuts />
       <BeepController />
       <MarkerController />
+      <ProgramLogger />
       <TextoDoDiaAutoPlay onOpen={() => setActiveTab("Texto do dia")} />
       <LiveTextAutoOpen onOpen={() => setActiveTab("Textos ao vivo")} />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
@@ -172,11 +194,15 @@ export function PlayApp() {
           onOpenQuickStart={() => setActiveTab("QuickStart")}
           onOpenAdvanced={openAdvanced}
           onOpenBeep={() => setBeepOpen(true)}
+          onOpenSecoes={() => setSecoesOpen(true)}
+          onOpenDevices={() => setDevicesOpen(true)}
         />
         <OnAirBar />
         <div className="flex min-h-0 flex-1">
           {activeTab === "QuickStart" ? (
             <QuickStartPanel />
+          ) : activeTab === "Status" ? (
+            <StatusPanel />
           ) : activeTab === "Músicas executadas" ? (
             <PlayedPanel />
           ) : activeTab === "Textos ao vivo" ? (
@@ -235,6 +261,8 @@ export function PlayApp() {
       </div>
       <OptionsDialog open={options.open} onOpenChange={(v) => setOptions((o) => ({ ...o, open: v }))} tab={options.tab} />
       <BeepDialog open={beepOpen} onOpenChange={setBeepOpen} />
+      <SecoesDialog open={secoesOpen} onOpenChange={setSecoesOpen} />
+      <AudioDevicesDialog open={devicesOpen} onOpenChange={setDevicesOpen} />
       <RecursosAvancadosDialog
         open={advanced.open}
         onOpenChange={(v) => setAdvanced((a) => ({ ...a, open: v }))}

@@ -20,6 +20,8 @@ export function TopBar({
   onOpenQuickStart,
   onOpenAdvanced,
   onOpenBeep,
+  onOpenSecoes,
+  onOpenDevices,
 }: {
   panels: PanelVisibility;
   onTogglePanel: (key: keyof PanelVisibility) => void;
@@ -29,6 +31,8 @@ export function TopBar({
   onOpenQuickStart: () => void;
   onOpenAdvanced: (tab: string) => void;
   onOpenBeep: () => void;
+  onOpenSecoes: () => void;
+  onOpenDevices: () => void;
 }) {
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
@@ -55,6 +59,8 @@ export function TopBar({
           onOpenQuickStart={onOpenQuickStart}
           onOpenAdvanced={onOpenAdvanced}
           onOpenBeep={onOpenBeep}
+          onOpenSecoes={onOpenSecoes}
+          onOpenDevices={onOpenDevices}
         />
       </div>
       {/* toolbar row */}

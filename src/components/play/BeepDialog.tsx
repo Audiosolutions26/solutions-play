@@ -10,6 +10,7 @@ import { FileAudio, Play } from "lucide-react";
 import { loadBeep, saveBeep, type BeepConfig } from "@/lib/play-beep";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { readAudioFile } from "@/lib/play-audio-files";
+import { logEvent } from "@/lib/play-events";
 
 const ALL_MIN = [0, 5, 10, 15, 20, 30, 40, 45, 50];
 
@@ -119,6 +120,7 @@ export function BeepController() {
         firedRef.current = key;
         if (cfg.url) getAudioEngine().fireUrl(cfg.url, 1.5);
         else getAudioEngine().fire(cfg.freq, 0.6);
+        logEvent("beep", `Beep :${m.toString().padStart(2, "0")}`, cfg.url ? "arquivo de áudio" : `${cfg.freq} Hz`);
       }
     }, 1000);
     return () => { clearInterval(id); window.removeEventListener("beep-config-changed", reload); };
