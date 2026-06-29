@@ -56,10 +56,6 @@ export class AudioEngine {
   private startedAt = 0;
   private offset = 0;
   private playing = false;
-  // Ganho de unidade (1.0): as faixas tocam exatamente no nível do arquivo
-  // original, sem atenuação de volume controlável pelo usuário. Continua
-  // sendo escalado apenas pelos fades/crossfade automáticos.
-  private volume = 1;
   private schedTimer: ReturnType<typeof setInterval> | null = null;
   private nextNoteTime = 0;
   private step = 0;
