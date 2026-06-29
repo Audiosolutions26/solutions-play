@@ -19,8 +19,6 @@ import {
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
 
-const ANY = -1;
-
 export function Aes67Panel() {
   const [cfg, setCfg] = useState<Aes67Config>(loadAes67);
   const [val, setVal] = useState<ValidationResult | null>(null);
