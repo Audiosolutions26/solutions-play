@@ -15,7 +15,8 @@ import {
   CHANNEL_OPTS, RATE_OPTS, BITS_OPTS, PTIME_OPTS, DEFAULT_AES67,
   loadAes67, saveAes67, packetMetrics, buildSdp, validateAes67, aes67Supported,
   openTxAes67, closeTxAes67, loopbackAes67, downloadAccessFile, parseAccessFile,
-  type Aes67Input, loadAes67Rx, saveAes67Rx,
+  type Aes67Input, loadAes67Rx, saveAes67Rx, validateRxInput,
+  type ValidationIssue,
 } from "@/lib/play-aes67";
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
@@ -24,9 +25,13 @@ export function Aes67Panel() {
   const [cfg, setCfg] = useState<Aes67Config>(loadAes67);
   const [val, setVal] = useState<ValidationResult | null>(null);
   const [tx, setTx] = useState<{ active: boolean; sdp?: string; sourceIp?: string }>({ active: false });
+  const [txError, setTxError] = useState<string | null>(null);
   const [loop, setLoop] = useState<LoopbackResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [rx, setRx] = useState<Aes67Input | null>(loadAes67Rx);
+  const [rxPreview, setRxPreview] = useState<
+    { input: Aes67Input; issues: ValidationIssue[]; fileName: string } | null
+  >(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const supported = aes67Supported();
 
@@ -58,10 +63,12 @@ export function Aes67Panel() {
     const r = await openTxAes67(cfg);
     setBusy(false);
     if (r.ok) {
+      setTxError(null);
       setTx({ active: true, sdp: r.sdp, sourceIp: r.sourceIp });
       logEvent("secao", "AES67 TX iniciada", `${cfg.group}:${cfg.port} • ${cfg.bits}/${cfg.sampleRate}/${cfg.channels} • origem ${r.sourceIp}`);
       toast.success("TX AES67 no ar (SAP anunciado).");
     } else {
+      setTxError(r.error || "Falha ao iniciar a TX.");
       toast.error(r.error || "Não foi possível iniciar a TX.");
       if (r.sdp) setTx((t) => ({ ...t, sdp: r.sdp }));
     }
@@ -71,6 +78,7 @@ export function Aes67Panel() {
     setBusy(true);
     await closeTxAes67();
     setBusy(false);
+    setTxError(null);
     setTx({ active: false });
     logEvent("secao", "AES67 TX parada", "SAP withdraw enviado");
     toast.info("TX AES67 encerrada (SAP withdraw).");
@@ -99,17 +107,34 @@ export function Aes67Panel() {
     reader.onload = () => {
       const parsed = parseAccessFile(String(reader.result || ""));
       const sourceIp = parsed.sourceIp;
+      const { issues } = validateRxInput(parsed);
       delete parsed.sourceIp;
       const input: Aes67Input = { ...DEFAULT_AES67, ...parsed, sourceIp };
-      setRx(input);
-      toast.success(`Entrada AES67 importada de "${f.name}".`);
+      // Mostra preview com campos detectados e avisos ANTES de aplicar.
+      setRxPreview({ input, issues, fileName: f.name });
     };
     reader.readAsText(f);
     e.target.value = "";
   };
 
+  const applyRxPreview = () => {
+    if (!rxPreview) return;
+    setRx(rxPreview.input);
+    toast.success(`Entrada AES67 aplicada de "${rxPreview.fileName}".`);
+    logEvent("secao", "AES67 RX aplicada", `${rxPreview.input.group}:${rxPreview.input.port} • ${rxPreview.input.bits}/${rxPreview.input.sampleRate}/${rxPreview.input.channels}`);
+    setRxPreview(null);
+  };
+
   const errors = val?.issues.filter((i) => i.level === "error") ?? [];
   const warns = val?.issues.filter((i) => i.level === "warning") ?? [];
+
+  // Status em tempo real do TX e da entrada RX.
+  const txStatus: StatusKind = busy ? "running" : txError ? "error" : tx.active ? "running" : "stopped";
+  const txStatusLabel = busy ? "Processando…" : txError ? "Erro" : tx.active ? "No ar" : "Parado";
+  const rxIssues = rx ? validateRxInput(rx).issues : [];
+  const rxHasError = rxIssues.some((i) => i.level === "error");
+  const rxStatus: StatusKind = !rx ? "stopped" : rxHasError ? "error" : "running";
+  const rxStatusLabel = !rx ? "Sem entrada" : rxHasError ? "Erro" : "Ativa";
 
   return (
     <div className="space-y-4 py-1">
@@ -119,6 +144,12 @@ export function Aes67Panel() {
           TX/loopback reais rodam no app desktop ({platformLabel()} atual). Aqui você configura, valida e gera o arquivo de acesso.
         </div>
       )}
+
+      {/* Status em tempo real */}
+      <div className="grid grid-cols-2 gap-2">
+        <StatusCard title="AES67 TX (saída)" kind={txStatus} label={txStatusLabel} detail={tx.active && tx.sourceIp ? `origem ${tx.sourceIp}` : txError || undefined} />
+        <StatusCard title="AES67 RX (entrada)" kind={rxStatus} label={rxStatusLabel} detail={rx ? `${rx.group}:${rx.port}` : undefined} />
+      </div>
 
       {/* Configuração */}
       <div className="grid grid-cols-2 gap-3">
@@ -270,7 +301,10 @@ export function Aes67Panel() {
         <div className="rounded-lg border border-sky-300 bg-sky-50 p-2 text-[11px]">
           <div className="mb-1 flex items-center gap-2 text-[12px] font-semibold text-sky-800">
             <Upload className="h-4 w-4" /> Entrada AES67 (RX): {rx.name}
-            <Button variant="ghost" size="sm" className="ml-auto h-6 text-sky-800" onClick={() => setRx(null)}>Remover</Button>
+            <Button variant="ghost" size="sm" className="ml-auto h-6 text-sky-800" onClick={() => downloadAccessFile(rx, rx.sourceIp || "0.0.0.0")}>
+              <Download className="mr-1 h-3.5 w-3.5" /> Baixar .sdp
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 text-sky-800" onClick={() => setRx(null)}>Remover</Button>
           </div>
           <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-sky-900">
             <li>Group: <b className="font-mono">{rx.group}:{rx.port}</b></li>
@@ -278,7 +312,52 @@ export function Aes67Panel() {
             <li>ptime: <b>{rx.ptime} ms</b> • TTL: <b>{rx.ttl}</b></li>
             {rx.sourceIp && <li>Origem: <b className="font-mono">{rx.sourceIp}</b></li>}
           </ul>
+          {rxIssues.map((i, n) => (
+            <p key={`rx${n}`} className={`mt-0.5 flex items-center gap-1 ${i.level === "error" ? "text-red-700" : "text-amber-700"}`}>
+              {i.level === "error" ? <ShieldAlert className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />} {i.msg}
+            </p>
+          ))}
           <p className="mt-1 text-sky-700">Preset salvo automaticamente — recarrega ao reabrir o app.</p>
+        </div>
+      )}
+
+      {/* Preview de importação RX — confirma campos detectados antes de aplicar */}
+      {rxPreview && (
+        <div className="rounded-lg border border-indigo-300 bg-indigo-50 p-2 text-[11px]">
+          <div className="mb-1 flex items-center gap-2 text-[12px] font-semibold text-indigo-800">
+            <Upload className="h-4 w-4" /> Confirmar entrada de "{rxPreview.fileName}"
+          </div>
+          <p className="mb-1 text-indigo-700">Campos detectados no SDP — revise antes de aplicar:</p>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-indigo-900">
+            <li>Nome: <b>{rxPreview.input.name}</b></li>
+            <li>Group: <b className="font-mono">{rxPreview.input.group}:{rxPreview.input.port}</b></li>
+            <li>Formato: <b>{rxPreview.input.bits} {rxPreview.input.sampleRate / 1000}kHz/{rxPreview.input.channels}ch</b></li>
+            <li>ptime: <b>{rxPreview.input.ptime} ms</b> • TTL: <b>{rxPreview.input.ttl}</b></li>
+            {rxPreview.input.sourceIp && <li>Origem: <b className="font-mono">{rxPreview.input.sourceIp}</b></li>}
+          </ul>
+          {rxPreview.issues.length === 0 ? (
+            <p className="mt-1 flex items-center gap-1 text-emerald-700"><ShieldCheck className="h-3.5 w-3.5" /> Compatível com AES67.</p>
+          ) : (
+            rxPreview.issues.map((i, n) => (
+              <p key={`pv${n}`} className={`mt-0.5 flex items-center gap-1 ${i.level === "error" ? "text-red-700" : "text-amber-700"}`}>
+                {i.level === "error" ? <ShieldAlert className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />} {i.msg}
+              </p>
+            ))
+          )}
+          <div className="mt-2 flex items-center gap-2">
+            <Button
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700"
+              disabled={rxPreview.issues.some((i) => i.level === "error")}
+              onClick={applyRxPreview}
+            >
+              Aplicar entrada
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setRxPreview(null)}>Cancelar</Button>
+            {rxPreview.issues.some((i) => i.level === "error") && (
+              <span className="text-[10px] text-red-700">Corrija os erros no SDP para poder aplicar.</span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -290,6 +369,29 @@ function Metric({ label, value, ok }: { label: string; value: string; ok?: boole
     <div>
       <div className={`text-sm font-bold ${ok === false ? "text-red-600" : ok === true ? "text-emerald-600" : "text-pl-toolbar"}`}>{value}</div>
       <div className="text-[10px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+type StatusKind = "stopped" | "running" | "error";
+
+function StatusCard({ title, kind, label, detail }: { title: string; kind: StatusKind; label: string; detail?: string }) {
+  const style =
+    kind === "running"
+      ? { border: "border-emerald-300", bg: "bg-emerald-50", dot: "bg-emerald-500", text: "text-emerald-700", pulse: true }
+      : kind === "error"
+        ? { border: "border-red-300", bg: "bg-red-50", dot: "bg-red-500", text: "text-red-700", pulse: false }
+        : { border: "border-border", bg: "bg-muted/40", dot: "bg-muted-foreground/50", text: "text-muted-foreground", pulse: false };
+  return (
+    <div className={`rounded-lg border ${style.border} ${style.bg} p-2`}>
+      <div className="text-[10px] font-medium text-muted-foreground">{title}</div>
+      <div className={`mt-0.5 flex items-center gap-1.5 text-[12px] font-semibold ${style.text}`}>
+        <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${style.dot}`}>
+          {style.pulse && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${style.dot} opacity-75`} />}
+        </span>
+        {label}
+      </div>
+      {detail && <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{detail}</div>}
     </div>
   );
 }

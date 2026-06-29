@@ -302,3 +302,48 @@ export function parseAccessFile(text: string): Partial<Aes67Config> & { sourceIp
   }
   return out;
 }
+
+// Valida um SDP de ENTRADA (RX) recém-importado, antes de aplicar. Aponta
+// campos ausentes e incompatibilidades com AES67 para avisar o operador.
+export function validateRxInput(
+  parsed: Partial<Aes67Config> & { sourceIp?: string },
+): { issues: ValidationIssue[] } {
+  const issues: ValidationIssue[] = [];
+
+  if (!parsed.group) {
+    issues.push({ level: "error", msg: "Multicast group (c=) ausente no SDP." });
+  } else {
+    const parts = ipParts(parsed.group);
+    if (!parts) issues.push({ level: "error", msg: "Multicast group (c=) inválido." });
+    else if (parts[0] < 224 || parts[0] > 239)
+      issues.push({ level: "error", msg: `Group fora da faixa multicast 224–239 (1º octeto = ${parts[0]}).` });
+  }
+
+  if (parsed.port == null) {
+    issues.push({ level: "error", msg: "Porta RTP (m=audio) ausente no SDP." });
+  } else if (!Number.isInteger(parsed.port) || parsed.port < 1024 || parsed.port > 65535) {
+    issues.push({ level: "error", msg: "Porta RTP fora do intervalo 1024–65535." });
+  } else if (parsed.port % 2 !== 0) {
+    issues.push({ level: "warning", msg: "Porta ímpar — convenção RTP usa porta par (RTCP = porta+1)." });
+  }
+
+  if (!parsed.bits) {
+    issues.push({ level: "warning", msg: "Codec (a=rtpmap) não detectado — assumindo L24." });
+  } else if (parsed.bits !== "L16" && parsed.bits !== "L24") {
+    issues.push({ level: "error", msg: `Codec "${parsed.bits}" não suportado — use L16 ou L24.` });
+  }
+
+  if (parsed.sampleRate != null && parsed.sampleRate !== 48000)
+    issues.push({ level: "warning", msg: `Sample rate ${parsed.sampleRate} Hz — AES67 exige 48 kHz para interoperabilidade plena.` });
+
+  if (parsed.channels != null && !CHANNEL_OPTS.includes(parsed.channels as (typeof CHANNEL_OPTS)[number]))
+    issues.push({ level: "warning", msg: `Canais ${parsed.channels} fora do padrão (1/2/4/6/8).` });
+
+  if (parsed.ptime != null && !PTIME_OPTS.includes(parsed.ptime as (typeof PTIME_OPTS)[number]))
+    issues.push({ level: "warning", msg: `ptime ${parsed.ptime} ms fora dos valores padrão (0.125–4 ms).` });
+
+  if (!parsed.name)
+    issues.push({ level: "warning", msg: "Nome da sessão (s=) ausente — será usado um nome padrão." });
+
+  return { issues };
+}
