@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Folder, FolderPlus, Trash2, Save, Music, Megaphone, Clock, FileText, Disc3, ListMusic, Check,
-  FolderSearch, FolderOpen, AlertTriangle, CheckCircle2,
+  FolderSearch, FolderOpen, AlertTriangle, CheckCircle2, RefreshCw,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -16,7 +16,8 @@ import {
   SHORTCUT_TYPES, PALETTE, makeShortcut, typeMeta,
   type ShortcutType, type Shortcut,
 } from "@/lib/play-shortcuts";
-import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative } from "@/lib/play-native";
+import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative, listFolderAudioNative } from "@/lib/play-native";
+import { makeFolderAudioTrack, type Track } from "@/lib/play-data";
 
 const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   musicas: Music,
