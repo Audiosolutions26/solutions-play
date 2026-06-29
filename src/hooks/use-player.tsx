@@ -13,6 +13,7 @@ import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } fr
 import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
 import { analyzeCuePoints, getCachedCuePoints, cueDetectionEnabled, equalPowerEnabled, type CuePoints } from "@/lib/play-cuepoints";
+import { updateRds } from "@/lib/play-rds";
 
 interface PlayerState {
   blocks: Block[];
@@ -77,6 +78,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     return null;
   }, []);
+
+  // Próximas N inserções a partir de uma posição (para o arquivo de RDS).
+  const upcomingFrom = useCallback((blockId: string | null, trackId: string | null, n: number): Track[] => {
+    if (!blockId || !trackId) return [];
+    const out: Track[] = [];
+    let bId = blockId;
+    let tId = trackId;
+    for (let k = 0; k < n; k++) {
+      const nx = findNext(bId, tId);
+      if (!nx) break;
+      out.push(nx.track);
+      bId = nx.block.id;
+      tId = nx.track.id;
+    }
+    return out;
+  }, [findNext]);
 
   // Resolve a URL tocável de uma faixa (cache, audioUrl ou arquivo de pasta).
   const trackUrl = useCallback(async (t: Track): Promise<string | undefined> => {
@@ -164,6 +181,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const nextManual = useCallback(() => {
     next(manualFadeMs());
   }, [next]);
+
+  // Gera/atualiza os arquivos de RDS (no ar + 3 próximas) sempre que a grade
+  // (blocks) ou a inserção no ar mudam. No desktop grava na pasta RDS; no
+  // modo web é silenciosamente ignorado.
+  useEffect(() => {
+    const up = upcomingFrom(currentBlockId, current?.id ?? null, 3);
+    updateRds(current, up);
+  }, [blocks, current, currentBlockId, upcomingFrom]);
 
   const togglePlay = useCallback(() => {
     const cur = currentRef.current;

@@ -250,6 +250,8 @@ const guiaConfiguracoes: ConfigGuide = {
         { key: "rdsEndereco", label: "Endereço do encoder RDS / arquivo", type: "text", default: "rds.txt" },
         { key: "rdsTexto", label: "Texto padrão", type: "text", default: "Solutions-Play" },
         sw("rdsComerciais", "Enviar comerciais", false),
+        sw("rdsGerarArquivos", "Gerar arquivos TXT (no ar + próximas) na pasta RDS", true),
+        { key: "rdsPasta", label: "Pasta RDS", type: "text", default: "", help: "Em branco usa Documentos\\Solutions-Play\\rds. Pode informar um caminho absoluto." },
       ],
     },
     {
