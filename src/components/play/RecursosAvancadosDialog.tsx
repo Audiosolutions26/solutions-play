@@ -97,6 +97,39 @@ export function RecursosAvancadosDialog({
     toast.success(`${name} baixado (${format})`);
   };
 
+  // Gera a programação final e exporta os arquivos no formato do Playlist.ini.
+  const gerarEExportar = () => {
+    if (errorCount > 0) {
+      toast.error(`Corrija ${errorCount} erro(s) de código antes de gerar`);
+      return;
+    }
+    const blocks = generateProgram(grade, mapa);
+    if (!blocks.length) {
+      toast.error("Nenhum bloco válido encontrado na Grade/Mapa");
+      return;
+    }
+    replaceBlocks(blocks);
+
+    // Exporta o índice e o resultado de cada bloco no formato definido.
+    downloadText("Playlist.ini", buildPlaylistIni(iniConfig));
+    const exported: string[] = [];
+    ([
+      ["comercial", comFormat, comFile],
+      ["musical", musFormat, musFile],
+    ] as const).forEach(([kind, format, template]) => {
+      const sub = blocks.filter((b) => b.category === kind);
+      if (!sub.length) return;
+      const name = baseName(template);
+      downloadText(name, serializeResult(sub, format));
+      exported.push(`${name} (${format})`);
+    });
+
+    const total = blocks.reduce((s, b) => s + b.items.length, 0);
+    toast.success(`Programação gerada (${blocks.length} blocos, ${total} inserções) e exportada: Playlist.ini, ${exported.join(", ")}`);
+    onOpenChange(false);
+    onGenerated();
+  };
+
   const textareaCls =
     "h-48 w-full resize-none rounded border border-pl-panel-dark bg-white p-2 font-mono text-[12px] text-pl-text outline-none focus:border-pl-toolbar";
 
