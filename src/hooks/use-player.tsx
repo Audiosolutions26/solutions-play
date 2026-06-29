@@ -12,6 +12,7 @@ import { getAudioEngine } from "@/lib/audio-engine";
 import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
 import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
+import { analyzeCuePoints, getCachedCuePoints, cueDetectionEnabled, equalPowerEnabled, type CuePoints } from "@/lib/play-cuepoints";
 
 interface PlayerState {
   blocks: Block[];
