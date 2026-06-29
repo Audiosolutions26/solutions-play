@@ -150,7 +150,7 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
             </span>
           )}
           {isCurrent && (
-            <div className="absolute inset-y-0 left-7 z-0 bg-white/30" style={{ width: `calc(${pct}% * (100% - 1.75rem) / 100%)` }} />
+            <div className="absolute inset-y-0 left-0 z-0 bg-white/30" style={{ width: `${pct}%` }} />
           )}
           <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
           {mMarker && (
