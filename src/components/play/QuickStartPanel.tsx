@@ -123,7 +123,7 @@ export function QuickStartPanel() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
-        <Zap className="h-4 w-4" /> QuickStart — disparo instantâneo
+        {!embedded && (<><Zap className="h-4 w-4" /> QuickStart — disparo instantâneo</>)}
         <div className="ml-auto flex items-center gap-2">
           <label className="flex items-center gap-1 text-[11px] font-normal">
             Colunas
