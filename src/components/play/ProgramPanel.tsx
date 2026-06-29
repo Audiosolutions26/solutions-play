@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer } from "lucide-react";
+import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makePause, makeHoraCerta, type Block, type Track } from "@/lib/play-data";
@@ -31,7 +31,11 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
   const fileRef = useRef<HTMLInputElement>(null);
   const isCurrent = current?.id === track.id;
   const isSelected = selectedId === track.id;
-  const Icon = track.kind === "pausa" ? Pause : track.kind === "horacerta" ? Clock : catIcon[track.category];
+  const Icon = track.kind === "pausa" ? Pause
+    : track.kind === "horacerta" ? Clock
+    : track.kind === "locucao" ? Mic
+    : track.kind === "textodia" ? Newspaper
+    : catIcon[track.category];
   const pct = isCurrent ? Math.min(100, (position / track.duration) * 100) : 0;
   const refrao = hasRefrao(track.id);
   const carimbo = hasCarimbo(track.id);
