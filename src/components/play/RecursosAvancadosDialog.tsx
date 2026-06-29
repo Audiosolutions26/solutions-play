@@ -277,18 +277,26 @@ export function RecursosAvancadosDialog({
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={exportarIni}
-                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px">
+                disabled={iniErrors.length > 0}
+                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
                 <FileCode2 className="h-4 w-4" /> Exportar Playlist.ini
               </button>
               <button onClick={() => baixarResultado("comercial")}
-                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted">
+                disabled={!!comFileErr || !!comFmtErr}
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
                 <Download className="h-4 w-4" /> Baixar resultado comercial
               </button>
               <button onClick={() => baixarResultado("musical")}
-                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted">
+                disabled={!!musFileErr || !!musFmtErr}
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
                 <Download className="h-4 w-4" /> Baixar resultado musical
               </button>
             </div>
+            {iniErrors.length > 0 && (
+              <p className="text-[12px] font-medium text-red-600">
+                Corrija os campos do Playlist.ini destacados acima antes de exportar.
+              </p>
+            )}
           </TabsContent>
 
           {/* Grade */}
