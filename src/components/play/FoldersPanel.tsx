@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones } from "lucide-react";
+import { ArrowLeft, Folder, Play, Square, SkipForward, Search, Clock3, Plus, Music, Shuffle, Headphones, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
-import { folders, fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
+import { fmt, type Folder as FolderType, type Track } from "@/lib/play-data";
+import { useShortcuts } from "@/hooks/use-shortcuts";
+import { SHORTCUT_TYPES } from "@/lib/play-shortcuts";
 import {
   ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import { cuePlay, cueStop, cueIsPlaying, cueCurrentId } from "@/lib/play-cue";
 import { useCue } from "@/hooks/use-cue";
 
-export function FoldersPanel() {
+export function FoldersPanel({ onManage }: { onManage?: () => void }) {
   const { addTrack, blocks, currentBlockId } = usePlayer();
+  const { shortcuts: folders } = useShortcuts();
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<Track | null>(null);
@@ -24,7 +27,7 @@ export function FoldersPanel() {
     return folders.flatMap((f) =>
       f.tracks.filter((t) => t.title.toLowerCase().includes(q) || (t.artist ?? "").toLowerCase().includes(q)),
     );
-  }, [query]);
+  }, [query, folders]);
 
   const targetBlock = currentBlockId ?? blocks[0]?.id;
 
