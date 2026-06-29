@@ -16,6 +16,7 @@ import {
 import {
   loadPresets, savePreset, deletePreset, getPreset, type GenPreset,
 } from "@/lib/play-presets";
+import { validateIniFile, validateIniFormat } from "@/lib/play-config-validate";
 
 const variables = [
   ["%d", "dia do mês (31)"],
@@ -100,6 +101,12 @@ export function RecursosAvancadosDialog({
   );
   const previewTotal = preview.reduce((s, b) => s + b.items.length, 0);
 
+  const comFileErr = validateIniFile(comFile, "ARQUIVO comercial");
+  const musFileErr = validateIniFile(musFile, "ARQUIVO musical");
+  const comFmtErr = validateIniFormat(comFormat, "FORMATO comercial");
+  const musFmtErr = validateIniFormat(musFormat, "FORMATO musical");
+  const iniErrors = [comFileErr, musFileErr, comFmtErr, musFmtErr].filter(Boolean) as string[];
+
   const gerar = () => {
     if (errorCount > 0) {
       toast.error(`Corrija ${errorCount} erro(s) de código antes de gerar`);
@@ -120,11 +127,21 @@ export function RecursosAvancadosDialog({
   const iniConfig = { comFormat, comFile, musFormat, musFile };
 
   const exportarIni = () => {
+    if (iniErrors.length) {
+      toast.error(iniErrors[0]);
+      return;
+    }
     downloadText("Playlist.ini", buildPlaylistIni(iniConfig));
     toast.success("Playlist.ini exportado");
   };
 
   const baixarResultado = (kind: "comercial" | "musical") => {
+    const fileErr = kind === "comercial" ? comFileErr : musFileErr;
+    const fmtErr = kind === "comercial" ? comFmtErr : musFmtErr;
+    if (fileErr || fmtErr) {
+      toast.error(fileErr || fmtErr!);
+      return;
+    }
     const blocks = currentBlocks.filter((b) => b.category === kind);
     if (!blocks.length) {
       toast.error("Programação vazia — gere a programação antes de baixar");
@@ -141,6 +158,10 @@ export function RecursosAvancadosDialog({
   const gerarEExportar = () => {
     if (errorCount > 0) {
       toast.error(`Corrija ${errorCount} erro(s) de código antes de gerar`);
+      return;
+    }
+    if (iniErrors.length) {
+      toast.error(iniErrors[0]);
       return;
     }
     const blocks = generateProgram(grade, mapa);
@@ -227,7 +248,10 @@ export function RecursosAvancadosDialog({
                   <option>AUTO</option><option>TXT1</option>
                 </select>
                 <Label htmlFor="cfile">ARQUIVO</Label>
-                <Input id="cfile" value={comFile} onChange={(e) => setComFile(e.target.value)} className="font-mono text-xs" />
+                <Input id="cfile" value={comFile} onChange={(e) => setComFile(e.target.value)}
+                  aria-invalid={!!comFileErr}
+                  className={`font-mono text-xs ${comFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`} />
+                {comFileErr && <p className="text-[11px] text-red-600">{comFileErr}</p>}
               </div>
               <div className="space-y-2 rounded border p-3">
                 <div className="text-sm font-semibold">[BLOCO MUSICAL]</div>
@@ -237,7 +261,10 @@ export function RecursosAvancadosDialog({
                   <option>AUTO</option><option>TXT1</option>
                 </select>
                 <Label htmlFor="mfile">ARQUIVO</Label>
-                <Input id="mfile" value={musFile} onChange={(e) => setMusFile(e.target.value)} className="font-mono text-xs" />
+                <Input id="mfile" value={musFile} onChange={(e) => setMusFile(e.target.value)}
+                  aria-invalid={!!musFileErr}
+                  className={`font-mono text-xs ${musFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`} />
+                {musFileErr && <p className="text-[11px] text-red-600">{musFileErr}</p>}
               </div>
             </div>
             <div className="rounded border p-3">
@@ -250,18 +277,26 @@ export function RecursosAvancadosDialog({
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={exportarIni}
-                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px">
+                disabled={iniErrors.length > 0}
+                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
                 <FileCode2 className="h-4 w-4" /> Exportar Playlist.ini
               </button>
               <button onClick={() => baixarResultado("comercial")}
-                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted">
+                disabled={!!comFileErr || !!comFmtErr}
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
                 <Download className="h-4 w-4" /> Baixar resultado comercial
               </button>
               <button onClick={() => baixarResultado("musical")}
-                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted">
+                disabled={!!musFileErr || !!musFmtErr}
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
                 <Download className="h-4 w-4" /> Baixar resultado musical
               </button>
             </div>
+            {iniErrors.length > 0 && (
+              <p className="text-[12px] font-medium text-red-600">
+                Corrija os campos do Playlist.ini destacados acima antes de exportar.
+              </p>
+            )}
           </TabsContent>
 
           {/* Grade */}
@@ -309,7 +344,7 @@ export function RecursosAvancadosDialog({
               <Wand2 className="h-4 w-4" /> Gerar programação automática
             </button>
             <button onClick={gerarEExportar}
-              disabled={errorCount > 0}
+              disabled={errorCount > 0 || iniErrors.length > 0}
               className="flex w-full items-center justify-center gap-2 rounded border border-pl-transport py-2.5 font-semibold text-pl-transport hover:bg-pl-transport/10 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
               <Download className="h-4 w-4" /> Gerar e exportar (Playlist.ini + arquivos)
             </button>

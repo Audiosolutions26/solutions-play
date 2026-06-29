@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { configGuides, type ConfigField, type ConfigGuide } from "@/lib/play-config";
 import { useConfig } from "@/hooks/use-config";
+import { validateFieldValue, validateConfigState } from "@/lib/play-config-validate";
 import { operators as seedOperators, type Operator } from "./OperatorLogin";
 import { folders } from "@/lib/play-data";
 
@@ -28,6 +29,7 @@ const GUIDES: { id: string; title: string }[] = [
 function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
   const { draft, setDraft } = useConfig();
   const value = draft[fullKey] ?? field.default;
+  const error = validateFieldValue(field, value);
 
   if (field.type === "switch") {
     return (
@@ -63,7 +65,8 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
       <Label className="text-[12px]">{field.label}{field.unit ? ` (${field.unit})` : ""}</Label>
       <Input
         type={field.type === "number" ? "number" : field.type === "password" ? "password" : "text"}
-        className="h-8 text-[12px]"
+        className={cn("h-8 text-[12px]", error && "border-red-500 focus-visible:ring-red-500")}
+        aria-invalid={!!error}
         min={field.min}
         max={field.max}
         value={String(value)}
@@ -71,7 +74,9 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
           setDraft(fullKey, field.type === "number" ? Number(e.target.value) : e.target.value)
         }
       />
-      {field.help && <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>}
+      {error
+        ? <div className="text-[11px] leading-tight text-red-600">{error}</div>
+        : field.help && <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>}
     </div>
   );
 }
@@ -210,8 +215,24 @@ export function OptionsDialog({
   onOpenChange: (v: boolean) => void;
   tab: string;
 }) {
-  const { commit, cancel, reset } = useConfig();
+  const { commit, cancel, reset, draft } = useConfig();
   const [active, setActive] = useState(tab);
+
+  const errors = validateConfigState(draft);
+  const errorKeys = Object.keys(errors);
+  const errorCount = errorKeys.length;
+
+  const handleSave = () => {
+    if (errorCount > 0) {
+      const firstGuide = errorKeys[0].split(".")[0];
+      setActive(firstGuide);
+      toast.error(`Corrija ${errorCount} campo(s) inválido(s) antes de salvar.`);
+      return;
+    }
+    commit();
+    toast.success("Configurações salvas.");
+    onOpenChange(false);
+  };
 
   // sync requested tab when dialog opens
   const handleOpen = (v: boolean) => {
@@ -258,9 +279,14 @@ export function OptionsDialog({
         </div>
 
         <DialogFooter className="border-t px-4 py-3">
+          {errorCount > 0 && (
+            <span className="mr-auto self-center text-[12px] font-medium text-red-600">
+              {errorCount} campo(s) inválido(s)
+            </span>
+          )}
           <button
             onClick={() => { reset(); toast.message("Padrões restaurados (não salvo até clicar em Salvar)."); }}
-            className="mr-auto rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+            className={cn("rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted", errorCount === 0 && "mr-auto")}
           >
             Restaurar padrões
           </button>
@@ -271,8 +297,9 @@ export function OptionsDialog({
             Cancelar
           </button>
           <button
-            onClick={() => { commit(); toast.success("Configurações salvas."); onOpenChange(false); }}
-            className="rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-[12px] font-semibold text-white hover:brightness-110"
+            onClick={handleSave}
+            disabled={errorCount > 0}
+            className="rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-[12px] font-semibold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Salvar
           </button>
