@@ -21,7 +21,7 @@ function TButton({
 }
 
 export function TransportBar() {
-  const { isPlaying, togglePlay, next, stop, volume, setVolume, selectedId, blocks, moveTrack, removeTrack, currentBlockId } = usePlayer();
+  const { isPlaying, togglePlay, nextManual, stop, volume, setVolume, selectedId, blocks, moveTrack, removeTrack, currentBlockId } = usePlayer();
 
   const requireSel = (): boolean => {
     if (!selectedId) { toast.info("Selecione uma inserção primeiro."); return false; }
@@ -43,7 +43,7 @@ export function TransportBar() {
       <TButton onClick={() => !isPlaying && togglePlay()} title="Pausa">
         <Pause className="h-5 w-5" />
       </TButton>
-      <TButton onClick={next} title="Próxima">
+      <TButton onClick={nextManual} title="Próxima (com fade)">
         <SkipForward className="h-5 w-5" />
       </TButton>
       <TButton onClick={stop} title="Parar">

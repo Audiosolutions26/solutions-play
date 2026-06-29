@@ -15,6 +15,14 @@ const semis = (n: number) => Math.pow(2, n / 12);
 
 type Mode = "synth" | "url" | null;
 
+// Uma "voz" de reprodução de URL: elemento de áudio + nó de origem + ganho
+// próprio (para fade/crossfade independente das outras vozes).
+interface UrlVoice {
+  el: HTMLAudioElement;
+  src: MediaElementAudioSourceNode;
+  gain: GainNode;
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -34,8 +42,9 @@ export class AudioEngine {
   private secPerStep = 0.125;
 
   // real audio file state
-  private audioEl: HTMLAudioElement | null = null;
-  private mediaSrc: MediaElementAudioSourceNode | null = null;
+  // Vozes de URL (uma por inserção em reprodução). Durante a mixagem
+  // (crossfade) coexistem temporariamente duas vozes: a que sai e a que entra.
+  private mainVoice: UrlVoice | null = null;
 
   private ensure() {
     if (typeof window === "undefined") return;
@@ -59,6 +68,31 @@ export class AudioEngine {
 
   getAnalyser(): AnalyserNode | null {
     return this.analyser;
+  }
+
+  // ---- vozes de URL (para mixagem/crossfade real) -----------------------
+
+  private makeVoice(url: string): UrlVoice | null {
+    if (!this.ctx || !this.master) return null;
+    const el = new Audio();
+    el.crossOrigin = "anonymous";
+    el.src = url;
+    const src = this.ctx.createMediaElementSource(el);
+    const gain = this.ctx.createGain();
+    src.connect(gain);
+    gain.connect(this.master);
+    return { el, src, gain };
+  }
+
+  private disposeVoice(v: UrlVoice | null) {
+    if (!v) return;
+    try { v.el.pause(); } catch { /* ignore */ }
+    try { v.gain.disconnect(); } catch { /* ignore */ }
+    try { v.src.disconnect(); } catch { /* ignore */ }
+  }
+
+  private disposeVoiceAfter(v: UrlVoice, seconds: number) {
+    window.setTimeout(() => this.disposeVoice(v), seconds * 1000 + 60);
   }
 
   // ---- scheduler primitives ---------------------------------------------
@@ -144,9 +178,8 @@ export class AudioEngine {
   }
 
   private teardownMedia() {
-    if (this.audioEl) {
-      try { this.audioEl.pause(); } catch { /* ignore */ }
-    }
+    this.disposeVoice(this.mainVoice);
+    this.mainVoice = null;
   }
 
   // ---- public synth playback --------------------------------------------
@@ -171,40 +204,58 @@ export class AudioEngine {
 
   // ---- public real-file playback ----------------------------------------
 
-  playUrl(url: string, fromOffset = 0) {
+  // Toca uma URL. Com fadeMs > 0 e uma voz já tocando, faz a MIXAGEM
+  // (crossfade) entre a inserção que sai e a que entra — manual p.106.
+  playUrl(url: string, fromOffset = 0, fadeMs = 0) {
     this.ensure();
-    if (!this.ctx) return;
+    if (!this.ctx || !this.master) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
     this.stopScheduler();
     this.mode = "url";
-    if (!this.audioEl) {
-      this.audioEl = new Audio();
-      this.audioEl.crossOrigin = "anonymous";
-      this.mediaSrc = this.ctx.createMediaElementSource(this.audioEl);
-      this.mediaSrc.connect(this.master!);
+
+    const prev = this.mainVoice;
+    const voice = this.makeVoice(url);
+    if (!voice) return;
+    try { voice.el.currentTime = fromOffset; } catch { /* ignore */ }
+
+    const now = this.ctx.currentTime;
+    const fade = Math.max(0, fadeMs) / 1000;
+
+    if (prev && this.playing && fade > 0) {
+      // Crossfade: nova voz sobe de 0→1; voz anterior desce 1→0 e é descartada.
+      voice.gain.gain.setValueAtTime(0, now);
+      voice.gain.gain.linearRampToValueAtTime(1, now + fade);
+      const g = prev.gain.gain;
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(g.value, now);
+      g.linearRampToValueAtTime(0, now + fade);
+      this.disposeVoiceAfter(prev, fade);
+    } else {
+      // Sem mixagem: corta a anterior e entra direto.
+      this.disposeVoice(prev);
+      voice.gain.gain.setValueAtTime(1, now);
     }
-    if (this.audioEl.src !== url) this.audioEl.src = url;
-    try { this.audioEl.currentTime = fromOffset; } catch { /* ignore */ }
-    void this.audioEl.play();
+
+    void voice.el.play();
+    this.mainVoice = voice;
     this.playing = true;
   }
 
   pause() {
     if (!this.ctx) return;
+    this.offset = this.position();
     if (this.mode === "url") {
-      this.offset = this.position();
-      this.teardownMedia();
+      if (this.mainVoice) { try { this.mainVoice.el.pause(); } catch { /* ignore */ } }
     } else {
-      this.offset = this.position();
       this.stopScheduler();
     }
     this.playing = false;
   }
 
   resume(rootFreq?: number) {
-    if (this.mode === "url" && this.audioEl) {
+    if (this.mode === "url" && this.mainVoice) {
       if (this.ctx?.state === "suspended") void this.ctx.resume();
-      void this.audioEl.play();
+      void this.mainVoice.el.play();
       this.playing = true;
       return;
     }
@@ -288,7 +339,7 @@ export class AudioEngine {
   }
 
   position(): number {
-    if (this.mode === "url" && this.audioEl) return this.audioEl.currentTime || this.offset;
+    if (this.mode === "url" && this.mainVoice) return this.mainVoice.el.currentTime || this.offset;
     if (!this.ctx || !this.playing) return this.offset;
     return this.ctx.currentTime - this.startedAt;
   }
