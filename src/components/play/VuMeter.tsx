@@ -55,28 +55,28 @@ export function VuMeter({ label }: { label: string }) {
   if (mode === "analogico") {
     return (
       <div
-        className="flex cursor-pointer flex-col items-center gap-0.5"
+        className="flex cursor-pointer flex-col items-center gap-1"
         onDoubleClick={toggleVuMode}
         title="Duplo clique para alternar Digital/Analógico"
       >
         <AnalogFace needleRef={needleRef} />
-        <span className="text-[9px] font-semibold leading-none text-white/90">{label}</span>
+        <span className="text-[11px] font-bold leading-none text-white/90">{label}</span>
       </div>
     );
   }
 
   return (
     <div
-      className="flex cursor-pointer flex-col items-center gap-0.5"
+      className="flex cursor-pointer flex-col items-center gap-1"
       onDoubleClick={toggleVuMode}
       title="Duplo clique para alternar Digital/Analógico"
     >
-      <div ref={barsRef} className="flex h-3 items-center gap-px rounded-sm bg-black/40 px-1 py-0.5">
+      <div ref={barsRef} className="flex h-6 items-center gap-[2px] rounded-sm bg-black/50 px-1.5 py-1 shadow-inner ring-1 ring-white/10">
         {Array.from({ length: SEGS }).map((_, i) => (
-          <div key={i} className="h-2 w-1 rounded-[1px]" />
+          <div key={i} className="h-4 w-1.5 rounded-[1px]" />
         ))}
       </div>
-      <span className="text-[9px] font-semibold leading-none text-white/90">{label}</span>
+      <span className="text-[11px] font-bold leading-none text-white/90">{label}</span>
     </div>
   );
 }
@@ -98,7 +98,7 @@ function AnalogFace({ needleRef }: { needleRef: React.RefObject<SVGGElement | nu
   const ticks = Array.from({ length: 11 }, (_, i) => i / 10);
 
   return (
-    <svg viewBox="0 0 100 60" className="h-9 w-[58px] rounded-sm" role="img" aria-label="VU analógico">
+    <svg viewBox="0 0 100 60" className="h-14 w-[92px] rounded-sm" role="img" aria-label="VU analógico">
       <defs>
         <linearGradient id="vuFace" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fbf3d8" />
