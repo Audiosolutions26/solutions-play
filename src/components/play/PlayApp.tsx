@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { PlayerProvider } from "@/hooks/use-player";
 import { usePlayer } from "@/hooks/use-player";
 import { ConfigProvider } from "@/hooks/use-config";
+import { ShortcutsProvider } from "@/hooks/use-shortcuts";
 import { TopBar } from "./TopBar";
 import { OnAirBar } from "./OnAirBar";
 import { ProgramPanel } from "./ProgramPanel";
@@ -16,6 +17,7 @@ import { RecursosAvancadosDialog } from "./RecursosAvancadosDialog";
 import { BeepDialog, BeepController } from "./BeepDialog";
 import { SecoesDialog } from "./SecoesDialog";
 import { AudioDevicesDialog } from "./AudioDevicesDialog";
+import { ShortcutsDialog } from "./ShortcutsDialog";
 import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { getMarkers } from "@/lib/play-markers";
@@ -169,6 +171,7 @@ export function PlayApp() {
   const [beepOpen, setBeepOpen] = useState(false);
   const [secoesOpen, setSecoesOpen] = useState(false);
   const [devicesOpen, setDevicesOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const togglePanel = (key: keyof PanelVisibility) =>
     setPanels((p) => ({ ...p, [key]: !p[key] }));
@@ -177,6 +180,7 @@ export function PlayApp() {
 
   return (
     <ConfigProvider>
+    <ShortcutsProvider>
     <PlayerProvider>
       <KeyboardShortcuts />
       <BeepController />
@@ -196,6 +200,7 @@ export function PlayApp() {
           onOpenBeep={() => setBeepOpen(true)}
           onOpenSecoes={() => setSecoesOpen(true)}
           onOpenDevices={() => setDevicesOpen(true)}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
         />
         <OnAirBar />
         <div className="flex min-h-0 flex-1">
@@ -228,7 +233,7 @@ export function PlayApp() {
                 <div className="flex w-[40%] min-w-[320px] flex-col">
                   {panels.pastas && (
                     <div className="min-h-0 flex-[1.4] border-b border-pl-toolbar-dark">
-                      <FoldersPanel />
+                      <FoldersPanel onManage={() => setShortcutsOpen(true)} />
                     </div>
                   )}
                   {panels.propriedades && (
@@ -263,6 +268,7 @@ export function PlayApp() {
       <BeepDialog open={beepOpen} onOpenChange={setBeepOpen} />
       <SecoesDialog open={secoesOpen} onOpenChange={setSecoesOpen} />
       <AudioDevicesDialog open={devicesOpen} onOpenChange={setDevicesOpen} />
+      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <RecursosAvancadosDialog
         open={advanced.open}
         onOpenChange={(v) => setAdvanced((a) => ({ ...a, open: v }))}
@@ -277,6 +283,7 @@ export function PlayApp() {
         />
       )}
     </PlayerProvider>
+    </ShortcutsProvider>
     </ConfigProvider>
   );
 }
