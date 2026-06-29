@@ -16,7 +16,11 @@ interface NativeBridge {
   openFolder?: (dir: string) => Promise<boolean>;
   folderExists?: (dir: string) => Promise<boolean>;
   listFolderAudio?: (dir: string) => Promise<NativeFolderAudio[]>;
+  writeRds?: (payload: RdsWritePayload) => Promise<string | null>;
 }
+
+export interface RdsFile { name: string; content: string; }
+export interface RdsWritePayload { dir?: string; files: RdsFile[]; }
 
 export interface NativePickedFolder {
   path: string;
@@ -113,5 +117,17 @@ export async function listFolderAudioNative(dir: string): Promise<NativeFolderAu
     return await b.listFolderAudio(dir);
   } catch {
     return [];
+  }
+}
+
+// Grava os arquivos de RDS (no ar + próximas) na pasta RDS. Retorna a pasta
+// gravada ou null em modo web (sem acesso ao sistema de arquivos).
+export async function writeRdsNative(payload: RdsWritePayload): Promise<string | null> {
+  const b = nativeBridge();
+  if (!b?.writeRds) return null;
+  try {
+    return await b.writeRds(payload);
+  } catch {
+    return null;
   }
 }
