@@ -1,32 +1,32 @@
 # Solutions-Play — Desktop (Windows .exe)
 
-The desktop shell wraps the same web app in Electron and serves the static
-client build locally, so it runs offline as a native window.
+The desktop build wraps the same UI in Electron. Because the app is fully
+client-side, the desktop build is a standalone SPA (`vite.electron.config.ts`)
+bundled into `dist/` and served locally by `electron/main.cjs` — runs offline.
 
-## 1. Install desktop tooling (one time)
+Everything is pre-wired. After cloning from GitHub:
+
+## 1. Install
 ```bash
-npm install --save-dev electron @electron/packager
+npm install
 ```
-Add to package.json:
-```json
-"main": "electron/main.cjs",
-"scripts": {
-  "desktop:dev": "electron electron/main.cjs",
-  "desktop:build": "vite build && electron-packager . Solutions-Play --platform=win32 --arch=x64 --out=electron-release --overwrite"
-}
-```
+(`electron` and `@electron/packager` are already in devDependencies.)
 
 ## 2. Run in development
-Start the web dev server (`npm run dev`), then:
 ```bash
-npm run desktop:dev
+npm run dev          # terminal 1 — web dev server on :8080
+npm run desktop:start # terminal 2 — opens the Electron window
 ```
 
-## 3. Build the Windows app
+## 3. Build the Windows app (.exe)
 ```bash
 npm run desktop:build
 ```
-Output: `electron-release/Solutions-Play-win32-x64/Solutions-Play.exe`.
+Produces: `electron-release/Solutions-Play-win32-x64/Solutions-Play.exe`
+(a runnable, self-contained folder — copy/zip it to distribute).
 
-> Cross-building Windows from Linux produces the runnable `.exe` folder.
-> A signed installer (`Setup.exe`) requires electron-builder on Windows.
+## Notes
+- `npm run desktop:web` just builds the offline SPA into `dist/` (no packaging).
+- Cross-building Windows from macOS/Linux produces the runnable `.exe` folder.
+  A signed `Setup.exe` installer would additionally need electron-builder on Windows.
+- The wrapper is offline-first: no network is required at runtime.
