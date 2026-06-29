@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { configGuides, type ConfigField, type ConfigGuide } from "@/lib/play-config";
 import { useConfig } from "@/hooks/use-config";
+import { validateFieldValue, validateConfigState } from "@/lib/play-config-validate";
 import { operators as seedOperators, type Operator } from "./OperatorLogin";
 import { folders } from "@/lib/play-data";
 
@@ -28,6 +29,7 @@ const GUIDES: { id: string; title: string }[] = [
 function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
   const { draft, setDraft } = useConfig();
   const value = draft[fullKey] ?? field.default;
+  const error = validateFieldValue(field, value);
 
   if (field.type === "switch") {
     return (
@@ -63,7 +65,8 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
       <Label className="text-[12px]">{field.label}{field.unit ? ` (${field.unit})` : ""}</Label>
       <Input
         type={field.type === "number" ? "number" : field.type === "password" ? "password" : "text"}
-        className="h-8 text-[12px]"
+        className={cn("h-8 text-[12px]", error && "border-red-500 focus-visible:ring-red-500")}
+        aria-invalid={!!error}
         min={field.min}
         max={field.max}
         value={String(value)}
@@ -71,7 +74,9 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
           setDraft(fullKey, field.type === "number" ? Number(e.target.value) : e.target.value)
         }
       />
-      {field.help && <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>}
+      {error
+        ? <div className="text-[11px] leading-tight text-red-600">{error}</div>
+        : field.help && <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>}
     </div>
   );
 }
