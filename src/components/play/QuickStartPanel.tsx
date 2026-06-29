@@ -45,7 +45,7 @@ function loadPads(): Pad[] {
   return defaultPads;
 }
 
-export function QuickStartPanel() {
+export function QuickStartPanel({ embedded }: { embedded?: boolean } = {}) {
   const [pads, setPads] = useState<Pad[]>(loadPads);
   const [active, setActive] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
