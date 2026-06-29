@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
+import { parseProgramText } from "@/lib/play-program-import";
 import {
   Menubar, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem,
   MenubarSeparator, MenubarSub, MenubarSubTrigger, MenubarSubContent,
@@ -36,7 +38,31 @@ const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
 export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts }: Props) {
-  const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack } = usePlayer();
+  const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack, replaceBlocks } = usePlayer();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const abrirPrograma = () => fileInputRef.current?.click();
+
+  const onProgramFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const { blocks: parsed, stats } = parseProgramText(text);
+      if (!parsed.length) {
+        toast.error("Nenhum bloco válido encontrado no arquivo de programação");
+        return;
+      }
+      replaceBlocks(parsed);
+      toast.success(
+        `Programação importada: ${stats.blocks} blocos, ${stats.inserts} inserções` +
+        (stats.unresolved ? ` (${stats.unresolved} arquivo(s) não localizado(s) nas pastas)` : ""),
+      );
+    } catch {
+      toast.error("Falha ao ler o arquivo de programação");
+    }
+  };
 
   const removeSelected = () => {
     if (!selectedId) {
@@ -57,12 +83,19 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
 
   return (
     <Menubar className="h-auto space-x-0 rounded-none border-0 bg-transparent p-0 shadow-none">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,text/plain"
+        className="hidden"
+        onChange={onProgramFile}
+      />
       {/* SOLUTIONS */}
       <MenubarMenu>
         <MenubarTrigger className={triggerCls}>Solutions</MenubarTrigger>
         <MenubarContent align="start">
           <MenubarItem onSelect={soon("Nova programação")}>Nova programação</MenubarItem>
-          <MenubarItem onSelect={soon("Abrir programação")}>Abrir programação…</MenubarItem>
+          <MenubarItem onSelect={abrirPrograma}>Abrir programação…</MenubarItem>
           <MenubarItem onSelect={soon("Salvar programação")}>Salvar programação</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>Gerar programação automática</MenubarItem>
