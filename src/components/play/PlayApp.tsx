@@ -106,6 +106,7 @@ export function PlayApp() {
           onOpenSecoes={() => ui.setSecoesOpen(true)}
           onOpenDevices={() => ui.setDevicesOpen(true)}
           onOpenShortcuts={() => ui.setShortcutsOpen(true)}
+          onDockQuickStart={() => { dock.openPanel("quickstart"); toast.success("QuickStart fixado nos painéis"); }}
         />
         <OnAirBar />
         <div ref={splitRef} className="flex min-h-0 flex-1">
