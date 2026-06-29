@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2, Save, FolderOpen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -13,6 +13,9 @@ import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib
 import {
   buildPlaylistIni, serializeResult, downloadText, baseName,
 } from "@/lib/play-export";
+import {
+  loadPresets, savePreset, deletePreset, getPreset, type GenPreset,
+} from "@/lib/play-presets";
 
 const variables = [
   ["%d", "dia do mês (31)"],
@@ -48,6 +51,43 @@ export function RecursosAvancadosDialog({
   const [musFile, setMusFile] = useState("Grades\\Grade%d.txt");
   const [grade, setGrade] = useState(DEFAULT_GRADE);
   const [mapa, setMapa] = useState(DEFAULT_MAPA);
+
+  const [presets, setPresets] = useState<GenPreset[]>(() => loadPresets());
+  const [presetName, setPresetName] = useState("");
+
+  const salvarPreset = () => {
+    const name = presetName.trim();
+    if (!name) {
+      toast.error("Informe um nome para o preset");
+      return;
+    }
+    setPresets(savePreset({ name, grade, mapa, comFormat, comFile, musFormat, musFile }));
+    toast.success(`Preset "${name}" salvo`);
+  };
+
+  const carregarPreset = (name: string) => {
+    const p = getPreset(name);
+    if (!p) return;
+    setGrade(p.grade);
+    setMapa(p.mapa);
+    setComFormat(p.comFormat);
+    setComFile(p.comFile);
+    setMusFormat(p.musFormat);
+    setMusFile(p.musFile);
+    setPresetName(p.name);
+    toast.success(`Preset "${p.name}" carregado`);
+  };
+
+  const excluirPreset = () => {
+    const name = presetName.trim();
+    if (!getPreset(name)) {
+      toast.error("Selecione um preset existente para excluir");
+      return;
+    }
+    setPresets(deletePreset(name));
+    setPresetName("");
+    toast.success(`Preset "${name}" excluído`);
+  };
 
   const gradeIssues = useMemo(() => validateGrid(grade, "musical"), [grade]);
   const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
