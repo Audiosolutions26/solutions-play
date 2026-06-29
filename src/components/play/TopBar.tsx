@@ -5,6 +5,7 @@ import {
 import { VuMeter } from "./VuMeter";
 import { Clock } from "./Clock";
 import { AppMenu, type PanelVisibility } from "./AppMenu";
+import { useVuMode, toggleVuMode } from "@/lib/play-vu";
 
 const toolIcons = [
   FolderOpen, Save, Printer, Scissors, Copy, Clipboard, RefreshCw, Info,
@@ -36,6 +37,7 @@ export function TopBar({
   onOpenDevices: () => void;
   onOpenShortcuts: () => void;
 }) {
+  const vuMode = useVuMode();
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
       {/* title bar */}
@@ -86,6 +88,14 @@ export function TopBar({
           </div>
         </div>
         <div className="ml-auto flex items-end gap-3 pr-1">
+          <button
+            type="button"
+            onClick={toggleVuMode}
+            title={`VU: ${vuMode === "analogico" ? "Analógico" : "Digital"} (clique para alternar)`}
+            className="mb-0.5 self-end rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-white/90 hover:bg-white/25"
+          >
+            {vuMode === "analogico" ? "Analóg." : "Digital"}
+          </button>
           <VuMeter label="L" />
           <VuMeter label="R" />
         </div>
