@@ -209,11 +209,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPosition(0);
   }, [engine]);
 
-  const setVolume = useCallback((v: number) => {
-    setVolumeState(v);
-    engine.setVolume(v);
-  }, [engine]);
-
   const select = useCallback((id: string) => setSelectedId(id), []);
 
   const addTrack = useCallback((blockId: string, track: Track) => {
