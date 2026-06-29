@@ -108,6 +108,32 @@ export class AudioEngine {
     this.playing = false;
   }
 
+  // One-shot sound for QuickStart pads (independent of main playback)
+  fire(rootFreq: number, duration = 0.9) {
+    this.ensure();
+    const ctx = this.ctx;
+    const master = this.master;
+    if (!ctx || !master) return;
+    if (ctx.state === "suspended") void ctx.resume();
+    const t0 = ctx.currentTime;
+    const ratios = [1, 1.5, 2];
+    const types: OscillatorType[] = ["triangle", "sine", "sine"];
+    ratios.forEach((r, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = types[i];
+      osc.frequency.value = rootFreq * r;
+      const gain = ctx.createGain();
+      const peak = 0.3 / (i + 1);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(peak, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(t0);
+      osc.stop(t0 + duration + 0.05);
+    });
+  }
+
   position(): number {
     if (!this.ctx || !this.playing) return this.offset;
     return this.offset + (this.ctx.currentTime - this.startedAt);
