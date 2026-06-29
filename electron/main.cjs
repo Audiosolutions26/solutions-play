@@ -102,6 +102,34 @@ ipcMain.handle("sp:read-audio-path", async (_evt, file) => {
   }
 });
 
+// ---- IPC: gravar arquivos de RDS (no ar + próximas) -----------------------
+// Resolve a pasta RDS: caminho absoluto informado, ou
+// Documentos\Solutions-Play\rds por padrão. Cria a pasta e grava os .txt.
+function resolveRdsDir(dir) {
+  if (dir && typeof dir === "string" && path.isAbsolute(dir)) return dir;
+  const base = path.join(app.getPath("documents"), "Solutions-Play");
+  return path.join(base, dir && typeof dir === "string" && dir.trim() ? dir.trim() : "rds");
+}
+
+ipcMain.handle("sp:write-rds", async (_evt, payload) => {
+  try {
+    const files = payload && Array.isArray(payload.files) ? payload.files : [];
+    if (!files.length) return null;
+    const dir = resolveRdsDir(payload && payload.dir);
+    fs.mkdirSync(dir, { recursive: true });
+    for (const f of files) {
+      if (!f || typeof f.name !== "string") continue;
+      // Nome de arquivo seguro (sem separadores de caminho).
+      const safe = path.basename(f.name);
+      const full = path.join(dir, safe);
+      fs.writeFileSync(full, String(f.content ?? ""), "utf8");
+    }
+    return dir;
+  } catch {
+    return null;
+  }
+});
+
 // ---- IPC: seletor de PASTA nativo (árvore do Windows) ---------------------
 // Abre a árvore de diretórios do Windows para apontar o atalho a uma pasta.
 ipcMain.handle("sp:pick-folder", async (_evt, current) => {
