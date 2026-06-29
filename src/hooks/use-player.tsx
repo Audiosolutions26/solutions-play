@@ -12,6 +12,7 @@ import { getAudioEngine } from "@/lib/audio-engine";
 import { initialBlocks, type Block, type BlockClock, type Track, cloneTrack } from "@/lib/play-data";
 import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
+import { analyzeCuePoints, getCachedCuePoints, cueDetectionEnabled, equalPowerEnabled, type CuePoints } from "@/lib/play-cuepoints";
 
 interface PlayerState {
   blocks: Block[];
@@ -60,6 +61,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const currentRef = useRef<{ track: Track | null; blockId: string | null }>({ track: null, blockId: null });
   // Evita disparar a mixagem (crossfade) mais de uma vez na mesma transição.
   const transitioningRef = useRef(false);
+  // Pontos de mixagem (cue-in/cue-out) detectados para a faixa atual.
+  const cueRef = useRef<CuePoints | null>(null);
 
   const findNext = useCallback((blockId: string, trackId: string): { block: Block; track: Track } | null => {
     const bs = blocksRef.current;
@@ -75,28 +78,64 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
+  // Resolve a URL tocável de uma faixa (cache, audioUrl ou arquivo de pasta).
+  const trackUrl = useCallback(async (t: Track): Promise<string | undefined> => {
+    const direct = getTrackAudioUrl(t.id) || t.audioUrl;
+    if (direct) return direct;
+    if (t.filePath) return (await resolveTrackAudio(t)) ?? undefined;
+    return undefined;
+  }, []);
+
+  // Pré-analisa a próxima faixa para que o "segue" (cue-in/cue-out) já esteja
+  // pronto no momento da transição — mixagem firme, sem buracos no ar.
+  const prefetchCue = useCallback((blockId: string, trackId: string) => {
+    if (!cueDetectionEnabled()) return;
+    const nx = findNext(blockId, trackId);
+    if (!nx) return;
+    void trackUrl(nx.track).then((u) => { if (u) void analyzeCuePoints(u); });
+  }, [findNext, trackUrl]);
+
   const playAt = useCallback((blockId: string, trackId: string, fadeMs = 0) => {
     const block = blocksRef.current.find((b) => b.id === blockId);
     const track = block?.items.find((t) => t.id === trackId);
     if (!track) return;
     currentRef.current = { track, blockId };
     transitioningRef.current = false;
+    cueRef.current = null;
     setCurrent(track);
     setCurrentBlockId(blockId);
     setSelectedId(trackId);
     setPosition(0);
+    // Inicia uma URL aplicando os pontos de mixagem detectados (corta o
+    // silêncio inicial) e a curva de potência constante na passagem.
+    const startUrl = (u: string) => {
+      const detect = cueDetectionEnabled();
+      const ep = equalPowerEnabled();
+      const cached = detect ? getCachedCuePoints(u) : undefined;
+      const startAt = cached && cached.cueIn > 0 ? cached.cueIn : 0;
+      cueRef.current = cached && cached.cueOut > 0 ? cached : null;
+      engine.playUrl(u, startAt, fadeMs, ep);
+      if (detect) {
+        void analyzeCuePoints(u).then((cp) => {
+          if (currentRef.current.track?.id === trackId) {
+            cueRef.current = cp.cueOut > 0 ? cp : null;
+          }
+        });
+      }
+      prefetchCue(blockId, trackId);
+    };
     const url = getTrackAudioUrl(trackId) || track.audioUrl;
-    if (url) engine.playUrl(url, 0, fadeMs);
+    if (url) startUrl(url);
     else if (track.filePath) {
       void resolveTrackAudio(track).then((u) => {
-        if (u && currentRef.current.track?.id === trackId) engine.playUrl(u, 0, fadeMs);
+        if (u && currentRef.current.track?.id === trackId) startUrl(u);
         else if (!u && track.freq > 0) engine.play(track.freq, 0);
       });
     }
     else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
     setIsPlaying(true);
-  }, [engine]);
+  }, [engine, prefetchCue]);
 
   const next = useCallback((fadeMs = 0) => {
     const cur = currentRef.current;
@@ -277,6 +316,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           // só usa a duração armazenada como fallback quando a real é desconhecida.
           const media = hasAudio ? engine.mediaDuration() : 0;
           const dur = media > 0 ? media : (cur.duration > 0 ? cur.duration : 0);
+          // Ponto de saída efetivo: o cue-out detectado (fim real do áudio,
+          // sem a cauda de silêncio) quando disponível; senão, a duração total.
+          const cp = cueRef.current;
+          const endPoint = cp && cp.cueOut > 0 ? cp.cueOut : dur;
           // Assim que o arquivo informa a duração real, grava de volta no track
           // para que o "tempo" apareça na Programação e o avanço automático
           // funcione (músicas de pasta entram com 0:00).
@@ -298,13 +341,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           if (hasAudio && !transitioningRef.current) {
             const mixMs = mixTimeForTrack(cur);
             const mixSec = mixMs / 1000;
-            if (mixSec > 0.05 && dur > 0 && pos >= dur - mixSec) {
+            if (mixSec > 0.05 && endPoint > 0 && pos >= endPoint - mixSec) {
               transitioningRef.current = true;
               next(mixMs);
               return;
             }
           }
-          if (dur > 0 && pos >= dur) {
+          if (endPoint > 0 && pos >= endPoint) {
             next();
             return;
           }

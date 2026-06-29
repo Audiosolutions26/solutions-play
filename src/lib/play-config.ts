@@ -328,6 +328,15 @@ const guiaInsercoes: ConfigGuide = {
       ],
     },
     {
+      id: "deteccaoPontos", title: "Detecção automática de pontos (segue)",
+      note: "Analisa cada faixa para achar o início e o fim reais do áudio, cortando silêncios e mixando exatamente no ponto certo — como nos automadores profissionais.",
+      fields: [
+        sw("detectarPontos", "Detectar automaticamente início/fim das faixas", true),
+        sw("crossEqualPower", "Mixagem de potência constante (equal-power)", true),
+        { key: "cueThresholdDb", label: "Sensibilidade de silêncio", type: "number", default: 45, unit: "dB", min: 20, max: 70 },
+      ],
+    },
+    {
       id: "fadeAuto", title: "Fade automático", fields: [
         sw("fadeQuickstart", "Fade para QuickStart", true),
         sw("fadeLocucoes", "Fade para locuções", true),

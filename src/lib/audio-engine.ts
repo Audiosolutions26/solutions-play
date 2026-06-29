@@ -15,6 +15,19 @@ const semis = (n: number) => Math.pow(2, n / 12);
 
 type Mode = "synth" | "url" | null;
 
+// Curvas de crossfade de POTÊNCIA CONSTANTE (equal-power). Diferente do fade
+// linear (que provoca uma "barriga" de volume no meio da mixagem), as curvas
+// seno/cosseno mantêm a energia percebida constante durante toda a passagem —
+// é o que os softwares profissionais de rádio/DJ usam para mixar músicas.
+const EP_STEPS = 64;
+const EP_IN = new Float32Array(EP_STEPS);
+const EP_OUT = new Float32Array(EP_STEPS);
+for (let i = 0; i < EP_STEPS; i++) {
+  const x = i / (EP_STEPS - 1);
+  EP_IN[i] = Math.sin((x * Math.PI) / 2);  // 0 → 1 (entra)
+  EP_OUT[i] = Math.cos((x * Math.PI) / 2); // 1 → 0 (sai)
+}
+
 // Só usar crossOrigin="anonymous" para URLs http(s) remotas. Em data:/blob:/file:
 // (áudios locais e de pasta) definir crossOrigin "tainta" o MediaElementSource,
 // fazendo o AnalyserNode ler SILÊNCIO — o som toca, mas VU/waveform ficam zerados.
@@ -235,7 +248,7 @@ export class AudioEngine {
 
   // Toca uma URL. Com fadeMs > 0 e uma voz já tocando, faz a MIXAGEM
   // (crossfade) entre a inserção que sai e a que entra — manual p.106.
-  playUrl(url: string, fromOffset = 0, fadeMs = 0) {
+  playUrl(url: string, fromOffset = 0, fadeMs = 0, equalPower = true) {
     this.ensure();
     if (!this.ctx || !this.master) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
@@ -252,12 +265,20 @@ export class AudioEngine {
 
     if (prev && this.playing && fade > 0) {
       // Crossfade: nova voz sobe de 0→1; voz anterior desce 1→0 e é descartada.
-      voice.gain.gain.setValueAtTime(0, now);
-      voice.gain.gain.linearRampToValueAtTime(1, now + fade);
-      const g = prev.gain.gain;
-      g.cancelScheduledValues(now);
-      g.setValueAtTime(g.value, now);
-      g.linearRampToValueAtTime(0, now + fade);
+      // Equal-power (padrão) mantém o volume percebido constante na mixagem.
+      const gIn = voice.gain.gain;
+      gIn.cancelScheduledValues(now);
+      gIn.setValueAtTime(0, now);
+      const gOut = prev.gain.gain;
+      gOut.cancelScheduledValues(now);
+      gOut.setValueAtTime(gOut.value, now);
+      if (equalPower) {
+        gIn.setValueCurveAtTime(EP_IN, now, fade);
+        gOut.setValueCurveAtTime(EP_OUT, now, fade);
+      } else {
+        gIn.linearRampToValueAtTime(1, now + fade);
+        gOut.linearRampToValueAtTime(0, now + fade);
+      }
       this.disposeVoiceAfter(prev, fade);
     } else {
       // Sem mixagem: corta a anterior e entra direto.
