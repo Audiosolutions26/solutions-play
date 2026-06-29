@@ -146,7 +146,7 @@ function BlockView({ block, onMarkers, onClock }: { block: Block; onMarkers: (t:
       <div className={`flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-pl-text ${head}`}>
         <span className="truncate">{block.date}, {block.time} • {c?.name || block.title}</span>
         {c?.fixo && <span title="FIXO — não pode atrasar" className="grid h-4 w-4 place-items-center rounded-sm bg-yellow-400 text-[9px] text-black">F</span>}
-        {c?.locked && <Lock title="Bloco bloqueado (LOCKED)" className="h-3.5 w-3.5 text-yellow-500" />}
+        {c?.locked && <span title="Bloco bloqueado (LOCKED)"><Lock className="h-3.5 w-3.5 text-yellow-500" /></span>}
         {c?.mode && <span title={c.mode === "sat" ? "Bloco satélite" : "Bloco local"} className="rounded bg-pl-toolbar/30 px-1 text-[9px] uppercase">{c.mode}</span>}
         {c?.descarte && <span title="Descarte aplicado" className="rounded bg-pl-toolbar/30 px-1 text-[9px]">DESC</span>}
         <button
