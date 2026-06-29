@@ -10,6 +10,7 @@ export interface Operator {
 }
 
 export const operators: Operator[] = [
+  { id: "auto", name: "Sem Operador", role: "Automático", pin: "" },
   { id: "op1", name: "Operador Demo", role: "Locutor", pin: "0000" },
   { id: "op2", name: "Ana Souza", role: "Programadora", pin: "1234" },
   { id: "op3", name: "Carlos Lima", role: "Administrador", pin: "9999" },

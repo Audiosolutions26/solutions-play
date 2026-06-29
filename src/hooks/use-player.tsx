@@ -30,6 +30,7 @@ interface PlayerState {
   setCue: (v: boolean) => void;
   select: (id: string) => void;
   addTrack: (blockId: string, track: Track) => void;
+  moveTrack: (trackId: string, dir: -1 | 1) => void;
   removeTrack: (blockId: string, trackId: string) => void;
   replaceBlocks: (blocks: Block[]) => void;
   setTrackAudio: (blockId: string, trackId: string, url: string, duration: number) => void;
@@ -124,7 +125,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const select = useCallback((id: string) => setSelectedId(id), []);
 
   const addTrack = useCallback((blockId: string, track: Track) => {
-    setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: [...b.items, cloneTrack(track)] } : b)));
+    const t = { ...cloneTrack(track), origin: "manual" as const, moved: false };
+    setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: [...b.items, t] } : b)));
+  }, []);
+
+  // Move an insertion up/down within its block (manual p.16-17).
+  // Auto items moved manually get flagged so the UI shows a red M.
+  const moveTrack = useCallback((trackId: string, dir: -1 | 1) => {
+    setBlocks((bs) =>
+      bs.map((b) => {
+        const i = b.items.findIndex((t) => t.id === trackId);
+        if (i < 0) return b;
+        const j = i + dir;
+        if (j < 0 || j >= b.items.length) return b;
+        const items = [...b.items];
+        const moved = { ...items[i], moved: items[i].origin === "auto" ? true : items[i].moved };
+        items[i] = items[j];
+        items[j] = moved;
+        return { ...b, items };
+      }),
+    );
   }, []);
 
   const removeTrack = useCallback((blockId: string, trackId: string) => {
@@ -182,9 +202,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, removeTrack, replaceBlocks, setTrackAudio,
+    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, removeTrack, replaceBlocks, setTrackAudio]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, moveTrack, removeTrack, replaceBlocks, setTrackAudio]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

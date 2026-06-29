@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlayerProvider } from "@/hooks/use-player";
+import { usePlayer } from "@/hooks/use-player";
 import { ConfigProvider } from "@/hooks/use-config";
 import { TopBar } from "./TopBar";
 import { OnAirBar } from "./OnAirBar";
@@ -14,6 +15,27 @@ import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import type { PanelVisibility } from "./AppMenu";
 
 const tabs = ["Programação", "QuickStart", "Músicas executadas", "Textos ao vivo", "Hoje", "Mini site", "Anotações"];
+
+// Atalhos de teclado (manual p.16, 18, 30): Espaço = Tocar/Passar, Delete = Remover.
+function KeyboardShortcuts() {
+  const { togglePlay, selectedId, blocks, removeTrack } = usePlayer();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "Delete" && selectedId) {
+        const block = blocks.find((b) => b.items.some((t) => t.id === selectedId));
+        if (block) removeTrack(block.id, selectedId);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [togglePlay, selectedId, blocks, removeTrack]);
+  return null;
+}
 
 export function PlayApp() {
   const [operator, setOperator] = useState<Operator>(operators[0]);
@@ -31,6 +53,7 @@ export function PlayApp() {
   return (
     <ConfigProvider>
     <PlayerProvider>
+      <KeyboardShortcuts />
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
         <TopBar
           panels={panels}

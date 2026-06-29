@@ -2,6 +2,11 @@
 
 export type Category = "musical" | "comercial" | "vinheta" | "texto";
 
+// Special program items that are not normal audio (manual p.15).
+export type TrackKind = "audio" | "pausa" | "horacerta";
+// Origin of an insertion, used to show the M marker (manual p.14-15).
+export type TrackOrigin = "auto" | "manual";
+
 export interface Track {
   id: string;
   title: string;
@@ -12,6 +17,9 @@ export interface Track {
   album?: string;
   year?: string;
   label?: string;
+  kind?: TrackKind;
+  origin?: TrackOrigin; // "manual" = blue M; auto + moved = red M
+  moved?: boolean;
 }
 
 export interface Block {
@@ -42,7 +50,7 @@ const mk = (
   category: Category,
   freq: number,
   extra: Partial<Track> = {},
-): Track => ({ id: uid(), title, artist, duration, category, freq, ...extra });
+): Track => ({ id: uid(), title, artist, duration, category, freq, kind: "audio", origin: "auto", ...extra });
 
 export const initialBlocks: Block[] = [
   {
@@ -160,6 +168,16 @@ export function fmt(sec: number): string {
 
 export function cloneTrack(t: Track): Track {
   return { ...t, id: uid() };
+}
+
+// Special insertions (manual p.15): Pausa paralisa a programação; Hora Certa
+// exibe a hora gravada. Não dão opção de escolha de conteúdo.
+export function makePause(): Track {
+  return mk("Pausa", "Programação paralisada", 0, "texto", 0, { kind: "pausa", origin: "manual" });
+}
+
+export function makeHoraCerta(): Track {
+  return mk("Hora Certa", "Hora gravada", 9, "vinheta", 330, { kind: "horacerta", origin: "manual" });
 }
 
 // ---- Recursos Avançados (Grade / Mapa / Playlist.ini) ----
