@@ -29,6 +29,17 @@ export interface Block {
   time: string;
   category: "musical" | "comercial";
   items: Track[];
+  clock?: BlockClock;
+}
+
+// Relógio Operacional (manual p.137-142): parâmetros por bloco.
+export interface BlockClock {
+  name?: string;            // Parâmetro ID — nome personalizado do bloco
+  fixo?: boolean;           // Parâmetro FIXO — F amarelo, não pode atrasar
+  mode?: "local" | "sat";   // Parâmetros LOCAL e SAT
+  dur?: number;             // Parâmetro DUR — duração alvo em minutos
+  locked?: boolean;         // Parâmetro LOCKED — cadeado amarelo, bloqueia edição
+  descarte?: boolean;       // Parâmetro DESCARTE — aplica cálculo de descarte no bloco
 }
 
 export interface Folder {
