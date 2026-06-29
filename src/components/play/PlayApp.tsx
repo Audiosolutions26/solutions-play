@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PlayerProvider } from "@/hooks/use-player";
+import { ConfigProvider } from "@/hooks/use-config";
 import { TopBar } from "./TopBar";
 import { OnAirBar } from "./OnAirBar";
 import { ProgramPanel } from "./ProgramPanel";
@@ -28,6 +29,7 @@ export function PlayApp() {
   if (!operator) return <OperatorLogin onLogin={setOperator} />;
 
   return (
+    <ConfigProvider>
     <PlayerProvider>
       <div className="flex h-screen w-full flex-col overflow-hidden bg-pl-panel text-pl-text">
         <TopBar
@@ -92,5 +94,6 @@ export function PlayApp() {
         onGenerated={() => setActiveTab("Programação")}
       />
     </PlayerProvider>
+    </ConfigProvider>
   );
 }
