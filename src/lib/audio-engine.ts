@@ -283,6 +283,19 @@ export class AudioEngine {
     }
   }
 
+  // Define o dispositivo de saída (setSinkId — Chromium/Electron no Windows).
+  async setOutputDevice(deviceId: string): Promise<boolean> {
+    this.ensure();
+    const ctx = this.ctx as (AudioContext & { setSinkId?: (id: string) => Promise<void> }) | null;
+    if (!ctx || typeof ctx.setSinkId !== "function") return false;
+    try {
+      await ctx.setSinkId(deviceId || "");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   // RMS level 0..1 for VU meters
   getLevel(): number {
     if (!this.analyser) return 0;
