@@ -1,4 +1,5 @@
 import { Play, Pause, SkipForward, Square, Volume2, ChevronUp, ChevronDown, Music, X } from "lucide-react";
+import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 
 function TButton({
@@ -20,7 +21,20 @@ function TButton({
 }
 
 export function TransportBar() {
-  const { isPlaying, togglePlay, next, stop, volume, setVolume } = usePlayer();
+  const { isPlaying, togglePlay, next, stop, volume, setVolume, selectedId, blocks, moveTrack, removeTrack, currentBlockId } = usePlayer();
+
+  const requireSel = (): boolean => {
+    if (!selectedId) { toast.info("Selecione uma inserção primeiro."); return false; }
+    return true;
+  };
+  const blockOfSelected = () =>
+    blocks.find((b) => b.items.some((t) => t.id === selectedId))?.id;
+  const moveSel = (dir: -1 | 1) => { if (requireSel()) moveTrack(selectedId!, dir); };
+  const removeSel = () => {
+    if (!requireSel()) return;
+    const bid = blockOfSelected() ?? currentBlockId;
+    if (bid) { removeTrack(bid, selectedId!); toast.success("Inserção removida."); }
+  };
   return (
     <div className="flex items-center gap-1.5 border-b border-pl-panel-dark bg-pl-panel px-2 py-1.5">
       <TButton onClick={togglePlay} title={isPlaying ? "Pausar" : "Tocar"}>
@@ -48,10 +62,10 @@ export function TransportBar() {
         />
       </div>
       <div className="ml-auto flex items-center gap-1.5">
-        <TButton title="Subir inserção"><ChevronUp className="h-5 w-5" /></TButton>
-        <TButton title="Descer inserção"><ChevronDown className="h-5 w-5" /></TButton>
-        <TButton title="Inserir música"><Music className="h-5 w-5" /></TButton>
-        <TButton title="Remover" danger><X className="h-5 w-5" /></TButton>
+        <TButton onClick={() => moveSel(-1)} title="Subir inserção"><ChevronUp className="h-5 w-5" /></TButton>
+        <TButton onClick={() => moveSel(1)} title="Descer inserção"><ChevronDown className="h-5 w-5" /></TButton>
+        <TButton onClick={() => toast.info("Arraste uma música da guia Pastas ou use o botão + para inserir.")} title="Inserir música"><Music className="h-5 w-5" /></TButton>
+        <TButton onClick={removeSel} title="Remover" danger><X className="h-5 w-5" /></TButton>
       </div>
     </div>
   );
