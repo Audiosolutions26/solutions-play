@@ -17,6 +17,7 @@ interface Props {
   onOpenOptions: (tab: string) => void;
   onLogout: () => void;
   onOpenQuickStart: () => void;
+  onOpenAdvanced: (tab: string) => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -29,7 +30,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpenQuickStart }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpenQuickStart, onOpenAdvanced }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack } = usePlayer();
 
   const removeSelected = () => {
@@ -54,7 +55,7 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpen
           <MenubarItem onSelect={soon("Abrir programação")}>Abrir programação…</MenubarItem>
           <MenubarItem onSelect={soon("Salvar programação")}>Salvar programação</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Gerar programação")}>Gerar programação automática</MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>Gerar programação automática</MenubarItem>
           <MenubarItem onSelect={soon("Importar áudios")}>Importar áudios…</MenubarItem>
           <MenubarItem onSelect={soon("Registrar comerciais")}>Registrar comerciais (Ligação)</MenubarItem>
           <MenubarSeparator />
@@ -155,6 +156,8 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onOpen
               <MenubarItem onSelect={() => onOpenOptions("geral")}>Configurações</MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
+          <MenubarSeparator />
+          <MenubarItem onSelect={() => onOpenAdvanced("ini")}>Recursos Avançados…</MenubarItem>
           <MenubarItem onSelect={soon("Personalizar")}>Personalizar…</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
