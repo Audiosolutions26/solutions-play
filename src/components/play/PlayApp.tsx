@@ -55,6 +55,16 @@ function LiveTextAutoOpen({ onOpen }: { onOpen: () => void }) {
   return null;
 }
 
+// Registra no log de status cada inserção que entra no ar (manual p.113).
+function ProgramLogger() {
+  const { current } = usePlayer();
+  useEffect(() => {
+    if (current) logEvent("programa", `No ar: ${current.title}`, current.artist);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id]);
+  return null;
+}
+
 // Texto do dia (manual p.36): ao chegar a vez na programação, abre o painel e
 // lê o texto automaticamente por voz (TTS).
 function TextoDoDiaAutoPlay({ onOpen }: { onOpen: () => void }) {
