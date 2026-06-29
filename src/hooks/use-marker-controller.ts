@@ -12,17 +12,13 @@ import { logEvent } from "@/lib/play-events";
  * e para restaurar o volume após um fade-out interrompido por troca de faixa.
  */
 export function useMarkerController(): void {
-  const { current, position, getEngine, next, setVolume, volume } = usePlayer();
+  const { current, position, getEngine, next } = usePlayer();
   const idRef = useRef<string | null>(null);
   const firedRef = useRef<Set<string>>(new Set());
-  const fadeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const preFade = useRef<number | null>(null);
 
   useEffect(() => {
     if (!current) { idRef.current = null; firedRef.current.clear(); return; }
     if (idRef.current !== current.id) {
-      if (fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
-      if (preFade.current != null) { setVolume(preFade.current); preFade.current = null; }
       idRef.current = current.id;
       firedRef.current = new Set();
     }
@@ -52,17 +48,10 @@ export function useMarkerController(): void {
           logEvent("carimbo", "Carimbo disparado", current.title);
           break;
         case "fadeOutStart": {
-          preFade.current = volume;
-          const startVol = volume;
+          // Fade-out automático no nível da própria inserção (não há volume
+          // base do usuário). A próxima faixa entra com ganho 1.0 (original).
           const remaining = Math.max(0.4, current.duration - at);
-          let elapsed = 0;
-          if (fadeTimer.current) clearInterval(fadeTimer.current);
-          fadeTimer.current = setInterval(() => {
-            elapsed += 0.1;
-            const factor = Math.max(0, 1 - elapsed / remaining);
-            setVolume(startVol * factor);
-            if (factor <= 0 && fadeTimer.current) { clearInterval(fadeTimer.current); fadeTimer.current = null; }
-          }, 100);
+          engine.fadeOutCurrent(remaining);
           logEvent("marcador", "Início do Fade-Out", current.title);
           break;
         }
