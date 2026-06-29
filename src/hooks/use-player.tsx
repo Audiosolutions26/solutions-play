@@ -79,6 +79,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
+  // Próximas N inserções a partir de uma posição (para o arquivo de RDS).
+  const upcomingFrom = useCallback((blockId: string | null, trackId: string | null, n: number): Track[] => {
+    if (!blockId || !trackId) return [];
+    const out: Track[] = [];
+    let bId = blockId;
+    let tId = trackId;
+    for (let k = 0; k < n; k++) {
+      const nx = findNext(bId, tId);
+      if (!nx) break;
+      out.push(nx.track);
+      bId = nx.block.id;
+      tId = nx.track.id;
+    }
+    return out;
+  }, [findNext]);
+
   // Resolve a URL tocável de uma faixa (cache, audioUrl ou arquivo de pasta).
   const trackUrl = useCallback(async (t: Track): Promise<string | undefined> => {
     const direct = getTrackAudioUrl(t.id) || t.audioUrl;
