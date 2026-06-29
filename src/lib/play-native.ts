@@ -12,6 +12,14 @@ interface NativeBridge {
   platform?: string;
   pickAudioFiles?: () => Promise<NativePickedFile[]>;
   readAudioPath?: (path: string) => Promise<string | null>; // retorna data URL
+  pickFolder?: (current?: string) => Promise<NativePickedFolder | null>;
+  openFolder?: (dir: string) => Promise<boolean>;
+}
+
+export interface NativePickedFolder {
+  path: string;
+  name: string;
+  audioCount: number;
 }
 
 export function nativeBridge(): NativeBridge | null {
@@ -52,5 +60,28 @@ export async function readAudioPathNative(path: string): Promise<string | null> 
     return await b.readAudioPath(path);
   } catch {
     return null;
+  }
+}
+
+// Abre a árvore de pastas do Windows para apontar um atalho a uma pasta.
+// Retorna null quando não há ponte nativa (modo web) ou quando o usuário cancela.
+export async function pickFolderNative(current?: string): Promise<NativePickedFolder | null> {
+  const b = nativeBridge();
+  if (!b?.pickFolder) return null;
+  try {
+    return await b.pickFolder(current);
+  } catch {
+    return null;
+  }
+}
+
+// Abre uma pasta no Explorer do Windows. Retorna false em modo web.
+export async function openFolderNative(dir: string): Promise<boolean> {
+  const b = nativeBridge();
+  if (!b?.openFolder) return false;
+  try {
+    return await b.openFolder(dir);
+  } catch {
+    return false;
   }
 }

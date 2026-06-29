@@ -15,6 +15,12 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   // Recarrega um áudio a partir de um caminho persistido (data URL).
   readAudioPath: (filePath) => ipcRenderer.invoke("sp:read-audio-path", filePath),
 
+  // --- Pastas de trabalho / Atalhos (manual p.145-149) ---
+  // Abre a árvore de pastas do Windows e devolve { path, name, audioCount }.
+  pickFolder: (current) => ipcRenderer.invoke("sp:pick-folder", current),
+  // Abre a pasta apontada pelo atalho no Explorer do Windows.
+  openFolder: (dir) => ipcRenderer.invoke("sp:open-folder", dir),
+
   // --- AES67 TX (áudio sobre IP / RTP multicast) ---
   aes67: {
     // Validação ao vivo (faixa multicast, porta, MTU, interfaces, conflitos).

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Folder, FolderPlus, Trash2, Save, Music, Megaphone, Clock, FileText, Disc3, ListMusic, Check,
+  FolderSearch, FolderOpen,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -15,6 +16,7 @@ import {
   SHORTCUT_TYPES, PALETTE, makeShortcut, typeMeta,
   type ShortcutType, type Shortcut,
 } from "@/lib/play-shortcuts";
+import { isDesktop, pickFolderNative, openFolderNative } from "@/lib/play-native";
 
 const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   musicas: Music,
@@ -151,6 +153,25 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
 }
 
 function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Partial<Shortcut>) => void }) {
+  const desktop = isDesktop();
+
+  // Abre a árvore de pastas do Windows e aponta o atalho para a pasta escolhida.
+  const browseFolder = async () => {
+    const picked = await pickFolderNative(sel.directory);
+    if (!picked) return; // cancelado
+    onChange({ directory: picked.path });
+    toast.success(
+      `Atalho apontado para "${picked.name}" — ${picked.audioCount} áudio(s).`,
+    );
+  };
+
+  // Abre a pasta apontada pelo atalho no Explorer do Windows.
+  const openInExplorer = async () => {
+    if (!sel.directory) { toast.info("Defina um diretório primeiro."); return; }
+    const ok = await openFolderNative(sel.directory);
+    if (!ok) toast.error("Não foi possível abrir a pasta no Windows.");
+  };
+
   return (
     <div className="space-y-3">
       <div>
@@ -178,12 +199,40 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
 
       <div>
         <Label className="text-[11px] font-semibold">Diretório</Label>
-        <Input
-          className="mt-1 h-8 font-mono text-[11px]"
-          value={sel.directory}
-          onChange={(e) => onChange({ directory: e.target.value })}
-          placeholder="C:\Playlist\Pgm\Pastas\..."
-        />
+        <div className="mt-1 flex gap-1">
+          <Input
+            className="h-8 flex-1 font-mono text-[11px]"
+            value={sel.directory}
+            onChange={(e) => onChange({ directory: e.target.value })}
+            placeholder="C:\Playlist\Pgm\Pastas\..."
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={browseFolder}
+            className="h-8 gap-1 px-2 text-[11px]"
+            title="Procurar pasta na árvore do Windows"
+          >
+            <FolderSearch className="h-4 w-4" /> Procurar
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={openInExplorer}
+            disabled={!sel.directory}
+            className="h-8 px-2"
+            title="Abrir pasta no Explorer do Windows"
+          >
+            <FolderOpen className="h-4 w-4" />
+          </Button>
+        </div>
+        {!desktop && (
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            A árvore de pastas do Windows abre no app desktop. No navegador, digite o caminho manualmente.
+          </p>
+        )}
       </div>
 
       <div>
