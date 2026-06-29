@@ -2,7 +2,7 @@
 // Loads the bundled web app. In production it serves the static client build
 // from ../dist via a tiny local HTTP server (works fully offline); in dev it
 // points to the Vite dev server.
-const { app, BrowserWindow, Menu, ipcMain, dialog, session } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, dialog, session, shell } = require("electron");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
@@ -91,6 +91,41 @@ ipcMain.handle("sp:read-audio-path", async (_evt, file) => {
     return fileToDataUrl(file);
   } catch {
     return null;
+  }
+});
+
+// ---- IPC: seletor de PASTA nativo (árvore do Windows) ---------------------
+// Abre a árvore de diretórios do Windows para apontar o atalho a uma pasta.
+ipcMain.handle("sp:pick-folder", async (_evt, current) => {
+  const opts = {
+    title: "Selecionar pasta de trabalho",
+    properties: ["openDirectory", "createDirectory"],
+  };
+  if (current && typeof current === "string") {
+    try { if (fs.existsSync(current)) opts.defaultPath = current; } catch { /* ignore */ }
+  }
+  const result = await dialog.showOpenDialog(opts);
+  if (result.canceled || !result.filePaths.length) return null;
+  const dir = result.filePaths[0];
+  let audioCount = 0;
+  try {
+    for (const entry of fs.readdirSync(dir)) {
+      const ext = path.extname(entry).toLowerCase();
+      if (AUDIO_MIME[ext]) audioCount++;
+    }
+  } catch { /* ignore */ }
+  return { path: dir, name: path.basename(dir), audioCount };
+});
+
+// ---- IPC: abrir a pasta no Explorer do Windows ----------------------------
+ipcMain.handle("sp:open-folder", async (_evt, dir) => {
+  try {
+    if (!dir || typeof dir !== "string") return false;
+    if (!fs.existsSync(dir)) return false;
+    const err = await shell.openPath(dir);
+    return !err; // string vazia = sucesso
+  } catch {
+    return false;
   }
 });
 
