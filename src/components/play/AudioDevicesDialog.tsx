@@ -17,9 +17,13 @@ import {
 import { getAudioEngine } from "@/lib/audio-engine";
 import { platformLabel } from "@/lib/play-native";
 import { logEvent } from "@/lib/play-events";
-import { cueTestTone, refreshCueSink } from "@/lib/play-cue";
+import { cueTestTone, refreshCueSink, makeToneUrl } from "@/lib/play-cue";
 import { Aes67Panel } from "./Aes67Panel";
-import { Network } from "lucide-react";
+import { Network, Speaker, Volume2 as Vol2 } from "lucide-react";
+import {
+  OUTPUT_FUNCTIONS, OUTPUT_DEFAULT, loadRouting, applyRouting, outputIds,
+  type OutputRouting, type OutputFn,
+} from "@/lib/play-outputs";
 
 const ANY = "__default__";
 
@@ -84,8 +88,9 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
         </DialogHeader>
 
         <Tabs defaultValue="dispositivos">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dispositivos"><Headphones className="mr-1 h-4 w-4" /> Dispositivos</TabsTrigger>
+            <TabsTrigger value="saidas"><Speaker className="mr-1 h-4 w-4" /> Saídas</TabsTrigger>
             <TabsTrigger value="aes67"><Network className="mr-1 h-4 w-4" /> AES67 TX</TabsTrigger>
           </TabsList>
 
@@ -149,11 +154,110 @@ export function AudioDevicesDialog({ open, onOpenChange }: { open: boolean; onOp
             </DialogFooter>
           </TabsContent>
 
+          <TabsContent value="saidas">
+            <OutputsView onClose={() => onOpenChange(false)} />
+          </TabsContent>
+
           <TabsContent value="aes67">
             <Aes67Panel />
           </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Roteamento de SAÍDAS por função (manual p.111) + "ID para Saídas".
+function OutputsView({ onClose }: { onClose: () => void }) {
+  const [devices, setDevices] = useState<DeviceLists>({ inputs: [], outputs: [] });
+  const [routing, setRouting] = useState<OutputRouting>(() => loadRouting());
+
+  useEffect(() => {
+    void (async () => {
+      await ensureMicPermission(); // libera os rótulos das saídas
+      setDevices(await listAudioDevices());
+      setRouting(loadRouting());
+    })();
+  }, []);
+
+  const ids = outputIds(devices);
+  const setFn = (fn: OutputFn, id: string) => setRouting((r) => ({ ...r, [fn]: id }));
+
+  const test = async (fn: OutputFn) => {
+    const id = routing[fn];
+    const deviceId = id === OUTPUT_DEFAULT ? "" : id;
+    const el = new Audio(makeToneUrl(fn === "musicas" ? 440 : 660, 0.8)) as HTMLAudioElement & {
+      setSinkId?: (id: string) => Promise<void>;
+    };
+    try {
+      if (deviceId && typeof el.setSinkId === "function") await el.setSinkId(deviceId);
+      await el.play();
+    } catch { toast.error("Não foi possível tocar nesta saída."); }
+  };
+
+  const save = async () => {
+    await applyRouting(routing);
+    logEvent("sistema", "Saídas de áudio salvas", "Roteamento por função aplicado.");
+    toast.success("Saídas salvas e aplicadas.");
+    onClose();
+  };
+
+  return (
+    <div className="space-y-3 py-2">
+      <p className="text-[12px] text-muted-foreground">
+        Escolha a placa/saída de áudio para cada função (manual p.111). O <b>ID</b> é gerado
+        automaticamente por saída reconhecida e pode ser usado no QuickStart.
+      </p>
+
+      <div className="space-y-2">
+        {OUTPUT_FUNCTIONS.map(({ fn, label, help }) => (
+          <div key={fn} className="rounded border border-border p-2">
+            <div className="flex items-center gap-2">
+              <Label className="flex-1 text-[12px] font-medium">{label}</Label>
+              <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                {ids.get(routing[fn]) ?? "S0"}
+              </span>
+              <Button type="button" variant="ghost" size="sm" className="h-7" onClick={() => test(fn)}>
+                <Vol2 className="mr-1 h-3.5 w-3.5" /> Testar
+              </Button>
+            </div>
+            <Select value={routing[fn]} onValueChange={(v) => setFn(fn, v)}>
+              <SelectTrigger className="mt-1 h-8 text-[12px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Padrão do sistema</SelectItem>
+                {devices.outputs.map((d, i) => (
+                  <SelectItem key={`${fn}-${d.deviceId || i}`} value={d.deviceId || `out-${i}`}>
+                    {d.label || `Saída ${i + 1}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{help}</p>
+          </div>
+        ))}
+      </div>
+
+      <fieldset className="rounded border border-border p-2">
+        <legend className="px-1 text-[11px] font-semibold text-muted-foreground">ID para Saídas</legend>
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+          {[...ids.entries()].map(([devId, sid]) => {
+            const name = devId === OUTPUT_DEFAULT
+              ? "Padrão do sistema"
+              : devices.outputs.find((d) => d.deviceId === devId)?.label || devId;
+            return (
+              <div key={sid} className="flex items-center gap-2 text-[12px]">
+                <span className="rounded bg-pl-toolbar px-1.5 py-0.5 font-mono text-[10px] text-white">{sid}</span>
+                <span className="truncate text-pl-text">{name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <DialogFooter className="mt-2">
+        <Button variant="outline" onClick={onClose}>Cancelar</Button>
+        <Button onClick={save}>Salvar</Button>
+      </DialogFooter>
+    </div>
   );
 }
