@@ -3,17 +3,21 @@ import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 
 function TButton({
-  onClick, title, children, danger,
-}: { onClick?: () => void; title: string; children: React.ReactNode; danger?: boolean }) {
+  onClick, title, children, danger, disabled,
+}: { onClick?: () => void; title: string; children: React.ReactNode; danger?: boolean; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
       title={title}
+      disabled={disabled}
+      aria-disabled={disabled}
       className={`grid h-9 w-10 place-items-center rounded text-white shadow-sm transition active:translate-y-px ${
-        danger
+        disabled
+          ? "cursor-not-allowed opacity-40 grayscale brightness-75 active:translate-y-0"
+          : danger
           ? "bg-gradient-to-b from-red-400 to-red-600 hover:from-red-300"
           : "bg-gradient-to-b from-pl-transport to-pl-transport-dark hover:brightness-110"
-      }`}
+      } ${disabled ? "bg-gradient-to-b from-pl-transport to-pl-transport-dark" : ""}`}
     >
       {children}
     </button>
@@ -37,10 +41,18 @@ export function TransportBar() {
   };
   return (
     <div className="flex items-center gap-1.5 border-b border-pl-panel-dark bg-pl-panel px-2 py-1.5">
-      <TButton onClick={togglePlay} title={isPlaying ? "Pausar" : "Tocar"}>
-        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+      <TButton
+        onClick={() => { if (!isPlaying) togglePlay(); }}
+        title={isPlaying ? "No ar (tocando)" : "Tocar"}
+        disabled={isPlaying}
+      >
+        <Play className="h-5 w-5" />
       </TButton>
-      <TButton onClick={() => !isPlaying && togglePlay()} title="Pausa">
+      <TButton
+        onClick={() => { if (isPlaying) togglePlay(); }}
+        title="Pausar"
+        disabled={!isPlaying}
+      >
         <Pause className="h-5 w-5" />
       </TButton>
       <TButton onClick={nextManual} title="Próxima (com fade)">
