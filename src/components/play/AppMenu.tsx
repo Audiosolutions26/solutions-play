@@ -25,6 +25,7 @@ interface Props {
   onOpenSecoes: () => void;
   onOpenDevices: () => void;
   onOpenShortcuts: () => void;
+  onDockQuickStart?: () => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -37,7 +38,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts, onDockQuickStart }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack, replaceBlocks } = usePlayer();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +149,9 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
             <MenubarSubTrigger>QuickStart</MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onSelect={onOpenQuickStart}>Abrir painel QuickStart</MenubarItem>
+              {onDockQuickStart && (
+                <MenubarItem onSelect={onDockQuickStart}>Fixar como grid nos painéis</MenubarItem>
+              )}
               <MenubarItem onSelect={soon("QuickStart Efeitos")}>Painel Efeitos</MenubarItem>
               <MenubarSeparator />
               <MenubarItem onSelect={soon("QuickStart Configurações")}>Configurações…</MenubarItem>
