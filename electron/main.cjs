@@ -129,6 +129,17 @@ ipcMain.handle("sp:open-folder", async (_evt, dir) => {
   }
 });
 
+// ---- IPC: validar se um diretório existe (atalho não pode apontar p/ vazio) -
+ipcMain.handle("sp:folder-exists", async (_evt, dir) => {
+  try {
+    if (!dir || typeof dir !== "string") return false;
+    const stat = fs.statSync(dir);
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+});
+
 // ---- IPC: AES67 TX (RTP/SAP) + loopback -----------------------------------
 aes67.register(ipcMain);
 app.on("before-quit", () => { try { aes67.closeTx(); } catch { /* ignore */ } });
