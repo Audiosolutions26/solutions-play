@@ -33,13 +33,23 @@ function fileToDataUrl(file) {
 
 // Serve the static client build (SPA fallback to index.html).
 function startStaticServer(root) {
+  const rootResolved = path.resolve(root);
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
-      let p = decodeURIComponent((req.url || "/").split("?")[0]);
-      let file = path.join(root, p);
+      let urlPath = "/";
+      try {
+        urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
+      } catch {
+        urlPath = "/";
+      }
+      // Resolve dentro do root e bloqueia path traversal (../) para fora dele.
+      let file = path.resolve(rootResolved, "." + urlPath);
+      if (file !== rootResolved && !file.startsWith(rootResolved + path.sep)) {
+        file = path.join(rootResolved, "index.html");
+      }
       if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-        const asPage = path.join(root, p, "index.html");
-        file = fs.existsSync(asPage) ? asPage : path.join(root, "index.html");
+        const asPage = path.join(file, "index.html");
+        file = fs.existsSync(asPage) ? asPage : path.join(rootResolved, "index.html");
       }
       fs.readFile(file, (err, data) => {
         if (err) { res.writeHead(404); res.end("Not found"); return; }
@@ -62,11 +72,17 @@ ipcMain.handle("sp:pick-audio-files", async () => {
     ],
   });
   if (result.canceled) return [];
-  return result.filePaths.map((file) => ({
-    path: file,
-    name: path.basename(file).replace(/\.[^.]+$/, ""),
-    dataUrl: fileToDataUrl(file),
-  }));
+  const files = [];
+  for (const file of result.filePaths) {
+    try {
+      files.push({
+        path: file,
+        name: path.basename(file).replace(/\.[^.]+$/, ""),
+        dataUrl: fileToDataUrl(file),
+      });
+    } catch { /* pula arquivos ilegíveis */ }
+  }
+  return files;
 });
 
 ipcMain.handle("sp:read-audio-path", async (_evt, file) => {
@@ -83,9 +99,10 @@ aes67.register(ipcMain);
 app.on("before-quit", () => { try { aes67.closeTx(); } catch { /* ignore */ } });
 
 async function createWindow() {
-  // Concede automaticamente acesso a microfone/saída de áudio (Windows).
+  // Concede acesso a microfone/saída de áudio (gravação de locuções no Windows)
+  // e nega o restante por padrão.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
-    cb(permission === "media" || permission === "audioCapture" ? true : true);
+    cb(permission === "media" || permission === "audioCapture");
   });
 
   const win = new BrowserWindow({
@@ -112,6 +129,16 @@ async function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
-app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
-app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+// Garante instância única (evita conflito de sockets RTP/SAP do AES67).
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+  });
+  app.whenReady().then(createWindow);
+  app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+  app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+}
