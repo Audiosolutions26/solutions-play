@@ -9,6 +9,16 @@
 const path = require("path");
 const fs = require("fs");
 
+// Garante que QUALQUER falha apareça no terminal (nada de saída silenciosa).
+process.on("unhandledRejection", (err) => {
+  console.error("\n[pack] ✖ unhandledRejection:\n", err && err.stack ? err.stack : err);
+  process.exit(1);
+});
+process.on("uncaughtException", (err) => {
+  console.error("\n[pack] ✖ uncaughtException:\n", err && err.stack ? err.stack : err);
+  process.exit(1);
+});
+
 async function main() {
   const root = path.resolve(__dirname, "..");
   const electronPkgDir = path.dirname(require.resolve("electron/package.json"));
@@ -21,13 +31,20 @@ async function main() {
     );
     process.exit(1);
   }
+  if (!fs.existsSync(path.join(root, "dist", "index.html"))) {
+    console.error("[pack] Build web não encontrado (dist/index.html). Rode `npm run desktop:web` antes.");
+    process.exit(1);
+  }
 
   // Faz o @electron/get usar o Electron local em vez de baixar de novo.
   process.env.ELECTRON_OVERRIDE_DIST_PATH = distPath;
 
   const electronVersion = require(path.join(electronPkgDir, "package.json")).version;
+  const outDir = path.join(root, "electron-release");
   console.log("[pack] Usando Electron local v" + electronVersion + " (sem novo download)");
   console.log("[pack] Dist: " + distPath);
+  console.log("[pack] Saída: " + outDir);
+  console.log("[pack] Empacotando... (pode levar 1-2 min copiando os arquivos)");
 
   const packager = require("@electron/packager");
   const appPaths = await packager({
@@ -35,22 +52,33 @@ async function main() {
     name: "Solutions-Play",
     platform: "win32",
     arch: "x64",
-    out: path.join(root, "electron-release"),
+    out: outDir,
     overwrite: true,
     electronVersion,
-    download: { mirrorOptions: {} },
+    // Desativa o "prune" (não chama npm nem rede) — empacotamos só dist/ + electron/.
+    prune: false,
+    derefSymlinks: true,
     ignore: [
-      /^\/src/,
-      /^\/electron\/renderer/,
-      /^\/electron-release/,
-      /^\/node_modules/,
-      /^\/\.git/,
+      /^\/src($|\/)/,
+      /^\/electron\/renderer($|\/)/,
+      /^\/electron-release($|\/)/,
+      /^\/node_modules($|\/)/,
+      /^\/\.git($|\/)/,
+      /^\/public($|\/)/,
     ],
   });
 
-  console.log("\n[pack] ✔ App gerado em:");
-  for (const p of appPaths) console.log("  " + p);
-  console.log("\nExecutável: " + path.join(appPaths[0] || "", "Solutions-Play.exe"));
+  const appDir = appPaths[0];
+  const exe = appDir ? path.join(appDir, "Solutions-Play.exe") : "";
+  if (!appDir || !fs.existsSync(exe)) {
+    console.error("\n[pack] ✖ Empacotador retornou, mas o .exe não foi encontrado em:\n  " + exe);
+    process.exit(1);
+  }
+
+  console.log("\n[pack] ✔ App gerado com sucesso!");
+  console.log("  Pasta: " + appDir);
+  console.log("  Executável: " + exe);
+  console.log("\nDê duplo clique no Solutions-Play.exe (funciona offline).");
 }
 
 main().catch((err) => {
