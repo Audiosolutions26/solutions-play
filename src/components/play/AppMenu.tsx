@@ -22,6 +22,7 @@ interface Props {
   onOpenBeep: () => void;
   onOpenSecoes: () => void;
   onOpenDevices: () => void;
+  onOpenShortcuts: () => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -34,7 +35,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack } = usePlayer();
 
   const removeSelected = () => {
@@ -157,6 +158,7 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
           <MenubarSeparator />
           <MenubarItem onSelect={onOpenSecoes}>Seções (Arduino/LPT/Satélite/RDS/Sensores)…</MenubarItem>
           <MenubarItem onSelect={onOpenDevices}>Dispositivos de áudio…</MenubarItem>
+          <MenubarItem onSelect={onOpenShortcuts}>Gerenciamento de atalhos…</MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
             <MenubarSubTrigger>Opções</MenubarSubTrigger>
