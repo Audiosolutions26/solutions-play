@@ -42,6 +42,7 @@ export interface Marker {
   kind: MarkerKind;
   pos: number; // 0..1
   note?: string;
+  locked?: boolean; // marcador travado: dispara mas não pode ser editado/movido
 }
 
 export interface TrackMarkers {
@@ -79,6 +80,15 @@ export function hasRefrao(trackId: string): boolean {
 
 export function hasCarimbo(trackId: string): boolean {
   return getMarkers(trackId).some((x) => x.kind === "carimbo");
+}
+
+// Aplica (copia) o mesmo conjunto de marcadores a vários áudios (manual p.118
+// — "aplicar marcadores ao bloco"). Marcadores travados de destino são mantidos.
+export function applyMarkersToTracks(markers: Marker[], trackIds: string[]) {
+  for (const id of trackIds) {
+    const existingLocked = getMarkers(id).filter((m) => m.locked);
+    saveMarkers(id, [...existingLocked, ...markers.map((m) => ({ ...m }))]);
+  }
 }
 
 // Forma de onda determinística (visual) a partir de uma semente.
