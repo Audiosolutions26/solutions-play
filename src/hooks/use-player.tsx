@@ -10,6 +10,7 @@ import {
 } from "react";
 import { getAudioEngine } from "@/lib/audio-engine";
 import { initialBlocks, type Block, type Track, cloneTrack } from "@/lib/play-data";
+import { getTrackAudioUrl, setTrackAudioUrl } from "@/lib/play-audio-files";
 
 interface PlayerState {
   blocks: Block[];
@@ -31,6 +32,7 @@ interface PlayerState {
   addTrack: (blockId: string, track: Track) => void;
   removeTrack: (blockId: string, trackId: string) => void;
   replaceBlocks: (blocks: Block[]) => void;
+  setTrackAudio: (blockId: string, trackId: string, url: string, duration: number) => void;
   getEngine: typeof getAudioEngine;
 }
 
@@ -74,7 +76,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentBlockId(blockId);
     setSelectedId(trackId);
     setPosition(0);
-    if (track.freq > 0) engine.play(track.freq, 0);
+    const url = getTrackAudioUrl(trackId);
+    if (url) engine.playUrl(url, 0);
+    else if (track.freq > 0) engine.play(track.freq, 0);
     else engine.stop();
     setIsPlaying(true);
   }, [engine]);
@@ -101,7 +105,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       engine.pause();
       setIsPlaying(false);
     } else {
-      if (cur.track.freq > 0) engine.resume(cur.track.freq);
+      if (getTrackAudioUrl(cur.track.id) || cur.track.freq > 0) engine.resume(cur.track.freq);
       setIsPlaying(true);
     }
   }, [isPlaying, engine, playAt]);
@@ -127,6 +131,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setBlocks((bs) => bs.map((b) => (b.id === blockId ? { ...b, items: b.items.filter((t) => t.id !== trackId) } : b)));
   }, []);
 
+  const setTrackAudio = useCallback((blockId: string, trackId: string, url: string, duration: number) => {
+    setTrackAudioUrl(trackId, url);
+    setBlocks((bs) =>
+      bs.map((b) =>
+        b.id === blockId
+          ? { ...b, items: b.items.map((t) => (t.id === trackId ? { ...t, duration: duration > 0 ? Math.round(duration) : t.duration } : t)) }
+          : b,
+      ),
+    );
+  }, []);
+
   const replaceBlocks = useCallback((bs: Block[]) => {
     engine.stop();
     currentRef.current = { track: null, blockId: null };
@@ -148,7 +163,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         last = ts;
         const cur = currentRef.current.track;
         if (cur) {
-          const pos = cur.freq > 0 ? engine.position() : position + 0.2;
+          const hasAudio = !!(currentRef.current.track && getTrackAudioUrl(cur.id));
+          const pos = hasAudio || cur.freq > 0 ? engine.position() : position + 0.2;
           if (pos >= cur.duration) {
             next();
             return;
@@ -166,9 +182,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     blocks, current, currentBlockId, isPlaying, position, volume,
     onAir: isPlaying, cue, selectedId,
-    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, removeTrack, replaceBlocks,
+    playAt, togglePlay, stop, next, setVolume, setCue, select, addTrack, removeTrack, replaceBlocks, setTrackAudio,
     getEngine: getAudioEngine,
-  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, removeTrack, replaceBlocks]);
+  }), [blocks, current, currentBlockId, isPlaying, position, volume, cue, selectedId, playAt, togglePlay, stop, next, setVolume, select, addTrack, removeTrack, replaceBlocks, setTrackAudio]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
