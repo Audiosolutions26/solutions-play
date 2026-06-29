@@ -185,6 +185,29 @@ export function RecursosAvancadosDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex flex-wrap items-end gap-2 rounded border bg-muted/40 p-2">
+          <div className="flex-1 min-w-[160px] space-y-1">
+            <Label htmlFor="presetName" className="text-[11px]">Preset (Grade + Mapa + regras)</Label>
+            <Input id="presetName" list="preset-list" value={presetName} placeholder="Nome do preset…"
+              onChange={(e) => setPresetName(e.target.value)} className="h-9 text-sm" />
+            <datalist id="preset-list">
+              {presets.map((p) => <option key={p.name} value={p.name} />)}
+            </datalist>
+          </div>
+          <button onClick={salvarPreset}
+            className="flex h-9 items-center gap-1 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-3 text-sm font-semibold text-white hover:brightness-110">
+            <Save className="h-4 w-4" /> Salvar
+          </button>
+          <button onClick={() => carregarPreset(presetName)}
+            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium hover:bg-muted">
+            <FolderOpen className="h-4 w-4" /> Carregar
+          </button>
+          <button onClick={excluirPreset}
+            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium text-red-600 hover:bg-red-50">
+            <Trash2 className="h-4 w-4" /> Excluir
+          </button>
+        </div>
+
         <Tabs key={defaultTab} defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="ini"><FileCode2 className="mr-1 h-4 w-4" />Playlist.ini</TabsTrigger>
