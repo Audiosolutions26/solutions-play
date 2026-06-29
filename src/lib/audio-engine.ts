@@ -257,6 +257,9 @@ export class AudioEngine {
     this.ensure();
     if (!this.ctx || !this.master) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
+    // Master sempre em 1.0: o nível de cada faixa é o do próprio arquivo.
+    this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.master.gain.setValueAtTime(1, this.ctx.currentTime);
     this.stopScheduler();
     this.mode = "url";
 
