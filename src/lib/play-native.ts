@@ -14,6 +14,7 @@ interface NativeBridge {
   readAudioPath?: (path: string) => Promise<string | null>; // retorna data URL
   pickFolder?: (current?: string) => Promise<NativePickedFolder | null>;
   openFolder?: (dir: string) => Promise<boolean>;
+  folderExists?: (dir: string) => Promise<boolean>;
 }
 
 export interface NativePickedFolder {
@@ -81,6 +82,17 @@ export async function openFolderNative(dir: string): Promise<boolean> {
   if (!b?.openFolder) return false;
   try {
     return await b.openFolder(dir);
+  } catch {
+    return false;
+  }
+}
+
+// Valida se um diretório existe. Retorna null em modo web (não há como checar).
+export async function folderExistsNative(dir: string): Promise<boolean | null> {
+  const b = nativeBridge();
+  if (!b?.folderExists) return null;
+  try {
+    return await b.folderExists(dir);
   } catch {
     return false;
   }
