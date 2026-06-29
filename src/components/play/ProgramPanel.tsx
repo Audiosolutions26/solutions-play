@@ -119,35 +119,40 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
           }}
           onClick={() => select(track.id)}
           onDoubleClick={() => playAt(block.id, track.id)}
-          className={`relative flex items-center gap-2 border-b border-black/5 px-2 py-[3px] text-[12px] text-pl-text ${
+          className={`relative flex items-center gap-2 overflow-hidden border-b border-black/5 text-pl-text ${
+            isCurrent || isNext ? "py-2 pr-2 pl-9" : "px-2 py-[3px]"
+          } ${
+            isCurrent ? "text-[13px]" : "text-[12px]"
+          } ${
             locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"
           } ${
             dragOver === "top" ? "shadow-[inset_0_2px_0_0_var(--color-pl-transport)]"
               : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]" : ""
           } ${
             isCurrent
-              ? "bg-pl-onair font-semibold text-pl-onair-text shadow-[inset_4px_0_0_0_var(--color-pl-transport)]"
+              ? "bg-pl-onair font-bold text-pl-onair-text"
               : isNext
-                ? "bg-amber-100 font-medium shadow-[inset_4px_0_0_0_#d97706]"
+                ? "bg-yellow-200 font-semibold"
                 : isSelected
                   ? "bg-pl-toolbar-light/40"
                   : catRowBg[track.category]
           }`}
         >
+          {/* Faixa vertical lateral: NO AR (no ar) / PRÓX (próxima) — modelo de referência. */}
           {isCurrent && (
-            <div className="absolute inset-y-0 left-0 bg-white/30" style={{ width: `${pct}%` }} />
-          )}
-          <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
-          {isCurrent && (
-            <span className="relative z-10 inline-flex shrink-0 items-center gap-1 rounded-sm bg-pl-banner px-1 py-px text-[9px] font-bold tracking-wide text-white">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> NO AR
+            <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-transport-dark">
+              <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">NO AR</span>
             </span>
           )}
           {!isCurrent && isNext && (
-            <span className="relative z-10 inline-flex shrink-0 items-center rounded-sm bg-amber-500 px-1 py-px text-[9px] font-bold tracking-wide text-white">
-              PRÓXIMA
+            <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-comercial-accent">
+              <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">PRÓX</span>
             </span>
           )}
+          {isCurrent && (
+            <div className="absolute inset-y-0 left-0 z-0 bg-white/30" style={{ width: `${pct}%` }} />
+          )}
+          <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
           {mMarker && (
             <span
               title={mMarker === "blue" ? "Inserção manual" : "Inserção automática movida"}
@@ -158,14 +163,14 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
               M
             </span>
           )}
-          <span className="relative z-10 flex-1 truncate">
+          <span className={`relative z-10 flex-1 truncate ${isCurrent ? "text-[15px] font-extrabold" : ""}`}>
             {track.title}
             {track.artist ? <span className="opacity-70"> — {track.artist}</span> : null}
             {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
             {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
             {realAudio && <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />}
           </span>
-          <span className={`relative z-10 font-mono text-[11px] tabular-nums ${isCurrent ? "font-bold opacity-100" : "opacity-80"}`}>
+          <span className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold opacity-100" : "text-[11px] opacity-80"}`}>
             {isCurrent ? `-${fmt(Math.max(0, track.duration - position))}` : fmt(track.duration)}
           </span>
           <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
