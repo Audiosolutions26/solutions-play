@@ -19,6 +19,7 @@ interface Props {
   onSwitchOperator: () => void;
   onOpenQuickStart: () => void;
   onOpenAdvanced: (tab: string) => void;
+  onOpenBeep: () => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -31,7 +32,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack } = usePlayer();
 
   const removeSelected = () => {
@@ -149,6 +150,7 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
           <MenubarSeparator />
           <MenubarCheckboxItem checked={cue} onCheckedChange={(v) => setCue(!!v)}>Pré-escuta (CUE)</MenubarCheckboxItem>
           <MenubarItem onSelect={soon("Hora Certa")}>Hora Certa</MenubarItem>
+          <MenubarItem onSelect={onOpenBeep}>Beep…</MenubarItem>
           <MenubarItem onSelect={soon("Mapas comerciais")}>Gerar mapas comerciais</MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
