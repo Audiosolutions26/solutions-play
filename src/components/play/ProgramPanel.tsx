@@ -26,7 +26,20 @@ const catRowBg = {
   texto: "bg-pl-texto",
 } as const;
 
-function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarkers: (t: Track) => void }) {
+// Próxima inserção a entrar no ar, na mesma ordem usada pelo player.
+function findNextId(blocks: Block[], currentId: string | null): string | null {
+  if (!currentId) return null;
+  const bi = blocks.findIndex((b) => b.items.some((t) => t.id === currentId));
+  if (bi < 0) return null;
+  const ti = blocks[bi].items.findIndex((t) => t.id === currentId);
+  if (ti >= 0 && ti < blocks[bi].items.length - 1) return blocks[bi].items[ti + 1].id;
+  for (let j = bi + 1; j < blocks.length; j++) {
+    if (blocks[j].items.length) return blocks[j].items[0].id;
+  }
+  return null;
+}
+
+function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; onMarkers: (t: Track) => void; isNext?: boolean }) {
   const { current, position, selectedId, select, playAt, removeTrack, moveTrack, reorderTrack, addTrackAt, getEngine, setTrackAudio } = usePlayer();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState<"top" | "bottom" | null>(null);
@@ -113,16 +126,28 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
               : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]" : ""
           } ${
             isCurrent
-              ? "bg-pl-onair font-semibold text-pl-onair-text"
-              : isSelected
-                ? "bg-pl-toolbar-light/40"
-                : catRowBg[track.category]
+              ? "bg-pl-onair font-semibold text-pl-onair-text shadow-[inset_4px_0_0_0_var(--color-pl-transport)]"
+              : isNext
+                ? "bg-amber-100 font-medium shadow-[inset_4px_0_0_0_#d97706]"
+                : isSelected
+                  ? "bg-pl-toolbar-light/40"
+                  : catRowBg[track.category]
           }`}
         >
           {isCurrent && (
             <div className="absolute inset-y-0 left-0 bg-white/30" style={{ width: `${pct}%` }} />
           )}
           <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
+          {isCurrent && (
+            <span className="relative z-10 inline-flex shrink-0 items-center gap-1 rounded-sm bg-pl-banner px-1 py-px text-[9px] font-bold tracking-wide text-white">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> NO AR
+            </span>
+          )}
+          {!isCurrent && isNext && (
+            <span className="relative z-10 inline-flex shrink-0 items-center rounded-sm bg-amber-500 px-1 py-px text-[9px] font-bold tracking-wide text-white">
+              PRÓXIMA
+            </span>
+          )}
           {mMarker && (
             <span
               title={mMarker === "blue" ? "Inserção manual" : "Inserção automática movida"}
@@ -140,8 +165,8 @@ function Row({ block, track, onMarkers }: { block: Block; track: Track; onMarker
             {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
             {realAudio && <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />}
           </span>
-          <span className="relative z-10 font-mono text-[11px] tabular-nums opacity-80">
-            {isCurrent ? `-${fmt(track.duration - position)}` : fmt(track.duration)}
+          <span className={`relative z-10 font-mono text-[11px] tabular-nums ${isCurrent ? "font-bold opacity-100" : "opacity-80"}`}>
+            {isCurrent ? `-${fmt(Math.max(0, track.duration - position))}` : fmt(track.duration)}
           </span>
           <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={onPickFile} />
         </div>
