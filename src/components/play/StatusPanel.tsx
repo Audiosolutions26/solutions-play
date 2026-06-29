@@ -21,7 +21,7 @@ export function StatusPanel() {
   const remaining = current ? Math.max(0, current.duration - position) : 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-w-0 flex-1 flex-col">
       <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
         <Activity className="h-4 w-4" /> Status da execução
         <span className={`ml-2 inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold ${onAir ? "bg-red-600 text-white" : "bg-white/15 text-white/80"}`}>
