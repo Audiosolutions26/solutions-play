@@ -17,12 +17,14 @@ export function TopBar({
   onOpenOptions,
   onLogout,
   onOpenQuickStart,
+  onOpenAdvanced,
 }: {
   panels: PanelVisibility;
   onTogglePanel: (key: keyof PanelVisibility) => void;
   onOpenOptions: (tab: string) => void;
   onLogout: () => void;
   onOpenQuickStart: () => void;
+  onOpenAdvanced: (tab: string) => void;
 }) {
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
@@ -46,6 +48,7 @@ export function TopBar({
           onOpenOptions={onOpenOptions}
           onLogout={onLogout}
           onOpenQuickStart={onOpenQuickStart}
+          onOpenAdvanced={onOpenAdvanced}
         />
       </div>
       {/* toolbar row */}
