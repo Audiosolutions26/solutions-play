@@ -107,6 +107,7 @@ export function PlayApp() {
           onOpenDevices={() => ui.setDevicesOpen(true)}
           onOpenShortcuts={() => ui.setShortcutsOpen(true)}
           onDockQuickStart={() => { dock.openPanel("quickstart"); toast.success("QuickStart fixado nos painéis"); }}
+          onOpenProgramFolders={() => ui.setProgramFoldersOpen(true)}
         />
         <OnAirBar />
         <div ref={splitRef} className="flex min-h-0 flex-1">
@@ -197,6 +198,11 @@ export function PlayApp() {
       <SecoesDialog open={ui.isSecoesOpen} onOpenChange={ui.setSecoesOpen} />
       <AudioDevicesDialog open={ui.isDevicesOpen} onOpenChange={ui.setDevicesOpen} />
       <ShortcutsDialog open={ui.isShortcutsOpen} onOpenChange={ui.setShortcutsOpen} />
+      <ProgramFoldersDialog
+        open={ui.isProgramFoldersOpen}
+        onOpenChange={ui.setProgramFoldersOpen}
+        onLoaded={() => setActiveTab("Programação")}
+      />
       <RecursosAvancadosDialog
         open={ui.advanced.open}
         onOpenChange={ui.setAdvancedOpen}
