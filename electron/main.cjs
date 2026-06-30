@@ -130,6 +130,100 @@ ipcMain.handle("sp:write-rds", async (_evt, payload) => {
   }
 });
 
+// ---- Pastas de programação (Mapas/Grades) na raiz do programa ------------
+// A raiz do programa é Documentos\Solutions-Play. Dentro dela ficam as
+// subpastas Grades (programação musical) e Mapas (programação comercial),
+// onde os arquivos .txt de programação são lidos e gerados.
+function appRootDir() {
+  return path.join(app.getPath("documents"), "Solutions-Play");
+}
+
+function programDirs() {
+  const base = appRootDir();
+  return {
+    base,
+    grades: path.join(base, "Grades"),
+    mapas: path.join(base, "Mapas"),
+  };
+}
+
+// Garante que a raiz e as subpastas Grades/Mapas existam.
+function ensureProgramDirs() {
+  const d = programDirs();
+  try {
+    fs.mkdirSync(d.grades, { recursive: true });
+    fs.mkdirSync(d.mapas, { recursive: true });
+  } catch { /* ignore */ }
+  return d;
+}
+
+ipcMain.handle("sp:program-dirs", async () => ensureProgramDirs());
+
+// Lista os arquivos .txt de Grades (musical) ou Mapas (comercial),
+// dos mais recentes para os mais antigos.
+ipcMain.handle("sp:list-program-files", async (_evt, kind) => {
+  try {
+    const d = ensureProgramDirs();
+    const dir = kind === "mapas" ? d.mapas : d.grades;
+    if (!fs.existsSync(dir)) return [];
+    const out = [];
+    for (const entry of fs.readdirSync(dir)) {
+      if (!/\.txt$/i.test(entry)) continue;
+      const full = path.join(dir, entry);
+      try {
+        const st = fs.statSync(full);
+        if (!st.isFile()) continue;
+        out.push({ name: entry, path: full, mtime: st.mtimeMs });
+      } catch { /* ignore */ }
+    }
+    out.sort((a, b) => b.mtime - a.mtime);
+    return out;
+  } catch {
+    return [];
+  }
+});
+
+// Lê o conteúdo de um arquivo de texto (programação) por caminho absoluto.
+ipcMain.handle("sp:read-text-file", async (_evt, file) => {
+  try {
+    if (!file || typeof file !== "string" || !fs.existsSync(file)) return null;
+    if (!fs.statSync(file).isFile()) return null;
+    return fs.readFileSync(file, "utf8");
+  } catch {
+    return null;
+  }
+});
+
+// Grava um arquivo .txt em Grades/Mapas (programação gerada).
+ipcMain.handle("sp:write-program-file", async (_evt, payload) => {
+  try {
+    const kind = payload && payload.kind;
+    const name = payload && typeof payload.name === "string" ? path.basename(payload.name) : null;
+    if (!name) return null;
+    const d = ensureProgramDirs();
+    const dir = kind === "mapas" ? d.mapas : d.grades;
+    fs.mkdirSync(dir, { recursive: true });
+    const full = path.join(dir, /\.txt$/i.test(name) ? name : `${name}.txt`);
+    fs.writeFileSync(full, String((payload && payload.content) ?? ""), "utf8");
+    return full;
+  } catch {
+    return null;
+  }
+});
+
+// Abre a pasta Grades/Mapas (ou a raiz) no Explorer do Windows.
+ipcMain.handle("sp:open-program-folder", async (_evt, kind) => {
+  try {
+    const d = ensureProgramDirs();
+    const dir = kind === "mapas" ? d.mapas : kind === "grades" ? d.grades : d.base;
+    fs.mkdirSync(dir, { recursive: true });
+    const err = await shell.openPath(dir);
+    return !err;
+  } catch {
+    return false;
+  }
+});
+
 // ---- IPC: seletor de PASTA nativo (árvore do Windows) ---------------------
 // Abre a árvore de diretórios do Windows para apontar o atalho a uma pasta.
 ipcMain.handle("sp:pick-folder", async (_evt, current) => {
