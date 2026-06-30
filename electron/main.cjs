@@ -336,7 +336,10 @@ if (!gotLock) {
     const win = BrowserWindow.getAllWindows()[0];
     if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
   });
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => {
+    ensureProgramDirs();
+    createWindow();
+  });
   app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 }
