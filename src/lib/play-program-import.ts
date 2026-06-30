@@ -174,7 +174,10 @@ function parseClock(spec: string | null): BlockClock | undefined {
 
 export interface ImportResult { blocks: Block[]; stats: ImportStats }
 
-export function parseProgramText(text: string): ImportResult {
+export function parseProgramText(
+  text: string,
+  defaultCategory: Block["category"] = "musical",
+): ImportResult {
   const shortcuts = loadShortcuts();
   const music = shortcuts.filter((s) => s.category === "musical");
   const vinhetas = shortcuts.filter((s) => s.category === "vinheta");
@@ -206,7 +209,7 @@ export function parseProgramText(text: string): ImportResult {
       title: clock?.name ?? "Programação",
       date,
       time,
-      category: "musical",
+      category: defaultCategory,
       items,
       clock,
     });
