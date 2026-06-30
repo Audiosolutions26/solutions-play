@@ -17,10 +17,21 @@ interface NativeBridge {
   folderExists?: (dir: string) => Promise<boolean>;
   listFolderAudio?: (dir: string) => Promise<NativeFolderAudio[]>;
   writeRds?: (payload: RdsWritePayload) => Promise<string | null>;
+  programDirs?: () => Promise<ProgramDirs>;
+  listProgramFiles?: (kind: ProgramKind) => Promise<ProgramFile[]>;
+  readTextFile?: (file: string) => Promise<string | null>;
+  writeProgramFile?: (payload: ProgramWritePayload) => Promise<string | null>;
+  openProgramFolder?: (kind: ProgramKind | "base") => Promise<boolean>;
 }
 
 export interface RdsFile { name: string; content: string; }
 export interface RdsWritePayload { dir?: string; files: RdsFile[]; }
+
+// "grades" = programação musical · "mapas" = programação comercial.
+export type ProgramKind = "grades" | "mapas";
+export interface ProgramDirs { base: string; grades: string; mapas: string; }
+export interface ProgramFile { name: string; path: string; mtime: number; }
+export interface ProgramWritePayload { kind: ProgramKind; name: string; content: string; }
 
 export interface NativePickedFolder {
   path: string;
@@ -129,5 +140,61 @@ export async function writeRdsNative(payload: RdsWritePayload): Promise<string |
     return await b.writeRds(payload);
   } catch {
     return null;
+  }
+}
+
+// Raiz do programa + pastas Grades (musical) e Mapas (comercial).
+// Retorna null em modo web (sem sistema de arquivos).
+export async function programDirsNative(): Promise<ProgramDirs | null> {
+  const b = nativeBridge();
+  if (!b?.programDirs) return null;
+  try {
+    return await b.programDirs();
+  } catch {
+    return null;
+  }
+}
+
+// Lista os arquivos .txt das pastas Grades/Mapas. Null em modo web.
+export async function listProgramFilesNative(kind: ProgramKind): Promise<ProgramFile[] | null> {
+  const b = nativeBridge();
+  if (!b?.listProgramFiles) return null;
+  try {
+    return await b.listProgramFiles(kind);
+  } catch {
+    return [];
+  }
+}
+
+// Lê o conteúdo de um arquivo de programação por caminho. Null em modo web.
+export async function readTextFileNative(file: string): Promise<string | null> {
+  const b = nativeBridge();
+  if (!b?.readTextFile) return null;
+  try {
+    return await b.readTextFile(file);
+  } catch {
+    return null;
+  }
+}
+
+// Grava um .txt em Grades/Mapas. Retorna o caminho gravado ou null em modo web.
+export async function writeProgramFileNative(payload: ProgramWritePayload): Promise<string | null> {
+  const b = nativeBridge();
+  if (!b?.writeProgramFile) return null;
+  try {
+    return await b.writeProgramFile(payload);
+  } catch {
+    return null;
+  }
+}
+
+// Abre a pasta Grades/Mapas (ou a raiz) no Explorer. False em modo web.
+export async function openProgramFolderNative(kind: ProgramKind | "base"): Promise<boolean> {
+  const b = nativeBridge();
+  if (!b?.openProgramFolder) return false;
+  try {
+    return await b.openProgramFolder(kind);
+  } catch {
+    return false;
   }
 }

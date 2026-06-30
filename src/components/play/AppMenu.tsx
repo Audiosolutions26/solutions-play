@@ -26,6 +26,7 @@ interface Props {
   onOpenDevices: () => void;
   onOpenShortcuts: () => void;
   onDockQuickStart?: () => void;
+  onOpenProgramFolders: () => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -38,7 +39,7 @@ const panelList = [
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts, onDockQuickStart }: Props) {
+export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts, onDockQuickStart, onOpenProgramFolders }: Props) {
   const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack, replaceBlocks } = usePlayer();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,6 +98,7 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
         <MenubarContent align="start">
           <MenubarItem onSelect={soon("Nova programação")}>Nova programação</MenubarItem>
           <MenubarItem onSelect={abrirPrograma}>Abrir programação…</MenubarItem>
+          <MenubarItem onSelect={onOpenProgramFolders}>Abrir das pastas Grades/Mapas…</MenubarItem>
           <MenubarItem onSelect={soon("Salvar programação")}>Salvar programação</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>Gerar programação automática</MenubarItem>
