@@ -18,6 +18,7 @@ import { BeepDialog } from "./BeepDialog";
 import { SecoesDialog } from "./SecoesDialog";
 import { AudioDevicesDialog } from "./AudioDevicesDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
+import { ProgramFoldersDialog } from "./ProgramFoldersDialog";
 import { StatusPanel } from "./StatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { PlayerControllers } from "./PlayerControllers";
