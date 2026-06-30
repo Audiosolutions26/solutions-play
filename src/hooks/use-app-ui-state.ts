@@ -17,6 +17,7 @@ export function useAppUiState() {
   const [isSecoesOpen, setSecoesOpen] = useState(false);
   const [isDevicesOpen, setDevicesOpen] = useState(false);
   const [isShortcutsOpen, setShortcutsOpen] = useState(false);
+  const [isProgramFoldersOpen, setProgramFoldersOpen] = useState(false);
 
   const togglePanel = (key: keyof PanelVisibility) =>
     setPanels((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -34,5 +35,6 @@ export function useAppUiState() {
     isSecoesOpen, setSecoesOpen,
     isDevicesOpen, setDevicesOpen,
     isShortcutsOpen, setShortcutsOpen,
+    isProgramFoldersOpen, setProgramFoldersOpen,
   };
 }
