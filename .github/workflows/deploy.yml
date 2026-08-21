@@ -72,26 +72,42 @@ jobs:
             rm -f /tmp/solutions-play-dist.tgz
             find /var/www/solutionsplay/releases -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +6 | cut -d' ' -f2- | xargs -r rm -rf
 
+  prepare-desktop-source:
+    name: Prepare Windows source artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout on Linux
+        uses: actions/checkout@v4
+
+      - name: Create portable source archive
+        run: |
+          mkdir -p desktop-source
+          cp -a electron src package.json bun.lock bunfig.toml components.json eslint.config.js tsconfig.json vite.config.ts vite.electron.config.ts desktop-source/
+          tar -czf solutions-play-source.tgz -C desktop-source .
+          test -s solutions-play-source.tgz
+
+      - name: Upload portable source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: solutions-play-source-${{ github.sha }}
+          path: solutions-play-source.tgz
+          if-no-files-found: error
+          retention-days: 1
+
   desktop-build:
     name: Build Windows executable
+    needs: prepare-desktop-source
     runs-on: windows-latest
     steps:
-      - name: Checkout (exclude invalid Linux-only path)
-        uses: actions/checkout@v4
+      - name: Download portable source artifact
+        uses: actions/download-artifact@v4
         with:
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            .github/
-            electron/
-            src/
-            package.json
-            bun.lock
-            bunfig.toml
-            components.json
-            eslint.config.js
-            tsconfig.json
-            vite.config.ts
-            vite.electron.config.ts
+          name: solutions-play-source-${{ github.sha }}
+          path: .
+
+      - name: Extract portable source
+        shell: pwsh
+        run: tar -xzf solutions-play-source.tgz; Remove-Item solutions-play-source.tgz
 
       - name: Setup Node
         uses: actions/setup-node@v4
