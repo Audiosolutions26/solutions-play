@@ -1,0 +1,101 @@
+name: Deploy Solutions-Play
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: solutions-play-main
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+jobs:
+  web-build-deploy:
+    name: Build and deploy web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build web
+        run: npm run build
+
+      - name: Validate build output
+        run: test -s dist/index.html
+
+      - name: Create deploy archive
+        run: tar -czf solutions-play-dist.tgz -C dist .
+
+      - name: Copy archive to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: solutions-play-dist.tgz
+          target: /tmp/
+          overwrite: true
+
+      - name: Activate release on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script_stop: true
+          script: |
+            set -eu
+            release="/var/www/solutionsplay/releases/${{ github.sha }}"
+            mkdir -p "$release"
+            tar -xzf /tmp/solutions-play-dist.tgz -C "$release"
+            test -s "$release/index.html"
+            ln -sfn "$release" /var/www/solutionsplay/current
+            chown -R www-data:www-data "$release"
+            nginx -t
+            systemctl reload nginx
+            rm -f /tmp/solutions-play-dist.tgz
+            find /var/www/solutionsplay/releases -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +6 | cut -d' ' -f2- | xargs -r rm -rf
+
+  desktop-build:
+    name: Build Windows executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Windows package
+        run: npm run desktop:build
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: solutions-play-windows-${{ github.sha }}
+          path: electron-release/Solutions-Play-win32-x64
+          if-no-files-found: error
+          retention-days: 30
