@@ -1,16 +1,41 @@
 import { useEffect, useRef, useState } from "react";
-import { Music, Megaphone, Radio, FileText, Bookmark, Repeat, Clock, Play, Headphones, Trash2, FileAudio, Pause, ChevronUp, ChevronDown, Lock, Timer, Mic, Newspaper, Disc3 } from "lucide-react";
+import {
+  Music,
+  Megaphone,
+  Radio,
+  FileText,
+  Bookmark,
+  Repeat,
+  Clock,
+  Play,
+  Headphones,
+  Trash2,
+  FileAudio,
+  Pause,
+  ChevronUp,
+  ChevronDown,
+  Lock,
+  Timer,
+  Mic,
+  Newspaper,
+  Disc3,
+} from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, makePause, makeHoraCerta, type Block, type Track } from "@/lib/play-data";
 import {
-  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import { TransportBar } from "./TransportBar";
 import { MarkersDialog } from "./MarkersDialog";
 import { BlockClockDialog } from "./BlockClockDialog";
 import { saveMarkers, getMarkers, hasRefrao, hasCarimbo } from "@/lib/play-markers";
 import { hasTrackAudio, readAudioFile } from "@/lib/play-audio-files";
+import { cuePlay, cueStop } from "@/lib/play-cue";
 import { AUDIO_ACCEPT } from "@/lib/audio-formats";
 
 const catIcon = {
@@ -56,24 +81,52 @@ function findNextId(blocks: Block[], currentId: string | null): string | null {
   return null;
 }
 
-function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; onMarkers: (t: Track) => void; isNext?: boolean }) {
-  const { current, position, selectedId, select, playAt, removeTrack, moveTrack, reorderTrack, addTrackAt, getEngine, setTrackAudio } = usePlayer();
+function Row({
+  block,
+  track,
+  onMarkers,
+  isNext,
+}: {
+  block: Block;
+  track: Track;
+  onMarkers: (t: Track) => void;
+  isNext?: boolean;
+}) {
+  const {
+    current,
+    position,
+    selectedId,
+    select,
+    playAt,
+    removeTrack,
+    moveTrack,
+    reorderTrack,
+    addTrackAt,
+    setTrackAudio,
+  } = usePlayer();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState<"top" | "bottom" | null>(null);
   const locked = !!block.clock?.locked;
   const isCurrent = current?.id === track.id;
   const isSelected = selectedId === track.id;
-  const Icon = track.kind === "pausa" ? Pause
-    : track.kind === "horacerta" ? Clock
-    : track.kind === "locucao" ? Mic
-    : track.kind === "textodia" ? Newspaper
-    : catIcon[track.category];
-  const pct = isCurrent ? Math.min(100, (position / track.duration) * 100) : 0;
+  const Icon =
+    track.kind === "pausa"
+      ? Pause
+      : track.kind === "horacerta"
+        ? Clock
+        : track.kind === "locucao"
+          ? Mic
+          : track.kind === "textodia"
+            ? Newspaper
+            : catIcon[track.category];
+  const pct =
+    isCurrent && track.duration > 0 ? Math.min(100, (position / track.duration) * 100) : 0;
   const refrao = hasRefrao(track.id);
   const carimbo = hasCarimbo(track.id);
   const realAudio = hasTrackAudio(track.id);
   // M marker (manual p.14-15): blue = inserted manually; red = auto item moved.
-  const mMarker = track.origin === "manual" ? "blue" : track.origin === "auto" && track.moved ? "red" : null;
+  const mMarker =
+    track.origin === "manual" ? "blue" : track.origin === "auto" && track.moved ? "red" : null;
 
   const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,13 +142,39 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
   };
 
   const addRefrao = () => {
-    const m = getMarkers(track.id).filter((x) => x.kind !== "refraoStart" && x.kind !== "refraoEnd");
-    saveMarkers(track.id, [...m, { kind: "refraoStart", pos: 0.4 }, { kind: "refraoEnd", pos: 0.7 }]);
+    const m = getMarkers(track.id).filter(
+      (x) => x.kind !== "refraoStart" && x.kind !== "refraoEnd",
+    );
+    saveMarkers(track.id, [
+      ...m,
+      {
+        id: "refrao-start",
+        kind: "refraoStart",
+        pos: 0.4,
+        positionSec: track.duration > 0 ? track.duration * 0.4 : undefined,
+      },
+      {
+        id: "refrao-end",
+        kind: "refraoEnd",
+        pos: 0.7,
+        positionSec: track.duration > 0 ? track.duration * 0.7 : undefined,
+      },
+    ]);
     toast.success("Refrão marcado (40%–70%). Ajuste em Marcadores.");
   };
   const carimbar = () => {
     const m = getMarkers(track.id).filter((x) => x.kind !== "carimbo");
-    saveMarkers(track.id, [...m, { kind: "carimbo", pos: 0.05, note: "Hora Certa" }]);
+    saveMarkers(track.id, [
+      ...m,
+      {
+        id: "carimbo-hora-certa",
+        kind: "carimbo",
+        pos: 0.05,
+        positionSec: track.duration > 0 ? track.duration * 0.05 : undefined,
+        note: "Hora Certa",
+        payload: { sourceId: "hora-certa" },
+      },
+    ]);
     toast.success("Áudio carimbado com Hora Certa.");
   };
 
@@ -112,7 +191,11 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
           onDragOver={(e) => {
             if (locked) return;
             e.preventDefault();
-            e.dataTransfer.dropEffect = e.dataTransfer.types.includes("application/x-play-folder-track") ? "copy" : "move";
+            e.dataTransfer.dropEffect = e.dataTransfer.types.includes(
+              "application/x-play-folder-track",
+            )
+              ? "copy"
+              : "move";
             const r = e.currentTarget.getBoundingClientRect();
             setDragOver(e.clientY - r.top < r.height / 2 ? "top" : "bottom");
           }}
@@ -128,7 +211,9 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
                 const t = JSON.parse(folderData) as Track;
                 addTrackAt(track.id, t, place);
                 toast.success(`Adicionado à programação: ${t.title}`);
-              } catch { /* ignore */ }
+              } catch {
+                /* ignore */
+              }
               return;
             }
             // Reposicionamento de inserção existente.
@@ -136,16 +221,23 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
             if (sourceId && sourceId !== track.id) reorderTrack(sourceId, track.id, place);
           }}
           onClick={() => select(track.id)}
+          onMouseEnter={() => {
+            if (!isCurrent) void cuePlay(track, { reason: "hover" });
+          }}
+          onMouseLeave={() => {
+            if (!isCurrent) cueStop();
+          }}
           onDoubleClick={() => playAt(block.id, track.id)}
           className={`relative flex items-center gap-2 overflow-hidden border-b border-black/5 text-pl-text ${
             isCurrent || isNext ? "py-2 pr-2 pl-9" : "px-2 py-[3px]"
-          } ${
-            isCurrent ? "text-[13px]" : "text-[12px]"
-          } ${
+          } ${isCurrent ? "text-[13px]" : "text-[12px]"} ${
             locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"
           } ${
-            dragOver === "top" ? "shadow-[inset_0_2px_0_0_var(--color-pl-transport)]"
-              : dragOver === "bottom" ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]" : ""
+            dragOver === "top"
+              ? "shadow-[inset_0_2px_0_0_var(--color-pl-transport)]"
+              : dragOver === "bottom"
+                ? "shadow-[inset_0_-2px_0_0_var(--color-pl-transport)]"
+                : ""
           } ${
             isCurrent
               ? "bg-pl-onair-bg font-bold text-white"
@@ -159,19 +251,28 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
           {/* Faixa vertical lateral: NO AR (no ar) / PRÓX (próxima) — modelo de referência. */}
           {isCurrent && (
             <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-onair-band">
-              <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">NO AR</span>
+              <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">
+                NO AR
+              </span>
             </span>
           )}
           {!isCurrent && isNext && (
             <span className="absolute inset-y-0 left-0 z-20 flex w-7 items-center justify-center bg-pl-prox-band">
-              <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">PRÓX</span>
+              <span className="rotate-180 text-[10px] font-bold tracking-widest text-white [writing-mode:vertical-rl]">
+                PRÓX
+              </span>
             </span>
           )}
           {isCurrent && (
-            <div className="absolute inset-y-0 left-0 z-0 bg-white/15" style={{ width: `${pct}%` }} />
+            <div
+              className="absolute inset-y-0 left-0 z-0 bg-white/15"
+              style={{ width: `${pct}%` }}
+            />
           )}
           {isCurrent || isNext ? (
-            <Disc3 className={`relative z-10 h-5 w-5 shrink-0 ${isCurrent ? "text-white/90 animate-[spin_3s_linear_infinite]" : "text-pl-text/70"}`} />
+            <Disc3
+              className={`relative z-10 h-5 w-5 shrink-0 ${isCurrent ? "text-white/90 animate-[spin_3s_linear_infinite]" : "text-pl-text/70"}`}
+            />
           ) : (
             <Icon className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-70" />
           )}
@@ -185,37 +286,75 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
               M
             </span>
           )}
-          <span className={`relative z-10 flex-1 break-words ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}>
+          <span
+            className={`relative z-10 flex-1 break-words ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}
+          >
             {track.title}
-            {track.artist ? <span className={isCurrent ? "opacity-80" : "opacity-70"}> — {track.artist}</span> : null}
+            {track.artist ? (
+              <span className={isCurrent ? "opacity-80" : "opacity-70"}> — {track.artist}</span>
+            ) : null}
             {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
             {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
-            {realAudio && <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />}
+            {realAudio && (
+              <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />
+            )}
           </span>
-          <span className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold text-white" : isNext ? "text-[12px] font-bold text-emerald-700" : "text-[11px] opacity-80"}`}>
+          <span
+            className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold text-white" : isNext ? "text-[12px] font-bold text-emerald-700" : "text-[11px] opacity-80"}`}
+          >
             {isCurrent ? pfmt(Math.max(0, track.duration - position), true) : pfmt(track.duration)}
           </span>
-          <input ref={fileRef} type="file" accept={AUDIO_ACCEPT} className="hidden" onChange={onPickFile} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept={AUDIO_ACCEPT}
+            className="hidden"
+            onChange={onPickFile}
+          />
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
-        <ContextMenuItem onClick={() => playAt(block.id, track.id)}><Play className="mr-2 h-4 w-4" /> Tocar</ContextMenuItem>
-        <ContextMenuItem onClick={() => { getEngine().fire(track.freq, 1.2); toast.message("Pré-escuta (CUE)"); }}>
-          <Headphones className="mr-2 h-4 w-4" /> Pré-escuta (CUE)
+        <ContextMenuItem onClick={() => playAt(block.id, track.id)}>
+          <Play className="mr-2 h-4 w-4" /> Tocar
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            void cuePlay(track, { reason: "manual" });
+            toast.message("Pré-escuta CUE fora do ar");
+          }}
+        >
+          <Headphones className="mr-2 h-4 w-4" /> Pré-escuta (CUE) real
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => moveTrack(track.id, -1)}><ChevronUp className="mr-2 h-4 w-4" /> Mover para cima</ContextMenuItem>
-        <ContextMenuItem onClick={() => moveTrack(track.id, 1)}><ChevronDown className="mr-2 h-4 w-4" /> Mover para baixo</ContextMenuItem>
+        <ContextMenuItem onClick={() => moveTrack(track.id, -1)}>
+          <ChevronUp className="mr-2 h-4 w-4" /> Mover para cima
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => moveTrack(track.id, 1)}>
+          <ChevronDown className="mr-2 h-4 w-4" /> Mover para baixo
+        </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => fileRef.current?.click()}>
-          <FileAudio className="mr-2 h-4 w-4" /> {realAudio ? "Trocar áudio real…" : "Carregar áudio real…"}
+          <FileAudio className="mr-2 h-4 w-4" />{" "}
+          {realAudio ? "Trocar áudio real…" : "Carregar áudio real…"}
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => onMarkers(track)}><Bookmark className="mr-2 h-4 w-4" /> Marcadores…</ContextMenuItem>
-        <ContextMenuItem onClick={addRefrao}><Repeat className="mr-2 h-4 w-4" /> Adicionar refrão</ContextMenuItem>
-        <ContextMenuItem onClick={carimbar}><Clock className="mr-2 h-4 w-4" /> Carimbar Hora Certa</ContextMenuItem>
+        <ContextMenuItem onClick={() => onMarkers(track)}>
+          <Bookmark className="mr-2 h-4 w-4" /> Marcadores…
+        </ContextMenuItem>
+        <ContextMenuItem onClick={addRefrao}>
+          <Repeat className="mr-2 h-4 w-4" /> Adicionar refrão
+        </ContextMenuItem>
+        <ContextMenuItem onClick={carimbar}>
+          <Clock className="mr-2 h-4 w-4" /> Carimbar Hora Certa
+        </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem className="text-destructive" onClick={() => { removeTrack(block.id, track.id); toast.success("Inserção removida."); }}>
+        <ContextMenuItem
+          className="text-destructive"
+          onClick={() => {
+            removeTrack(block.id, track.id);
+            toast.success("Inserção removida.");
+          }}
+        >
           <Trash2 className="mr-2 h-4 w-4" /> Remover inserção
         </ContextMenuItem>
       </ContextMenuContent>
@@ -223,7 +362,17 @@ function Row({ block, track, onMarkers, isNext }: { block: Block; track: Track; 
   );
 }
 
-function BlockView({ block, onMarkers, onClock, nextId }: { block: Block; onMarkers: (t: Track) => void; onClock: (b: Block) => void; nextId: string | null }) {
+function BlockView({
+  block,
+  onMarkers,
+  onClock,
+  nextId,
+}: {
+  block: Block;
+  onMarkers: (t: Track) => void;
+  onClock: (b: Block) => void;
+  nextId: string | null;
+}) {
   const total = block.items.reduce((s, t) => s + t.duration, 0);
   const isMusical = block.category === "musical";
   const head = isMusical
@@ -243,16 +392,44 @@ function BlockView({ block, onMarkers, onClock, nextId }: { block: Block; onMark
     : "";
   return (
     <div className={`mb-2 overflow-hidden rounded-md border-l-[5px] shadow-sm ${accent}`}>
-      <div className={`flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-bold text-pl-text ${head}`}>
+      <div
+        className={`flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-bold text-pl-text ${head}`}
+      >
         <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-white/40">
           <CatIcon className="h-3.5 w-3.5" />
         </span>
-        <span className="shrink-0 rounded-full bg-white/40 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide">{catLabel}</span>
-        <span className="break-words">{block.date}, {block.time} • {c?.name || block.title}</span>
-        {c?.fixo && <span title="FIXO — não pode atrasar" className="grid h-4 w-4 place-items-center rounded-sm bg-yellow-400 text-[9px] text-black">F</span>}
-        {c?.locked && <span title="Bloco bloqueado (LOCKED)"><Lock className="h-3.5 w-3.5 text-yellow-500" /></span>}
-        {c?.mode && <span title={c.mode === "sat" ? "Bloco satélite" : "Bloco local"} className="rounded bg-pl-toolbar/30 px-1 text-[9px] uppercase">{c.mode}</span>}
-        {c?.descarte && <span title="Descarte aplicado" className="rounded bg-pl-toolbar/30 px-1 text-[9px]">DESC</span>}
+        <span className="shrink-0 rounded-full bg-white/40 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide">
+          {catLabel}
+        </span>
+        <span className="break-words">
+          {block.date}, {block.time} • {c?.name || block.title}
+        </span>
+        {c?.fixo && (
+          <span
+            title="FIXO — não pode atrasar"
+            className="grid h-4 w-4 place-items-center rounded-sm bg-yellow-400 text-[9px] text-black"
+          >
+            F
+          </span>
+        )}
+        {c?.locked && (
+          <span title="Bloco bloqueado (LOCKED)">
+            <Lock className="h-3.5 w-3.5 text-yellow-500" />
+          </span>
+        )}
+        {c?.mode && (
+          <span
+            title={c.mode === "sat" ? "Bloco satélite" : "Bloco local"}
+            className="rounded bg-pl-toolbar/30 px-1 text-[9px] uppercase"
+          >
+            {c.mode}
+          </span>
+        )}
+        {c?.descarte && (
+          <span title="Descarte aplicado" className="rounded bg-pl-toolbar/30 px-1 text-[9px]">
+            DESC
+          </span>
+        )}
         <button
           onClick={() => onClock(block)}
           title="Relógio operacional do bloco"
@@ -261,7 +438,9 @@ function BlockView({ block, onMarkers, onClock, nextId }: { block: Block; onMark
           <Timer className="h-3.5 w-3.5" />
         </button>
         {c?.dur ? (
-          <span className={`font-mono ${durColor}`}>{fmt(total)}/{c.dur}min</span>
+          <span className={`font-mono ${durColor}`}>
+            {fmt(total)}/{c.dur}min
+          </span>
         ) : (
           <span className="font-mono">{fmt(total)}</span>
         )}
@@ -296,8 +475,14 @@ export function ProgramPanel() {
     container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [current?.id]);
 
-  const openMarkers = (t: Track) => { setMarkerTrack(t); setMarkersOpen(true); };
-  const openClock = (b: Block) => { setClockBlock(b); setClockOpen(true); };
+  const openMarkers = (t: Track) => {
+    setMarkerTrack(t);
+    setMarkersOpen(true);
+  };
+  const openClock = (b: Block) => {
+    setClockBlock(b);
+    setClockOpen(true);
+  };
   const targetBlock = currentBlockId ?? blocks[0]?.id;
   const insertPause = () => {
     if (!targetBlock) return;
@@ -315,10 +500,18 @@ export function ProgramPanel() {
       <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
         <Music className="h-4 w-4" /> Programação
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={insertPause} title="Inserir Pausa" className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30">
+          <button
+            onClick={insertPause}
+            title="Inserir Pausa"
+            className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
+          >
             <Pause className="h-3.5 w-3.5" />
           </button>
-          <button onClick={insertHoraCerta} title="Inserir Hora Certa" className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30">
+          <button
+            onClick={insertHoraCerta}
+            title="Inserir Hora Certa"
+            className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
+          >
             <Clock className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -326,7 +519,13 @@ export function ProgramPanel() {
       <TransportBar />
       <div ref={scrollRef} className="pl-scroll flex-1 overflow-y-auto bg-pl-row">
         {blocks.map((b) => (
-          <BlockView key={b.id} block={b} onMarkers={openMarkers} onClock={openClock} nextId={nextId} />
+          <BlockView
+            key={b.id}
+            block={b}
+            onMarkers={openMarkers}
+            onClock={openClock}
+            nextId={nextId}
+          />
         ))}
       </div>
       <MarkersDialog track={markerTrack} open={markersOpen} onOpenChange={setMarkersOpen} />

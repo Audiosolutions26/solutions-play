@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { usePlayer } from "./use-player";
-import { getMarkers } from "@/lib/play-markers";
+import { getMarkers, markerPositionSec } from "@/lib/play-markers";
+import { resolveTrackAudio } from "@/lib/play-audio-files";
+import { deviceForFunction } from "@/lib/play-outputs";
 import { logEvent } from "@/lib/play-events";
 
 /**
@@ -17,7 +19,11 @@ export function useMarkerController(): void {
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!current) { idRef.current = null; firedRef.current.clear(); return; }
+    if (!current) {
+      idRef.current = null;
+      firedRef.current.clear();
+      return;
+    }
     if (idRef.current !== current.id) {
       idRef.current = current.id;
       firedRef.current = new Set();
@@ -26,13 +32,16 @@ export function useMarkerController(): void {
     if (!markers.length) return;
     const engine = getEngine();
     for (const marker of markers) {
-      const at = marker.pos * current.duration;
-      const key = `${marker.kind}:${marker.pos}`;
+      const at = markerPositionSec(marker, current.duration);
+      const key = marker.id || `${marker.kind}:${at.toFixed(3)}`;
       if (position < at || firedRef.current.has(key)) continue;
       firedRef.current.add(key);
       switch (marker.kind) {
         case "annotation":
-          if (marker.note) { toast.info(`📝 ${marker.note}`); logEvent("marcador", "Anotação", marker.note); }
+          if (marker.note) {
+            toast.info(`📝 ${marker.note}`);
+            logEvent("marcador", "Anotação", marker.note);
+          }
           break;
         case "introEnd":
           toast.message("Fim da introdução — locutor liberado.");
@@ -42,11 +51,33 @@ export function useMarkerController(): void {
           toast.message("🎙️ Início de locução.");
           logEvent("locucao", "Início de locução", current.title);
           break;
-        case "carimbo":
-          engine.fire(current.freq > 0 ? current.freq : 330, 0.5);
-          toast.message("Carimbo (Hora Certa) disparado.");
+        case "carimbo": {
+          const path = marker.payload?.audioPath;
+          if (path) {
+            const stamp = {
+              ...current,
+              id: `${current.id}:carimbo:${marker.id || at}`,
+              title: marker.note || "Carimbo",
+              audioUrl: /^https?:/i.test(path) ? path : undefined,
+              filePath: /^https?:/i.test(path) ? undefined : path,
+              kind: "audio" as const,
+            };
+            void resolveTrackAudio(stamp).then((url) => {
+              if (url)
+                engine.fireUrl(
+                  url,
+                  Math.max(1.2, (marker.payload?.fadeMs ?? 0) / 1000 + 0.8),
+                  deviceForFunction("quickstart"),
+                );
+              else engine.fire(current.freq > 0 ? current.freq : 330, 0.5);
+            });
+          } else {
+            engine.fire(current.freq > 0 ? current.freq : 330, 0.5);
+          }
+          toast.message("Carimbo disparado.");
           logEvent("carimbo", "Carimbo disparado", current.title);
           break;
+        }
         case "fadeOutStart": {
           // Fade-out automático no nível da própria inserção (não há volume
           // base do usuário). A próxima faixa entra com ganho 1.0 (original).

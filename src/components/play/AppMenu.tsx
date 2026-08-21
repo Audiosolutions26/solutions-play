@@ -2,10 +2,19 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { parseProgramText } from "@/lib/play-program-import";
+import { parseProgramXml } from "@/lib/play-program-xml";
 import {
-  Menubar, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem,
-  MenubarSeparator, MenubarSub, MenubarSubTrigger, MenubarSubContent,
-  MenubarCheckboxItem, MenubarShortcut,
+  Menubar,
+  MenubarMenu,
+  MenubarTrigger,
+  MenubarContent,
+  MenubarItem,
+  MenubarSeparator,
+  MenubarSub,
+  MenubarSubTrigger,
+  MenubarSubContent,
+  MenubarCheckboxItem,
+  MenubarShortcut,
 } from "@/components/ui/menubar";
 
 export interface PanelVisibility {
@@ -32,15 +41,49 @@ interface Props {
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
 
 const panelList = [
-  "Programação", "Display No Ar", "Músicas Executadas", "Textos ao vivo",
-  "Texto do dia", "Anotações", "Hoje", "Mini Site", "Aparência",
+  "Programação",
+  "Display No Ar",
+  "Músicas Executadas",
+  "Textos ao vivo",
+  "Texto do dia",
+  "Anotações",
+  "Hoje",
+  "Mini Site",
+  "Aparência",
 ];
 
 const triggerCls =
   "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
 
-export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwitchOperator, onOpenQuickStart, onOpenAdvanced, onOpenBeep, onOpenSecoes, onOpenDevices, onOpenShortcuts, onDockQuickStart, onOpenProgramFolders }: Props) {
-  const { togglePlay, stop, next, isPlaying, cue, setCue, selectedId, currentBlockId, blocks, removeTrack, moveTrack, replaceBlocks } = usePlayer();
+export function AppMenu({
+  panels,
+  onTogglePanel,
+  onOpenOptions,
+  onLogout,
+  onSwitchOperator,
+  onOpenQuickStart,
+  onOpenAdvanced,
+  onOpenBeep,
+  onOpenSecoes,
+  onOpenDevices,
+  onOpenShortcuts,
+  onDockQuickStart,
+  onOpenProgramFolders,
+}: Props) {
+  const {
+    togglePlay,
+    stop,
+    next,
+    isPlaying,
+    cue,
+    setCue,
+    selectedId,
+    currentBlockId,
+    blocks,
+    removeTrack,
+    moveTrack,
+    replaceBlocks,
+  } = usePlayer();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const abrirPrograma = () => fileInputRef.current?.click();
@@ -51,15 +94,23 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
     if (!file) return;
     try {
       const text = await file.text();
-      const { blocks: parsed, stats } = parseProgramText(text);
+      const isXml = /\.(pxml|xml3?|xml)$/i.test(file.name) || /^\s*</.test(text);
+      const imported = isXml ? parseProgramXml(text) : parseProgramText(text);
+      if (!imported) {
+        toast.error("Formato de programação inválido ou não suportado");
+        return;
+      }
+      const { blocks: parsed, stats } = imported;
       if (!parsed.length) {
         toast.error("Nenhum bloco válido encontrado no arquivo de programação");
         return;
       }
       replaceBlocks(parsed);
       toast.success(
-        `Programação importada: ${stats.blocks} blocos, ${stats.inserts} inserções` +
-        (stats.unresolved ? ` (${stats.unresolved} arquivo(s) não localizado(s) nas pastas)` : ""),
+        `${isXml ? "Programação PXML importada" : "Programação TXT importada"}: ${stats.blocks} blocos, ${stats.inserts} inserções` +
+          (stats.unresolved
+            ? ` (${stats.unresolved} arquivo(s) não localizado(s) nas pastas)`
+            : ""),
       );
     } catch {
       toast.error("Falha ao ler o arquivo de programação");
@@ -71,7 +122,9 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
       toast.info("Selecione uma inserção para remover");
       return;
     }
-    const block = blocks.find((b) => b.items.some((t) => t.id === selectedId)) ?? blocks.find((b) => b.id === currentBlockId);
+    const block =
+      blocks.find((b) => b.items.some((t) => t.id === selectedId)) ??
+      blocks.find((b) => b.id === currentBlockId);
     if (block) {
       removeTrack(block.id, selectedId);
       toast.success("Inserção removida");
@@ -79,7 +132,10 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
   };
 
   const move = (dir: -1 | 1) => {
-    if (!selectedId) { toast.info("Selecione uma inserção primeiro."); return; }
+    if (!selectedId) {
+      toast.info("Selecione uma inserção primeiro.");
+      return;
+    }
     moveTrack(selectedId, dir);
   };
 
@@ -88,7 +144,7 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
       <input
         ref={fileInputRef}
         type="file"
-        accept=".txt,text/plain"
+        accept=".txt,.xml,.xml3,.pxml,text/plain,application/xml"
         className="hidden"
         onChange={onProgramFile}
       />
@@ -101,9 +157,13 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
           <MenubarItem onSelect={onOpenProgramFolders}>Abrir das pastas Grades/Mapas…</MenubarItem>
           <MenubarItem onSelect={soon("Salvar programação")}>Salvar programação</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>Gerar programação automática</MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>
+            Gerar programação automática
+          </MenubarItem>
           <MenubarItem onSelect={soon("Importar áudios")}>Importar áudios…</MenubarItem>
-          <MenubarItem onSelect={soon("Registrar comerciais")}>Registrar comerciais (Ligação)</MenubarItem>
+          <MenubarItem onSelect={soon("Registrar comerciais")}>
+            Registrar comerciais (Ligação)
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={soon("Imprimir")}>Imprimir programação…</MenubarItem>
           <MenubarSeparator />
@@ -116,19 +176,35 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
       <MenubarMenu>
         <MenubarTrigger className={triggerCls}>Editar</MenubarTrigger>
         <MenubarContent align="start">
-          <MenubarItem onSelect={soon("Desfazer")}>Desfazer<MenubarShortcut>Ctrl+Z</MenubarShortcut></MenubarItem>
-          <MenubarItem onSelect={soon("Refazer")}>Refazer<MenubarShortcut>Ctrl+Y</MenubarShortcut></MenubarItem>
+          <MenubarItem onSelect={soon("Desfazer")}>
+            Desfazer<MenubarShortcut>Ctrl+Z</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onSelect={soon("Refazer")}>
+            Refazer<MenubarShortcut>Ctrl+Y</MenubarShortcut>
+          </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Recortar")}>Recortar<MenubarShortcut>Ctrl+X</MenubarShortcut></MenubarItem>
-          <MenubarItem onSelect={soon("Copiar")}>Copiar<MenubarShortcut>Ctrl+C</MenubarShortcut></MenubarItem>
-          <MenubarItem onSelect={soon("Colar")}>Colar<MenubarShortcut>Ctrl+V</MenubarShortcut></MenubarItem>
+          <MenubarItem onSelect={soon("Recortar")}>
+            Recortar<MenubarShortcut>Ctrl+X</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onSelect={soon("Copiar")}>
+            Copiar<MenubarShortcut>Ctrl+C</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onSelect={soon("Colar")}>
+            Colar<MenubarShortcut>Ctrl+V</MenubarShortcut>
+          </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={removeSelected}>Remover inserção<MenubarShortcut>Del</MenubarShortcut></MenubarItem>
+          <MenubarItem onSelect={removeSelected}>
+            Remover inserção<MenubarShortcut>Del</MenubarShortcut>
+          </MenubarItem>
           <MenubarItem onSelect={() => move(-1)}>Mover inserção p/ cima</MenubarItem>
           <MenubarItem onSelect={() => move(1)}>Mover inserção p/ baixo</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Localizar")}>Localizar arquivo…<MenubarShortcut>Ctrl+F</MenubarShortcut></MenubarItem>
-          <MenubarItem onSelect={soon("Selecionar tudo")}>Selecionar tudo<MenubarShortcut>Ctrl+A</MenubarShortcut></MenubarItem>
+          <MenubarItem onSelect={soon("Localizar")}>
+            Localizar arquivo…<MenubarShortcut>Ctrl+F</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onSelect={soon("Selecionar tudo")}>
+            Selecionar tudo<MenubarShortcut>Ctrl+A</MenubarShortcut>
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -139,11 +215,23 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
           <MenubarSub>
             <MenubarSubTrigger>Painéis</MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarCheckboxItem checked={panels.pastas} onCheckedChange={() => onTogglePanel("pastas")}>Pastas</MenubarCheckboxItem>
-              <MenubarCheckboxItem checked={panels.propriedades} onCheckedChange={() => onTogglePanel("propriedades")}>Propriedades</MenubarCheckboxItem>
+              <MenubarCheckboxItem
+                checked={panels.pastas}
+                onCheckedChange={() => onTogglePanel("pastas")}
+              >
+                Pastas
+              </MenubarCheckboxItem>
+              <MenubarCheckboxItem
+                checked={panels.propriedades}
+                onCheckedChange={() => onTogglePanel("propriedades")}
+              >
+                Propriedades
+              </MenubarCheckboxItem>
               <MenubarSeparator />
               {panelList.map((p) => (
-                <MenubarItem key={p} onSelect={soon(p)}>{p}</MenubarItem>
+                <MenubarItem key={p} onSelect={soon(p)}>
+                  {p}
+                </MenubarItem>
               ))}
             </MenubarSubContent>
           </MenubarSub>
@@ -186,16 +274,23 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
       <MenubarMenu>
         <MenubarTrigger className={triggerCls}>Ferramentas</MenubarTrigger>
         <MenubarContent align="start">
-          <MenubarItem onSelect={() => togglePlay()}>{isPlaying ? "Pausar" : "Tocar"}<MenubarShortcut>Espaço</MenubarShortcut></MenubarItem>
+          <MenubarItem onSelect={() => togglePlay()}>
+            {isPlaying ? "Pausar" : "Tocar"}
+            <MenubarShortcut>Espaço</MenubarShortcut>
+          </MenubarItem>
           <MenubarItem onSelect={() => stop()}>Parar</MenubarItem>
           <MenubarItem onSelect={() => next()}>Próxima inserção</MenubarItem>
           <MenubarSeparator />
-          <MenubarCheckboxItem checked={cue} onCheckedChange={(v) => setCue(!!v)}>Pré-escuta (CUE)</MenubarCheckboxItem>
+          <MenubarCheckboxItem checked={cue} onCheckedChange={(v) => setCue(!!v)}>
+            Pré-escuta (CUE)
+          </MenubarCheckboxItem>
           <MenubarItem onSelect={soon("Hora Certa")}>Hora Certa</MenubarItem>
           <MenubarItem onSelect={onOpenBeep}>Beep…</MenubarItem>
           <MenubarItem onSelect={soon("Mapas comerciais")}>Gerar mapas comerciais</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={onOpenSecoes}>Seções (Arduino/LPT/Satélite/RDS/Sensores)…</MenubarItem>
+          <MenubarItem onSelect={onOpenSecoes}>
+            Seções (Arduino/LPT/Satélite/RDS/Sensores)…
+          </MenubarItem>
           <MenubarItem onSelect={onOpenDevices}>Dispositivos de áudio…</MenubarItem>
           <MenubarItem onSelect={onOpenShortcuts}>Gerenciamento de atalhos…</MenubarItem>
           <MenubarSeparator />
@@ -220,12 +315,18 @@ export function AppMenu({ panels, onTogglePanel, onOpenOptions, onLogout, onSwit
       <MenubarMenu>
         <MenubarTrigger className={triggerCls}>Ajuda</MenubarTrigger>
         <MenubarContent align="start">
-          <MenubarItem onSelect={soon("Guia de configuração e uso")}>Guia de configuração e uso</MenubarItem>
+          <MenubarItem onSelect={soon("Guia de configuração e uso")}>
+            Guia de configuração e uso
+          </MenubarItem>
           <MenubarItem onSelect={soon("Suporte Solutions")}>Suporte Solutions</MenubarItem>
           <MenubarItem onSelect={soon("Acesso remoto")}>Acesso remoto</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Verificar atualizações")}>Verificar atualizações</MenubarItem>
-          <MenubarItem onSelect={() => toast.info("Solutions-Play • modo demonstração • v1.0")}>Sobre o Solutions-Play</MenubarItem>
+          <MenubarItem onSelect={soon("Verificar atualizações")}>
+            Verificar atualizações
+          </MenubarItem>
+          <MenubarItem onSelect={() => toast.info("Solutions-Play • modo demonstração • v1.0")}>
+            Sobre o Solutions-Play
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>

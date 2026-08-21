@@ -1,68 +1,111 @@
-// In-memory registry of real audio files loaded by the user, keyed by track id.
-// Files are kept as object URLs for the session (no backend / no persistence).
+// Session-scoped audio URL resolver. Files are kept as object/data URLs only
+// while the app is running; the original media is never rewritten.
 
 import { readAudioPathNative } from "./play-native";
 import type { Track } from "./play-data";
 
+const MAX_URL_CACHE = 96;
 const urls = new Map<string, string>();
+const pending = new Map<string, Promise<string | undefined>>();
+
+function touch(id: string, url: string) {
+  urls.delete(id);
+  urls.set(id, url);
+  while (urls.size > MAX_URL_CACHE) {
+    const oldest = urls.keys().next().value as string | undefined;
+    if (!oldest) break;
+    urls.delete(oldest);
+  }
+}
 
 export function setTrackAudioUrl(trackId: string, url: string) {
   const prev = urls.get(trackId);
-  if (prev && prev !== url) {
-    try { URL.revokeObjectURL(prev); } catch { /* ignore */ }
+  if (prev && prev !== url && /^blob:/i.test(prev)) {
+    try {
+      URL.revokeObjectURL(prev);
+    } catch {
+      /* ignore */
+    }
   }
-  urls.set(trackId, url);
+  touch(trackId, url);
 }
 
 export function getTrackAudioUrl(trackId: string): string | undefined {
-  return urls.get(trackId);
+  const url = urls.get(trackId);
+  if (url) touch(trackId, url);
+  return url;
 }
 
 export function hasTrackAudio(trackId: string): boolean {
   return urls.has(trackId);
 }
 
-export async function readAudioFile(
-  file: File,
-): Promise<{ url: string; duration: number }> {
+export function clearTrackAudio(trackId: string): void {
+  const url = urls.get(trackId);
+  if (url && /^blob:/i.test(url)) {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  }
+  urls.delete(trackId);
+  pending.delete(trackId);
+}
+
+export function clearTrackAudioCache(): void {
+  for (const id of urls.keys()) clearTrackAudio(id);
+  urls.clear();
+  pending.clear();
+}
+
+export async function readAudioFile(file: File): Promise<{ url: string; duration: number }> {
   const url = URL.createObjectURL(file);
   const duration = await new Promise<number>((resolve) => {
-    const a = new Audio();
-    a.preload = "metadata";
-    a.onloadedmetadata = () => resolve(Number.isFinite(a.duration) ? a.duration : 0);
-    a.onerror = () => resolve(0);
-    a.src = url;
+    const audio = new Audio();
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => resolve(Number.isFinite(audio.duration) ? audio.duration : 0);
+    audio.onerror = () => resolve(0);
+    audio.src = url;
   });
   return { url, duration };
 }
 
-// Resolve a URL tocável de um track. Para áudios de pasta (filePath), lê o
-// arquivo nativo sob demanda e guarda em cache pela id do track.
+/** Resolve uma mídia local/remota uma única vez por Track durante a sessão. */
 export async function resolveTrackAudio(track: Track): Promise<string | undefined> {
-  const cached = urls.get(track.id);
+  const cached = getTrackAudioUrl(track.id);
   if (cached) return cached;
-  if (track.audioUrl) return track.audioUrl;
-  if (track.filePath) {
-    const url = await readAudioPathNative(track.filePath);
-    if (url) { urls.set(track.id, url); return url; }
+  const active = pending.get(track.id);
+  if (active) return active;
+  const request = (async () => {
+    if (track.audioUrl) {
+      touch(track.id, track.audioUrl);
+      return track.audioUrl;
+    }
+    if (track.filePath) {
+      const url = await readAudioPathNative(track.filePath);
+      if (url) touch(track.id, url);
+      return url ?? undefined;
+    }
+    return undefined;
+  })();
+  pending.set(track.id, request);
+  try {
+    return await request;
+  } finally {
+    if (pending.get(track.id) === request) pending.delete(track.id);
   }
-  return undefined;
 }
 
-// Lê a duração (em segundos) de um track sem manter o arquivo em memória.
-// Usado para mostrar o "tempo" das músicas de uma pasta na lista, sem
-// inflar o cache (importante quando a pasta tem muitos arquivos).
+// Lê a duração sem manter uma segunda cópia do arquivo em memória.
 export async function readTrackDuration(track: Track): Promise<number> {
-  let url = urls.get(track.id) || track.audioUrl;
-  if (!url && track.filePath) {
-    url = (await readAudioPathNative(track.filePath)) ?? undefined;
-  }
+  const url = await resolveTrackAudio(track);
   if (!url) return 0;
   return new Promise<number>((resolve) => {
-    const a = new Audio();
-    a.preload = "metadata";
-    a.onloadedmetadata = () => resolve(Number.isFinite(a.duration) ? a.duration : 0);
-    a.onerror = () => resolve(0);
-    a.src = url as string;
+    const audio = new Audio();
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => resolve(Number.isFinite(audio.duration) ? audio.duration : 0);
+    audio.onerror = () => resolve(0);
+    audio.src = url;
   });
 }

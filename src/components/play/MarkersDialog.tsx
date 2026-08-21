@@ -1,15 +1,45 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bookmark, Save, RotateCcw, Trash2, ZoomIn, ZoomOut, Play, Lock, Unlock, Pencil, Copy } from "lucide-react";
+import {
+  Bookmark,
+  Save,
+  RotateCcw,
+  Trash2,
+  ZoomIn,
+  ZoomOut,
+  Play,
+  Lock,
+  Unlock,
+  Pencil,
+  Copy,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { fmt, type Track } from "@/lib/play-data";
 import {
-  MARKER_DEFS, type Marker, type MarkerKind, getMarkers, saveMarkers, pseudoWave, applyMarkersToTracks,
+  MARKER_DEFS,
+  type Marker,
+  type MarkerKind,
+  getMarkers,
+  saveMarkers,
+  pseudoWave,
+  applyMarkersToTracks,
+  markerPositionSec,
+  validateMarkers,
 } from "@/lib/play-markers";
 import { usePlayer } from "@/hooks/use-player";
+import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
+import { cuePlayAt } from "@/lib/play-cue";
+import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
+import { createPkfInfoDocument, serializePkfInfo } from "@/lib/play-pkfinfo";
+import { writePkfInfoNative } from "@/lib/play-native";
 
 const HIT = 0.012; // tolerância (fração) para pegar um marcador ao clicar
 
@@ -22,11 +52,12 @@ export function MarkersDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { getEngine, blocks } = usePlayer();
+  const { blocks } = usePlayer();
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [tool, setTool] = useState<MarkerKind>("startPoint");
   const [zoom, setZoom] = useState(1);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [waveform, setWaveform] = useState<WaveformPeaks | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -36,10 +67,32 @@ export function MarkersDialog({
     }
   }, [track, open]);
 
-  const wave = useMemo(
+  const fallbackWave = useMemo(
     () => (track ? pseudoWave(Math.round((track.freq + track.duration) * 7) + 1) : []),
     [track],
   );
+  const durationSec = waveform?.durationSec || track?.duration || 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    setWaveform(null);
+    if (!track || !open)
+      return () => {
+        cancelled = true;
+      };
+    const url = getTrackAudioUrl(track.id) || track.audioUrl;
+    void (url ? Promise.resolve(url) : resolveTrackAudio(track))
+      .then((resolved) => {
+        if (!resolved || cancelled) return null;
+        return analyzeWaveform(resolved);
+      })
+      .then((peaks) => {
+        if (!cancelled && peaks) setWaveform(peaks);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [track, open]);
 
   const block = track ? blocks.find((b) => b.items.some((t) => t.id === track.id)) : undefined;
 
@@ -63,12 +116,19 @@ export function MarkersDialog({
     ctx.moveTo(0, h / 2);
     ctx.lineTo(w, h / 2);
     ctx.stroke();
-    ctx.fillStyle = "rgba(232,130,30,0.55)";
-    const n = wave.length;
+    const left = waveform?.left;
+    const right = waveform?.right ?? left;
+    const n = left?.length || fallbackWave.length;
     for (let x = 0; x < w; x++) {
-      const v = wave[Math.floor((x / w) * n)] ?? 0;
-      const bar = v * (h / 2) * 0.92;
-      ctx.fillRect(x, h / 2 - bar, 1, bar * 2);
+      const idx = Math.floor((x / w) * n);
+      const lv = left ? (left[idx] ?? 0) : (fallbackWave[idx] ?? 0);
+      const rv = right ? (right[idx] ?? lv) : lv;
+      const topBar = lv * (h / 2) * 0.86;
+      const bottomBar = rv * (h / 2) * 0.86;
+      ctx.fillStyle = waveform ? "rgba(75,166,255,0.86)" : "rgba(232,130,30,0.55)";
+      ctx.fillRect(x, h / 2 - topBar, 1, topBar);
+      ctx.fillStyle = waveform ? "rgba(137,207,255,0.72)" : "rgba(232,130,30,0.32)";
+      ctx.fillRect(x, h / 2, 1, bottomBar);
     }
     for (const m of markers) {
       const def = MARKER_DEFS.find((d) => d.kind === m.kind);
@@ -90,7 +150,7 @@ export function MarkersDialog({
       ctx.closePath();
       ctx.fill();
     }
-  }, [markers, wave, track, open, zoom]);
+  }, [markers, waveform, fallbackWave, track, open, zoom]);
 
   if (!track) return null;
 
@@ -100,10 +160,14 @@ export function MarkersDialog({
   };
 
   const findNear = (pos: number): number => {
-    let best = -1, bestD = HIT;
+    let best = -1,
+      bestD = HIT;
     markers.forEach((m, i) => {
       const d = Math.abs(m.pos - pos);
-      if (d < bestD) { bestD = d; best = i; }
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
     });
     return best;
   };
@@ -124,16 +188,28 @@ export function MarkersDialog({
     setMarkers((prev) => {
       let next = prev;
       if (def.single) next = prev.filter((m) => m.kind !== tool || m.locked);
-      const note = tool === "annotation" ? (window.prompt("Texto da anotação:") || "") : undefined;
-      return [...next, { kind: tool, pos, note }];
+      const note = tool === "annotation" ? window.prompt("Texto da anotação:") || "" : undefined;
+      const id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${tool}-${Date.now()}`;
+      return [
+        ...next,
+        { id, kind: tool, pos, positionSec: durationSec > 0 ? pos * durationSec : undefined, note },
+      ];
     });
-    getEngine().fire(track.freq > 0 ? track.freq : 330, 0.12);
   };
 
   const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (dragIdx == null) return;
     const pos = posFromEvent(e);
-    setMarkers((prev) => prev.map((m, i) => (i === dragIdx ? { ...m, pos } : m)));
+    setMarkers((prev) =>
+      prev.map((m, i) =>
+        i === dragIdx
+          ? { ...m, pos, positionSec: durationSec > 0 ? pos * durationSec : undefined }
+          : m,
+      ),
+    );
   };
 
   const endDrag = () => setDragIdx(null);
@@ -147,24 +223,57 @@ export function MarkersDialog({
   };
 
   const removeAt = (idx: number) => {
-    if (markers[idx].locked) { toast.info("Marcador travado — destrave para remover."); return; }
+    if (markers[idx].locked) {
+      toast.info("Marcador travado — destrave para remover.");
+      return;
+    }
     setMarkers((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const lockAll = () => setMarkers((prev) => prev.map((m) => ({ ...m, locked: true })));
 
   const applyToBlock = () => {
-    if (!block) { toast.error("Bloco não encontrado."); return; }
+    if (!block) {
+      toast.error("Bloco não encontrado.");
+      return;
+    }
     const others = block.items.filter((t) => t.id !== track.id).map((t) => t.id);
-    if (!others.length) { toast.info("O bloco não tem outras inserções."); return; }
+    if (!others.length) {
+      toast.info("O bloco não tem outras inserções.");
+      return;
+    }
     saveMarkers(track.id, markers);
     applyMarkersToTracks(markers, others);
     toast.success(`Marcadores aplicados a ${others.length} inserção(ões) do bloco.`);
   };
 
   const save = () => {
+    const validation = validateMarkers(markers, durationSec);
+    if (!validation.valid) {
+      toast.error(validation.errors[0] || "Marcadores inválidos.");
+      return;
+    }
     saveMarkers(track.id, markers);
-    toast.success("Marcadores salvos.");
+    if (track.filePath && durationSec > 0) {
+      const cueIn = Math.max(
+        0,
+        markerPositionSec(
+          markers.find((m) => m.kind === "startPoint") ?? { kind: "startPoint", pos: 0 },
+          durationSec,
+        ),
+      );
+      const cueOut = markerPositionSec(
+        markers.find((m) => m.kind === "endPoint") ?? { kind: "endPoint", pos: 1 },
+        durationSec,
+      );
+      const document = createPkfInfoDocument(
+        track,
+        { duration: durationSec, cueIn, cueOut },
+        markers,
+      );
+      void writePkfInfoNative({ audioPath: track.filePath, content: serializePkfInfo(document) });
+    }
+    toast.success("Marcadores salvos sem alterar o áudio.");
     onOpenChange(false);
   };
 
@@ -176,7 +285,8 @@ export function MarkersDialog({
             <Bookmark className="h-5 w-5" /> Marcadores — {track.title}
           </DialogTitle>
           <DialogDescription className="text-[12px]">
-            {track.artist ? `${track.artist} • ` : ""}duração {fmt(track.duration)}. Clique para criar; arraste um marcador para reposicionar; trave para fixar.
+            {track.artist ? `${track.artist} • ` : ""}duração {fmt(durationSec)}. Clique para criar;
+            arraste um marcador para reposicionar; trave para fixar.
           </DialogDescription>
         </DialogHeader>
 
@@ -188,7 +298,9 @@ export function MarkersDialog({
               onClick={() => setTool(d.kind)}
               className={cn(
                 "flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-medium transition-colors",
-                tool === d.kind ? "border-transparent text-white" : "border-pl-panel-dark/40 bg-white/60 text-pl-text hover:bg-muted",
+                tool === d.kind
+                  ? "border-transparent text-white"
+                  : "border-pl-panel-dark/40 bg-white/60 text-pl-text hover:bg-muted",
               )}
               style={tool === d.kind ? { backgroundColor: d.color } : undefined}
             >
@@ -215,15 +327,29 @@ export function MarkersDialog({
             {MARKER_DEFS.find((d) => d.kind === tool)?.help}
           </p>
           <div className="flex items-center gap-1">
-            <button onClick={() => setZoom((z) => Math.max(1, z - 0.5))} className="rounded border p-1 hover:bg-muted" title="Menos zoom"><ZoomOut className="h-3.5 w-3.5" /></button>
+            <button
+              onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
+              className="rounded border p-1 hover:bg-muted"
+              title="Menos zoom"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
             <span className="w-10 text-center text-[11px] tabular-nums">{zoom.toFixed(1)}x</span>
-            <button onClick={() => setZoom((z) => Math.min(6, z + 0.5))} className="rounded border p-1 hover:bg-muted" title="Mais zoom"><ZoomIn className="h-3.5 w-3.5" /></button>
+            <button
+              onClick={() => setZoom((z) => Math.min(6, z + 0.5))}
+              className="rounded border p-1 hover:bg-muted"
+              title="Mais zoom"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
 
         <div className="max-h-40 overflow-y-auto rounded border border-pl-panel-dark/40">
           {markers.length === 0 ? (
-            <p className="p-3 text-[12px] text-muted-foreground">Nenhum marcador. Clique na onda para adicionar.</p>
+            <p className="p-3 text-[12px] text-muted-foreground">
+              Nenhum marcador. Clique na onda para adicionar.
+            </p>
           ) : (
             <table className="w-full text-[12px]">
               <tbody>
@@ -236,19 +362,45 @@ export function MarkersDialog({
                       <tr key={`${m.kind}-${i}`} className="border-t border-pl-panel-dark/30">
                         <td className="px-2 py-1">
                           <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: def.color }} />
-                            {def.label}{m.locked && <Lock className="h-3 w-3 text-amber-500" />}
+                            <span
+                              className="h-2.5 w-2.5 rounded-sm"
+                              style={{ backgroundColor: def.color }}
+                            />
+                            {def.label}
+                            {m.locked && <Lock className="h-3 w-3 text-amber-500" />}
                           </span>
                         </td>
-                        <td className="px-2 py-1 font-mono tabular-nums">{fmt(track.duration * m.pos)}</td>
+                        <td className="px-2 py-1 font-mono tabular-nums">
+                          {fmt(markerPositionSec(m, durationSec))}
+                        </td>
                         <td className="px-2 py-1 text-muted-foreground">{m.note}</td>
                         <td className="px-2 py-1">
                           <div className="flex items-center justify-end gap-1">
-                            <button onClick={() => editNote(i)} title="Editar nota" className="text-muted-foreground hover:text-pl-text"><Pencil className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => toggleLock(i)} title={m.locked ? "Destravar" : "Travar"} className="text-amber-500 hover:opacity-70">
-                              {m.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                            <button
+                              onClick={() => editNote(i)}
+                              title="Editar nota"
+                              className="text-muted-foreground hover:text-pl-text"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => removeAt(i)} title="Remover" className="text-destructive hover:opacity-70"><Trash2 className="h-3.5 w-3.5" /></button>
+                            <button
+                              onClick={() => toggleLock(i)}
+                              title={m.locked ? "Destravar" : "Travar"}
+                              className="text-amber-500 hover:opacity-70"
+                            >
+                              {m.locked ? (
+                                <Lock className="h-3.5 w-3.5" />
+                              ) : (
+                                <Unlock className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => removeAt(i)}
+                              title="Remover"
+                              className="text-destructive hover:opacity-70"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -260,19 +412,34 @@ export function MarkersDialog({
         </div>
 
         <DialogFooter className="flex-wrap gap-1">
-          <button onClick={() => getEngine().fire(track.freq > 0 ? track.freq : 330, 0.5)} className="mr-auto inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted">
-            <Play className="h-3.5 w-3.5" /> Pré-escuta
+          <button
+            onClick={() => void cuePlayAt(track, 0, undefined, "manual")}
+            className="mr-auto inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+          >
+            <Play className="h-3.5 w-3.5" /> Pré-escuta real
           </button>
-          <button onClick={lockAll} className="inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted">
+          <button
+            onClick={lockAll}
+            className="inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+          >
             <Lock className="h-3.5 w-3.5" /> Travar todos
           </button>
-          <button onClick={applyToBlock} className="inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted">
+          <button
+            onClick={applyToBlock}
+            className="inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+          >
             <Copy className="h-3.5 w-3.5" /> Aplicar ao bloco
           </button>
-          <button onClick={() => setMarkers(getMarkers(track.id))} className="inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted">
+          <button
+            onClick={() => setMarkers(getMarkers(track.id))}
+            className="inline-flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
+          >
             <RotateCcw className="h-3.5 w-3.5" /> Restaurar
           </button>
-          <button onClick={save} className="inline-flex items-center gap-1 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-[12px] font-semibold text-white hover:brightness-110">
+          <button
+            onClick={save}
+            className="inline-flex items-center gap-1 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-[12px] font-semibold text-white hover:brightness-110"
+          >
             <Save className="h-3.5 w-3.5" /> Salvar
           </button>
         </DialogFooter>

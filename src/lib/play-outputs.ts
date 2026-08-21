@@ -6,17 +6,12 @@
 import { loadDevicePrefs, saveDevicePrefs, type DeviceLists } from "./play-audio-devices";
 import { getAudioEngine } from "./audio-engine";
 import { refreshCueSink } from "./play-cue";
+import type { Track } from "./play-data";
 
 export const OUTPUT_DEFAULT = "__default__";
 
 export type OutputFn =
-  | "programacao"
-  | "preEscuta"
-  | "quickstart"
-  | "tocar"
-  | "comerciais"
-  | "musicas"
-  | "vinhetas";
+  "programacao" | "preEscuta" | "quickstart" | "tocar" | "comerciais" | "musicas" | "vinhetas";
 
 export interface OutputFnMeta {
   fn: OutputFn;
@@ -56,7 +51,9 @@ export function loadRouting(): OutputRouting {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || "null");
     if (raw && typeof raw === "object") Object.assign(base, raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   // Mantém compatibilidade com as preferências já existentes (Dispositivos).
   const prefs = loadDevicePrefs();
   if (base.programacao === OUTPUT_DEFAULT && prefs.outputId) base.programacao = prefs.outputId;
@@ -65,7 +62,11 @@ export function loadRouting(): OutputRouting {
 }
 
 export function saveRouting(routing: OutputRouting) {
-  try { localStorage.setItem(KEY, JSON.stringify(routing)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(routing));
+  } catch {
+    /* ignore */
+  }
   // Espelha Programação/Pré-escuta nas preferências usadas pelo motor e pelo CUE.
   const prefs = loadDevicePrefs();
   saveDevicePrefs({
@@ -81,6 +82,24 @@ export function deviceForFunction(fn: OutputFn, routing = loadRouting()): string
   return id && id !== OUTPUT_DEFAULT ? id : "";
 }
 
+/** Mapeia uma inserção para o barramento de saída operacional. */
+export function outputFunctionForTrack(track: Track, explicit?: OutputFn): OutputFn {
+  if (explicit) return explicit;
+  if (track.category === "comercial") return "comerciais";
+  if (track.category === "vinheta") return "vinhetas";
+  if (track.category === "musical") return "musicas";
+  return "programacao";
+}
+
+export function deviceForTrack(track: Track, explicit?: OutputFn, routing = loadRouting()): string {
+  return deviceForFunction(outputFunctionForTrack(track, explicit), routing);
+}
+
+/** Aplica uma saída à voz principal; retorna falso quando o runtime só tem sink padrão. */
+export async function applyTrackOutput(track: Track, explicit?: OutputFn): Promise<boolean> {
+  return getAudioEngine().setOutputDevice(deviceForTrack(track, explicit));
+}
+
 // "ID para Saídas": identificador automático e estável por saída reconhecida.
 // Saída padrão do sistema = "S0"; demais saídas = "S1", "S2", ... na ordem.
 export function outputIds(devices: DeviceLists): Map<string, string> {
@@ -92,7 +111,11 @@ export function outputIds(devices: DeviceLists): Map<string, string> {
   return map;
 }
 
-export function outputIdForFunction(fn: OutputFn, devices: DeviceLists, routing = loadRouting()): string {
+export function outputIdForFunction(
+  fn: OutputFn,
+  devices: DeviceLists,
+  routing = loadRouting(),
+): string {
   const ids = outputIds(devices);
   return ids.get(routing[fn]) ?? "S0";
 }
@@ -101,6 +124,14 @@ export function outputIdForFunction(fn: OutputFn, devices: DeviceLists, routing 
 // Programação -> destino do motor de áudio; Pré-escuta -> saída do CUE.
 export async function applyRouting(routing = loadRouting()): Promise<void> {
   saveRouting(routing);
-  try { await getAudioEngine().setOutputDevice(deviceForFunction("programacao", routing)); } catch { /* ignore */ }
-  try { await refreshCueSink(); } catch { /* ignore */ }
+  try {
+    await getAudioEngine().setOutputDevice(deviceForFunction("programacao", routing));
+  } catch {
+    /* ignore */
+  }
+  try {
+    await refreshCueSink();
+  } catch {
+    /* ignore */
+  }
 }

@@ -24,7 +24,7 @@ const EP_IN = new Float32Array(EP_STEPS);
 const EP_OUT = new Float32Array(EP_STEPS);
 for (let i = 0; i < EP_STEPS; i++) {
   const x = i / (EP_STEPS - 1);
-  EP_IN[i] = Math.sin((x * Math.PI) / 2);  // 0 → 1 (entra)
+  EP_IN[i] = Math.sin((x * Math.PI) / 2); // 0 → 1 (entra)
   EP_OUT[i] = Math.cos((x * Math.PI) / 2); // 1 → 0 (sai)
 }
 
@@ -42,6 +42,9 @@ interface UrlVoice {
   el: HTMLAudioElement;
   src: MediaElementAudioSourceNode;
   gain: GainNode;
+  sourceUrl: string;
+  streamRetries: number;
+  retryTimer: number | null;
 }
 
 export class AudioEngine {
@@ -72,7 +75,9 @@ export class AudioEngine {
   private ensure() {
     if (typeof window === "undefined") return;
     if (this.ctx) return;
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     // latencyHint "playback" prioriza QUALIDADE sobre latência (ideal para
     // playout de rádio), deixando o motor usar a taxa de amostragem nativa
     // do hardware sem reamostragem desnecessária.
@@ -119,7 +124,35 @@ export class AudioEngine {
     const gain = this.ctx.createGain();
     src.connect(gain);
     gain.connect(this.master);
-    const voice: UrlVoice = { el, src, gain };
+    const voice: UrlVoice = { el, src, gain, sourceUrl: url, streamRetries: 0, retryTimer: null };
+    // Streams remotos podem cair. Faz no máximo três tentativas graduais e
+    // nunca deixa uma falha externa disparar avanço falso da programação.
+    el.addEventListener("error", () => {
+      if (
+        voice !== this.mainVoice ||
+        !/^https?:/i.test(voice.sourceUrl) ||
+        voice.streamRetries >= 3
+      )
+        return;
+      const delay = 500 * 2 ** voice.streamRetries;
+      voice.streamRetries++;
+      voice.retryTimer = window.setTimeout(() => {
+        if (voice !== this.mainVoice || !this.playing) return;
+        try {
+          voice.el.load();
+        } catch {
+          /* ignore */
+        }
+        void voice.el.play().catch(() => undefined);
+      }, delay);
+    });
+    el.addEventListener("playing", () => {
+      voice.streamRetries = 0;
+      if (voice.retryTimer !== null) {
+        window.clearTimeout(voice.retryTimer);
+        voice.retryTimer = null;
+      }
+    });
     // Avanço automático no fim real do arquivo. Só a voz PRINCIPAL dispara
     // (vozes antigas em crossfade são ignoradas para não pular duas vezes).
     el.addEventListener("ended", () => {
@@ -130,9 +163,25 @@ export class AudioEngine {
 
   private disposeVoice(v: UrlVoice | null) {
     if (!v) return;
-    try { v.el.pause(); } catch { /* ignore */ }
-    try { v.gain.disconnect(); } catch { /* ignore */ }
-    try { v.src.disconnect(); } catch { /* ignore */ }
+    if (v.retryTimer !== null) {
+      window.clearTimeout(v.retryTimer);
+      v.retryTimer = null;
+    }
+    try {
+      v.el.pause();
+    } catch {
+      /* ignore */
+    }
+    try {
+      v.gain.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      v.src.disconnect();
+    } catch {
+      /* ignore */
+    }
   }
 
   private disposeVoiceAfter(v: UrlVoice, seconds: number) {
@@ -142,7 +191,8 @@ export class AudioEngine {
   // ---- scheduler primitives ---------------------------------------------
 
   private note(time: number, freq: number, dur: number, type: OscillatorType, peak: number) {
-    const ctx = this.ctx!, master = this.master!;
+    const ctx = this.ctx!,
+      master = this.master!;
     const osc = ctx.createOscillator();
     osc.type = type;
     osc.frequency.value = freq;
@@ -157,7 +207,8 @@ export class AudioEngine {
   }
 
   private perc(time: number, dur: number, peak: number, hp = false) {
-    const ctx = this.ctx!, master = this.master!;
+    const ctx = this.ctx!,
+      master = this.master!;
     if (!this.noiseBuf) return;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
@@ -168,7 +219,8 @@ export class AudioEngine {
       const f = ctx.createBiquadFilter();
       f.type = "highpass";
       f.frequency.value = 6000;
-      src.connect(f); f.connect(g);
+      src.connect(f);
+      f.connect(g);
     } else {
       src.connect(g);
     }
@@ -266,7 +318,11 @@ export class AudioEngine {
     const prev = this.mainVoice;
     const voice = this.makeVoice(url);
     if (!voice) return;
-    try { voice.el.currentTime = fromOffset; } catch { /* ignore */ }
+    try {
+      voice.el.currentTime = fromOffset;
+    } catch {
+      /* ignore */
+    }
 
     const now = this.ctx.currentTime;
     const fade = Math.max(0, fadeMs) / 1000;
@@ -303,7 +359,13 @@ export class AudioEngine {
     if (!this.ctx) return;
     this.offset = this.position();
     if (this.mode === "url") {
-      if (this.mainVoice) { try { this.mainVoice.el.pause(); } catch { /* ignore */ } }
+      if (this.mainVoice) {
+        try {
+          this.mainVoice.el.pause();
+        } catch {
+          /* ignore */
+        }
+      }
     } else {
       this.stopScheduler();
     }
@@ -359,7 +421,10 @@ export class AudioEngine {
   // Com deviceId: roteia para a saída escolhida (manual p.111 — saída QuickStart)
   // usando setSinkId em um elemento dedicado, fora do AudioContext.
   fireUrl(url: string, duration = 2, deviceId?: string) {
-    if (deviceId) { this.fireUrlOn(url, deviceId, duration); return; }
+    if (deviceId) {
+      this.fireUrlOn(url, deviceId, duration);
+      return;
+    }
     this.ensure();
     const ctx = this.ctx;
     const master = this.master;
@@ -371,10 +436,18 @@ export class AudioEngine {
     try {
       const src = ctx.createMediaElementSource(el);
       src.connect(master);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     void el.play();
     if (duration > 0) {
-      window.setTimeout(() => { try { el.pause(); } catch { /* ignore */ } }, duration * 1000);
+      window.setTimeout(() => {
+        try {
+          el.pause();
+        } catch {
+          /* ignore */
+        }
+      }, duration * 1000);
     }
   }
 
@@ -386,7 +459,13 @@ export class AudioEngine {
     const start = () => {
       void el.play();
       if (duration > 0) {
-        window.setTimeout(() => { try { el.pause(); } catch { /* ignore */ } }, duration * 1000);
+        window.setTimeout(() => {
+          try {
+            el.pause();
+          } catch {
+            /* ignore */
+          }
+        }, duration * 1000);
       }
     };
     if (typeof el.setSinkId === "function") {
@@ -425,9 +504,7 @@ export class AudioEngine {
     const now = this.ctx.currentTime;
     const dur = Math.max(0.05, durationSec);
     const param =
-      this.mode === "url" && this.mainVoice
-        ? this.mainVoice.gain.gain
-        : this.master?.gain;
+      this.mode === "url" && this.mainVoice ? this.mainVoice.gain.gain : this.master?.gain;
     if (!param) return;
     param.cancelScheduledValues(now);
     param.setValueAtTime(param.value, now);

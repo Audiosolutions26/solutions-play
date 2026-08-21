@@ -1,7 +1,7 @@
 // Geração dos arquivos de RDS (RadioText) em disco. Mantém dois arquivos TXT
 // dentro da pasta RDS, atualizados em tempo real:
 //   • no_ar.txt    -> a música/inserção que está NO AR agora;
-//   • proximas.txt -> a do ar + as 3 próximas da grade (Programação).
+//   • proximas.txt -> a do ar + as 5 próximas da grade (Programação).
 // Os arquivos só são (re)gravados quando o conteúdo muda, e apenas no app
 // desktop (no modo web não há acesso ao sistema de arquivos).
 
@@ -14,12 +14,17 @@ export function rdsLabel(t: Track | null | undefined): string {
   if (!t) return "";
   const title = (t.title || "").trim();
   const artist = (t.artist || "").trim();
-  if (artist && title && artist.toLowerCase() !== title.toLowerCase()) return `${artist} - ${title}`;
+  if (artist && title && artist.toLowerCase() !== title.toLowerCase())
+    return `${artist} - ${title}`;
   return title || artist || "";
 }
 
 function cfg(): Record<string, unknown> {
-  try { return loadConfig() as Record<string, unknown>; } catch { return {}; }
+  try {
+    return loadConfig() as Record<string, unknown>;
+  } catch {
+    return {};
+  }
 }
 
 function enabled(): boolean {
@@ -41,9 +46,31 @@ export function updateRds(current: Track | null, upcoming: Track[]): void {
   const onAir = rdsLabel(current);
   const nextLines: string[] = [];
   if (current) nextLines.push(`No ar: ${rdsLabel(current)}`);
-  upcoming.slice(0, 3).forEach((t, i) => nextLines.push(`Proxima ${i + 1}: ${rdsLabel(t)}`));
+  upcoming.slice(0, 5).forEach((t, i) => nextLines.push(`Proxima ${i + 1}: ${rdsLabel(t)}`));
   const nextContent = nextLines.join("\r\n") + (nextLines.length ? "\r\n" : "");
   const onAirContent = onAir ? onAir + "\r\n" : "";
+  const metadataContent =
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        nowPlaying: current
+          ? {
+              id: current.id,
+              title: current.title,
+              artist: current.artist ?? "",
+              category: current.category,
+            }
+          : null,
+        upcoming: upcoming.slice(0, 5).map((track) => ({
+          id: track.id,
+          title: track.title,
+          artist: track.artist ?? "",
+          category: track.category,
+        })),
+      },
+      null,
+      2,
+    ) + "\n";
 
   if (onAirContent === lastOnAir && nextContent === lastNext) return;
   lastOnAir = onAirContent;
@@ -54,6 +81,7 @@ export function updateRds(current: Track | null, upcoming: Track[]): void {
     files: [
       { name: "no_ar.txt", content: onAirContent },
       { name: "proximas.txt", content: nextContent },
+      { name: "now_playing.json", content: metadataContent },
     ],
   });
 }
