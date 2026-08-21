@@ -29,7 +29,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
@@ -77,14 +76,18 @@ jobs:
     name: Build Windows executable
     runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout (exclude invalid Linux-only path)
         uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/mem:/
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
