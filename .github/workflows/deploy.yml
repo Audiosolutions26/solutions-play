@@ -81,8 +81,17 @@ jobs:
         with:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /*
-            !/mem:/
+            .github/
+            electron/
+            src/
+            package.json
+            bun.lock
+            bunfig.toml
+            components.json
+            eslint.config.js
+            tsconfig.json
+            vite.config.ts
+            vite.electron.config.ts
 
       - name: Setup Node
         uses: actions/setup-node@v4
