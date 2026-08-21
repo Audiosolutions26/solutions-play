@@ -41,6 +41,10 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   // Abre a pasta Grades/Mapas (ou a raiz) no Explorer.
   openProgramFolder: (kind) => ipcRenderer.invoke("sp:open-program-folder", kind),
 
+  // --- Sidecar de marcadores `.pkfinfo` ---
+  readPkfInfo: (audioPath) => ipcRenderer.invoke("sp:read-pkfinfo", audioPath),
+  writePkfInfo: (payload) => ipcRenderer.invoke("sp:write-pkfinfo", payload),
+
   // --- AES67 TX (áudio sobre IP / RTP multicast) ---
   aes67: {
     // Validação ao vivo (faixa multicast, porta, MTU, interfaces, conflitos).

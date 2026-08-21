@@ -12,10 +12,18 @@ const DEV_URL = process.env.SP_DEV_URL || "http://localhost:8080";
 const isDev = !app.isPackaged;
 
 const MIME = {
-  ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
-  ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg",
-  ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2",
-  ".woff": "font/woff", ".ttf": "font/ttf", ".map": "application/json",
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
+  ".map": "application/json",
 };
 
 // Codecs/formatos de áudio suportados — o Chromium embutido decodifica
@@ -23,13 +31,27 @@ const MIME = {
 // melhor qualidade disponível. Lista ampla para aceitar as principais
 // extensões do mercado.
 const AUDIO_MIME = {
-  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".wave": "audio/wav",
-  ".flac": "audio/flac", ".ogg": "audio/ogg", ".oga": "audio/ogg",
-  ".opus": "audio/ogg", ".m4a": "audio/mp4", ".m4b": "audio/mp4",
-  ".mp4": "audio/mp4", ".aac": "audio/aac", ".webm": "audio/webm",
-  ".weba": "audio/webm", ".aiff": "audio/aiff", ".aif": "audio/aiff",
-  ".aifc": "audio/aiff", ".wma": "audio/x-ms-wma", ".mka": "audio/x-matroska",
-  ".3gp": "audio/3gpp", ".amr": "audio/amr", ".caf": "audio/x-caf",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".wave": "audio/wav",
+  ".flac": "audio/flac",
+  ".ogg": "audio/ogg",
+  ".oga": "audio/ogg",
+  ".opus": "audio/ogg",
+  ".m4a": "audio/mp4",
+  ".m4b": "audio/mp4",
+  ".mp4": "audio/mp4",
+  ".aac": "audio/aac",
+  ".webm": "audio/webm",
+  ".weba": "audio/webm",
+  ".aiff": "audio/aiff",
+  ".aif": "audio/aiff",
+  ".aifc": "audio/aiff",
+  ".wma": "audio/x-ms-wma",
+  ".mka": "audio/x-matroska",
+  ".3gp": "audio/3gpp",
+  ".amr": "audio/amr",
+  ".caf": "audio/x-caf",
 };
 
 function fileToDataUrl(file) {
@@ -60,8 +82,14 @@ function startStaticServer(root) {
         file = fs.existsSync(asPage) ? asPage : path.join(rootResolved, "index.html");
       }
       fs.readFile(file, (err, data) => {
-        if (err) { res.writeHead(404); res.end("Not found"); return; }
-        res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });
+        if (err) {
+          res.writeHead(404);
+          res.end("Not found");
+          return;
+        }
+        res.writeHead(200, {
+          "Content-Type": MIME[path.extname(file)] || "application/octet-stream",
+        });
         res.end(data);
       });
     });
@@ -88,7 +116,9 @@ ipcMain.handle("sp:pick-audio-files", async () => {
         name: path.basename(file).replace(/\.[^.]+$/, ""),
         dataUrl: fileToDataUrl(file),
       });
-    } catch { /* pula arquivos ilegíveis */ }
+    } catch {
+      /* pula arquivos ilegíveis */
+    }
   }
   return files;
 });
@@ -153,7 +183,9 @@ function ensureProgramDirs() {
   try {
     fs.mkdirSync(d.grades, { recursive: true });
     fs.mkdirSync(d.mapas, { recursive: true });
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return d;
 }
 
@@ -174,7 +206,9 @@ ipcMain.handle("sp:list-program-files", async (_evt, kind) => {
         const st = fs.statSync(full);
         if (!st.isFile()) continue;
         out.push({ name: entry, path: full, mtime: st.mtimeMs });
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     out.sort((a, b) => b.mtime - a.mtime);
     return out;
@@ -211,6 +245,56 @@ ipcMain.handle("sp:write-program-file", async (_evt, payload) => {
   }
 });
 
+// ---- IPC: sidecar de marcadores `.pkfinfo` -------------------------------
+// O sidecar sempre é derivado do caminho de um áudio existente e nunca aceita
+// um destino arbitrário. Isso evita que a UI grave arquivos fora da pasta da
+// música. O conteúdo é pequeno, versionado e não contém o áudio nem ganho.
+const PKFINFO_MAX_BYTES = 2 * 1024 * 1024;
+function validAudioFile(file) {
+  try {
+    if (!file || typeof file !== "string" || !path.isAbsolute(file)) return null;
+    const resolved = path.resolve(file);
+    if (!AUDIO_MIME[path.extname(resolved).toLowerCase()]) return null;
+    if (!fs.statSync(resolved).isFile()) return null;
+    return resolved;
+  } catch {
+    return null;
+  }
+}
+
+function pkfInfoPath(audioPath) {
+  return `${audioPath}.pkfinfo`;
+}
+
+ipcMain.handle("sp:read-pkfinfo", async (_evt, audioPath) => {
+  try {
+    const audio = validAudioFile(audioPath);
+    if (!audio) return null;
+    const sidecar = pkfInfoPath(audio);
+    const stat = fs.statSync(sidecar);
+    if (!stat.isFile() || stat.size > PKFINFO_MAX_BYTES) return null;
+    return fs.readFileSync(sidecar, "utf8");
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle("sp:write-pkfinfo", async (_evt, payload) => {
+  try {
+    const audio = validAudioFile(payload && payload.audioPath);
+    const content = payload && typeof payload.content === "string" ? payload.content : "";
+    if (!audio || !content.trim() || Buffer.byteLength(content, "utf8") > PKFINFO_MAX_BYTES)
+      return null;
+    const sidecar = pkfInfoPath(audio);
+    const temp = `${sidecar}.tmp-${process.pid}-${Date.now()}`;
+    fs.writeFileSync(temp, content, { encoding: "utf8", flag: "wx" });
+    fs.renameSync(temp, sidecar);
+    return sidecar;
+  } catch {
+    return null;
+  }
+});
+
 // Abre a pasta Grades/Mapas (ou a raiz) no Explorer do Windows.
 ipcMain.handle("sp:open-program-folder", async (_evt, kind) => {
   try {
@@ -232,7 +316,11 @@ ipcMain.handle("sp:pick-folder", async (_evt, current) => {
     properties: ["openDirectory", "createDirectory"],
   };
   if (current && typeof current === "string") {
-    try { if (fs.existsSync(current)) opts.defaultPath = current; } catch { /* ignore */ }
+    try {
+      if (fs.existsSync(current)) opts.defaultPath = current;
+    } catch {
+      /* ignore */
+    }
   }
   const result = await dialog.showOpenDialog(opts);
   if (result.canceled || !result.filePaths.length) return null;
@@ -243,7 +331,9 @@ ipcMain.handle("sp:pick-folder", async (_evt, current) => {
       const ext = path.extname(entry).toLowerCase();
       if (AUDIO_MIME[ext]) audioCount++;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { path: dir, name: path.basename(dir), audioCount };
 });
 
@@ -271,7 +361,11 @@ ipcMain.handle("sp:list-folder-audio", async (_evt, dir) => {
       const ext = path.extname(entry).toLowerCase();
       if (!AUDIO_MIME[ext]) continue;
       const full = path.join(dir, entry);
-      try { if (!fs.statSync(full).isFile()) continue; } catch { continue; }
+      try {
+        if (!fs.statSync(full).isFile()) continue;
+      } catch {
+        continue;
+      }
       out.push({ path: full, name: entry.replace(/\.[^.]+$/, "") });
     }
     out.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -294,7 +388,13 @@ ipcMain.handle("sp:folder-exists", async (_evt, dir) => {
 
 // ---- IPC: AES67 TX (RTP/SAP) + loopback -----------------------------------
 aes67.register(ipcMain);
-app.on("before-quit", () => { try { aes67.closeTx(); } catch { /* ignore */ } });
+app.on("before-quit", () => {
+  try {
+    aes67.closeTx();
+  } catch {
+    /* ignore */
+  }
+});
 
 async function createWindow() {
   // Concede acesso a microfone/saída de áudio (gravação de locuções no Windows)
@@ -334,12 +434,19 @@ if (!gotLock) {
 } else {
   app.on("second-instance", () => {
     const win = BrowserWindow.getAllWindows()[0];
-    if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
   });
   app.whenReady().then(() => {
     ensureProgramDirs();
     createWindow();
   });
-  app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
-  app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") app.quit();
+  });
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
 }
