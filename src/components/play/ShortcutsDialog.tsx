@@ -1,11 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  Folder, FolderPlus, Trash2, Save, Music, Megaphone, Clock, FileText, Disc3, ListMusic, Check,
-  FolderSearch, FolderOpen, AlertTriangle, CheckCircle2, RefreshCw,
+  Folder,
+  FolderPlus,
+  Trash2,
+  Save,
+  Music,
+  Megaphone,
+  Clock,
+  FileText,
+  Disc3,
+  ListMusic,
+  Check,
+  FolderSearch,
+  FolderOpen,
+  AlertTriangle,
+  CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,12 +31,23 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import {
-  SHORTCUT_TYPES, PALETTE, makeShortcut, typeMeta,
-  type ShortcutType, type Shortcut,
+  SHORTCUT_TYPES,
+  PALETTE,
+  makeShortcut,
+  typeMeta,
+  type ShortcutType,
+  type Shortcut,
 } from "@/lib/play-shortcuts";
-import { isDesktop, pickFolderNative, openFolderNative, folderExistsNative, listFolderAudioNative } from "@/lib/play-native";
+import {
+  isDesktop,
+  pickFolderNative,
+  openFolderNative,
+  folderExistsNative,
+  listFolderAudioNative,
+} from "@/lib/play-native";
 import { makeFolderAudioTrack, type Track } from "@/lib/play-data";
 import { readTrackDuration } from "@/lib/play-audio-files";
+import { generatePkfInfoForFolder, importPkfInfoForTracks } from "@/lib/play-pkfinfo";
 
 const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   musicas: Music,
@@ -29,7 +58,13 @@ const TYPE_ICON: Record<ShortcutType, typeof Music> = {
   textos: FileText,
 };
 
-export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function ShortcutsDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const { shortcuts, add, update, remove } = useShortcuts();
   const [selId, setSelId] = useState<string | null>(null);
   const [newType, setNewType] = useState<ShortcutType>("musicas");
@@ -52,7 +87,10 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
   };
 
   const deleteShortcut = () => {
-    if (!sel) { toast.info("Selecione um atalho para excluir."); return; }
+    if (!sel) {
+      toast.info("Selecione um atalho para excluir.");
+      return;
+    }
     remove(sel.id);
     setSelId(null);
     toast.success(`Atalho "${sel.name}" excluído.`);
@@ -84,16 +122,33 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
             className="h-8 rounded border border-pl-panel-dark bg-white px-2 text-[12px] text-pl-text outline-none"
           >
             {SHORTCUT_TYPES.map((t) => (
-              <option key={t.type} value={t.type}>{t.label}</option>
+              <option key={t.type} value={t.type}>
+                {t.label}
+              </option>
             ))}
           </select>
-          <Button onClick={createShortcut} size="sm" className="h-8 gap-1 bg-pl-toolbar text-[12px] hover:brightness-110">
+          <Button
+            onClick={createShortcut}
+            size="sm"
+            className="h-8 gap-1 bg-pl-toolbar text-[12px] hover:brightness-110"
+          >
             <FolderPlus className="h-4 w-4" /> Criar atalho
           </Button>
-          <Button onClick={deleteShortcut} size="sm" variant="destructive" className="h-8 gap-1 text-[12px]" disabled={!sel}>
+          <Button
+            onClick={deleteShortcut}
+            size="sm"
+            variant="destructive"
+            className="h-8 gap-1 text-[12px]"
+            disabled={!sel}
+          >
             <Trash2 className="h-4 w-4" /> Excluir
           </Button>
-          <Button onClick={saveAll} size="sm" variant="outline" className="ml-auto h-8 gap-1 text-[12px]">
+          <Button
+            onClick={saveAll}
+            size="sm"
+            variant="outline"
+            className="ml-auto h-8 gap-1 text-[12px]"
+          >
             <Save className="h-4 w-4" /> Salvar todas as alterações
           </Button>
         </div>
@@ -107,7 +162,9 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
                 <div key={meta.type} className="mb-3">
                   <div className="flex items-center gap-2 rounded-t bg-pl-toolbar-light/40 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-pl-toolbar">
                     <Icon className="h-3.5 w-3.5" /> {meta.label}
-                    <span className="ml-auto rounded bg-white/60 px-1.5 text-[10px] font-semibold text-pl-text">{items.length}</span>
+                    <span className="ml-auto rounded bg-white/60 px-1.5 text-[10px] font-semibold text-pl-text">
+                      {items.length}
+                    </span>
                   </div>
                   {items.length === 0 ? (
                     <p className="rounded-b border border-t-0 border-pl-panel-dark/40 bg-white/50 px-2 py-1.5 text-[11px] text-muted-foreground">
@@ -120,15 +177,26 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
                           key={s.id}
                           onClick={() => setSelId(s.id)}
                           className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-[12px] ${
-                            selId === s.id ? "bg-pl-toolbar-light/50" : i % 2 ? "bg-pl-row-alt" : "bg-white"
+                            selId === s.id
+                              ? "bg-pl-toolbar-light/50"
+                              : i % 2
+                                ? "bg-pl-row-alt"
+                                : "bg-white"
                           }`}
                         >
-                          <Folder className="h-4 w-4 shrink-0" style={{ color: s.color, fill: s.color }} />
+                          <Folder
+                            className="h-4 w-4 shrink-0"
+                            style={{ color: s.color, fill: s.color }}
+                          />
                           <span className="flex-1 break-words text-pl-text">{s.name}</span>
                           {s.registered && (
-                            <span className="rounded bg-emerald-600 px-1 text-[9px] font-bold text-white">REG</span>
+                            <span className="rounded bg-emerald-600 px-1 text-[9px] font-bold text-white">
+                              REG
+                            </span>
                           )}
-                          <span className="font-mono text-[10px] text-muted-foreground">{s.tracks.length}</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {s.tracks.length}
+                          </span>
                           {selId === s.id && <Check className="h-3.5 w-3.5 text-pl-toolbar" />}
                         </button>
                       ))}
@@ -143,7 +211,9 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
           <div className="pl-scroll max-h-[60vh] overflow-y-auto bg-pl-panel p-3">
             <h3 className="mb-2 text-[12px] font-bold text-pl-toolbar">Propriedades da pasta</h3>
             {!sel ? (
-              <p className="text-[12px] text-muted-foreground">Selecione um atalho à esquerda para editar suas propriedades.</p>
+              <p className="text-[12px] text-muted-foreground">
+                Selecione um atalho à esquerda para editar suas propriedades.
+              </p>
             ) : (
               <ShortcutForm sel={sel} onChange={(patch) => update(sel.id, patch)} />
             )}
@@ -154,17 +224,31 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
   );
 }
 
-function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Partial<Shortcut>) => void }) {
+function ShortcutForm({
+  sel,
+  onChange,
+}: {
+  sel: Shortcut;
+  onChange: (patch: Partial<Shortcut>) => void;
+}) {
   const desktop = isDesktop();
   // Estado de validação do diretório: "checking" | "ok" | "missing" | "idle".
   const [dirStatus, setDirStatus] = useState<"idle" | "checking" | "ok" | "missing">("idle");
   const [scanning, setScanning] = useState(false);
+  const [pkfScanning, setPkfScanning] = useState(false);
+  const [pkfProgress, setPkfProgress] = useState({ done: 0, total: 0 });
 
   // Valida o caminho sempre que o atalho ou o diretório mudar (debounced).
   useEffect(() => {
     const dir = sel.directory?.trim();
-    if (!desktop) { setDirStatus("idle"); return; }
-    if (!dir) { setDirStatus("missing"); return; }
+    if (!desktop) {
+      setDirStatus("idle");
+      return;
+    }
+    if (!dir) {
+      setDirStatus("missing");
+      return;
+    }
     let active = true;
     setDirStatus("checking");
     const t = setTimeout(async () => {
@@ -172,34 +256,45 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
       if (!active) return;
       setDirStatus(exists ? "ok" : "missing");
     }, 350);
-    return () => { active = false; clearTimeout(t); };
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
   }, [sel.id, sel.directory, desktop]);
 
   // Lê os áudios da pasta e popula as músicas do atalho (manual p.145-149).
   const loadTracksFrom = async (dir: string): Promise<number> => {
     const files = await listFolderAudioNative(dir);
     if (!files) return -1; // modo web: não há acesso ao sistema de arquivos
-    const tracks: Track[] = files.map((f) =>
-      makeFolderAudioTrack(f.name, f.path, sel.category),
-    );
+    const tracks: Track[] = files.map((f) => makeFolderAudioTrack(f.name, f.path, sel.category));
     onChange({ tracks });
+    // Importa sidecars já existentes sem bloquear a listagem da pasta.
+    void importPkfInfoForTracks(tracks);
     // Lê a duração real de cada música em segundo plano e atualiza o "tempo"
     // exibido na lista (as inserções entram com 0:00 e vão sendo preenchidas).
     void resolveDurations(tracks);
     return tracks.length;
   };
 
-  // Resolve as durações dos áudios da pasta sequencialmente, atualizando a
-  // lista conforme cada uma fica pronta (evita carregar tudo de uma vez).
+  // Resolve as durações em pequenos lotes concorrentes. Antes, uma pasta com
+  // centenas de arquivos fazia uma leitura e uma re-renderização por faixa;
+  // agora há no máximo quatro metadados sendo lidos simultaneamente e a UI
+  // recebe atualizações agrupadas. Nenhum áudio é decodificado para playback.
   const resolveDurations = async (tracks: Track[]) => {
     const out = [...tracks];
-    for (let i = 0; i < out.length; i++) {
-      const d = await readTrackDuration(out[i]);
-      if (d > 0) {
-        out[i] = { ...out[i], duration: Math.round(d) };
-        onChange({ tracks: [...out] });
+    let cursor = 0;
+    const worker = async () => {
+      while (true) {
+        const i = cursor++;
+        if (i >= out.length) return;
+        const d = await readTrackDuration(out[i]);
+        if (d > 0) out[i] = { ...out[i], duration: Math.round(d) };
+        if ((i + 1) % 8 === 0 || i === out.length - 1) onChange({ tracks: [...out] });
       }
-    }
+    };
+    const workers = Math.min(4, Math.max(1, out.length));
+    await Promise.all(Array.from({ length: workers }, () => worker()));
+    onChange({ tracks: [...out] });
   };
 
   // Abre a árvore de pastas do Windows e aponta o atalho para a pasta escolhida.
@@ -220,23 +315,65 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
   // novos arquivos foram adicionados à pasta no Windows).
   const rescanFolder = async () => {
     const dir = sel.directory?.trim();
-    if (!dir) { toast.info("Defina um diretório primeiro."); return; }
+    if (!dir) {
+      toast.info("Defina um diretório primeiro.");
+      return;
+    }
     if (desktop) {
       const exists = await folderExistsNative(dir);
-      if (exists === false) { setDirStatus("missing"); toast.error(`A pasta não existe: ${dir}`); return; }
+      if (exists === false) {
+        setDirStatus("missing");
+        toast.error(`A pasta não existe: ${dir}`);
+        return;
+      }
     }
     setScanning(true);
     const n = await loadTracksFrom(dir);
     setScanning(false);
-    if (n < 0) { toast.info("A leitura da pasta só funciona no app desktop."); return; }
+    if (n < 0) {
+      toast.info("A leitura da pasta só funciona no app desktop.");
+      return;
+    }
     setDirStatus("ok");
     toast.success(`${n} música(s) carregada(s) da pasta.`);
   };
 
-  // Abre a pasta apontada pelo atalho no Explorer do Windows, no local exato.
+  const generatePkfInfo = async () => {
+    const dir = sel.directory?.trim();
+    if (!dir) {
+      toast.info("Defina um diretório primeiro.");
+      return;
+    }
+    if (!desktop) {
+      toast.info("A geração de pkfinfo só funciona no app desktop.");
+      return;
+    }
+    const exists = await folderExistsNative(dir);
+    if (exists === false) {
+      setDirStatus("missing");
+      toast.error(`A pasta não existe: ${dir}`);
+      return;
+    }
+    setPkfScanning(true);
+    setPkfProgress({ done: 0, total: 0 });
+    const result = await generatePkfInfoForFolder(dir, sel.category, (done, total) =>
+      setPkfProgress({ done, total }),
+    );
+    setPkfScanning(false);
+    if (result.errors)
+      toast.warning(
+        `pkfinfo: ${result.generated} gerado(s), ${result.skipped} ignorado(s), ${result.errors} erro(s).`,
+      );
+    else toast.success(`pkfinfo: ${result.generated} arquivo(s) gerado(s) na pasta.`);
+  };
+
+  // Abre a pasta apontada pelo atalho no Explorer, no local exato.
   const openInExplorer = async () => {
     const dir = sel.directory?.trim();
-    if (!dir) { toast.info("Defina um diretório primeiro."); return; }
+    if (!dir) {
+      toast.info("Defina um diretório primeiro.");
+      return;
+    }
     // Revalida antes de abrir para dar uma mensagem clara em caso de erro.
     if (desktop) {
       const exists = await folderExistsNative(dir);
@@ -270,7 +407,9 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
           className="mt-1 h-8 w-full rounded border border-pl-panel-dark bg-white px-2 text-[12px] text-pl-text outline-none"
         >
           {SHORTCUT_TYPES.map((t) => (
-            <option key={t.type} value={t.type}>{t.label}</option>
+            <option key={t.type} value={t.type}>
+              {t.label}
+            </option>
           ))}
         </select>
       </div>
@@ -312,12 +451,27 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
           type="button"
           size="sm"
           variant="outline"
+          onClick={generatePkfInfo}
+          disabled={!desktop || !sel.directory || dirStatus === "missing" || pkfScanning}
+          className="mt-1.5 h-8 w-full gap-1 text-[11px]"
+          title="Analisar as bordas audíveis e gerar sidecars .pkfinfo"
+        >
+          <RefreshCw className={`h-4 w-4 ${pkfScanning ? "animate-spin" : ""}`} />{" "}
+          {pkfScanning
+            ? `Gerando pkfinfo ${pkfProgress.done}/${pkfProgress.total || "…"}`
+            : "Gerar pkfinfo das músicas"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
           onClick={rescanFolder}
           disabled={!sel.directory || dirStatus === "missing" || scanning}
           className="mt-1.5 h-8 w-full gap-1 text-[11px]"
           title="Reler a pasta e carregar as músicas"
         >
-          <RefreshCw className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`} /> {scanning ? "Lendo pasta…" : "Reler pasta (carregar músicas)"}
+          <RefreshCw className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`} />{" "}
+          {scanning ? "Lendo pasta…" : "Reler pasta (carregar músicas)"}
         </Button>
 
         {/* Validação clara do caminho do diretório */}
@@ -339,7 +493,8 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
         )}
         {!desktop && (
           <p className="mt-1 text-[10px] text-muted-foreground">
-            A árvore de pastas do Windows abre no app desktop. No navegador, digite o caminho manualmente.
+            A árvore de pastas do Windows abre no app desktop. No navegador, digite o caminho
+            manualmente.
           </p>
         )}
       </div>
@@ -357,7 +512,9 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
       <div className="flex items-center justify-between rounded border border-pl-panel-dark/40 bg-white/60 px-3 py-2">
         <div>
           <Label className="text-[11px] font-semibold">Registrar</Label>
-          <p className="text-[10px] text-muted-foreground">Permite programar este atalho automaticamente.</p>
+          <p className="text-[10px] text-muted-foreground">
+            Permite programar este atalho automaticamente.
+          </p>
         </div>
         <Switch checked={sel.registered} onCheckedChange={(v) => onChange({ registered: v })} />
       </div>
@@ -379,7 +536,9 @@ function ShortcutForm({ sel, onChange }: { sel: Shortcut; onChange: (patch: Part
         </div>
       </div>
 
-      <p className="text-[10px] text-muted-foreground">{sel.tracks.length} áudio(s) nesta pasta de trabalho.</p>
+      <p className="text-[10px] text-muted-foreground">
+        {sel.tracks.length} áudio(s) nesta pasta de trabalho.
+      </p>
     </div>
   );
 }
