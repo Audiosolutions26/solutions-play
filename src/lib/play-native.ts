@@ -22,16 +22,40 @@ interface NativeBridge {
   readTextFile?: (file: string) => Promise<string | null>;
   writeProgramFile?: (payload: ProgramWritePayload) => Promise<string | null>;
   openProgramFolder?: (kind: ProgramKind | "base") => Promise<boolean>;
+  readPkfInfo?: (audioPath: string) => Promise<string | null>;
+  writePkfInfo?: (payload: PkfInfoWritePayload) => Promise<string | null>;
 }
 
-export interface RdsFile { name: string; content: string; }
-export interface RdsWritePayload { dir?: string; files: RdsFile[]; }
+export interface RdsFile {
+  name: string;
+  content: string;
+}
+export interface RdsWritePayload {
+  dir?: string;
+  files: RdsFile[];
+}
 
 // "grades" = programação musical · "mapas" = programação comercial.
 export type ProgramKind = "grades" | "mapas";
-export interface ProgramDirs { base: string; grades: string; mapas: string; }
-export interface ProgramFile { name: string; path: string; mtime: number; }
-export interface ProgramWritePayload { kind: ProgramKind; name: string; content: string; }
+export interface ProgramDirs {
+  base: string;
+  grades: string;
+  mapas: string;
+}
+export interface ProgramFile {
+  name: string;
+  path: string;
+  mtime: number;
+}
+export interface ProgramWritePayload {
+  kind: ProgramKind;
+  name: string;
+  content: string;
+}
+export interface PkfInfoWritePayload {
+  audioPath: string;
+  content: string;
+}
 
 export interface NativePickedFolder {
   path: string;
@@ -196,5 +220,25 @@ export async function openProgramFolderNative(kind: ProgramKind | "base"): Promi
     return await b.openProgramFolder(kind);
   } catch {
     return false;
+  }
+}
+
+export async function readPkfInfoNative(audioPath: string): Promise<string | null> {
+  const b = nativeBridge();
+  if (!b?.readPkfInfo) return null;
+  try {
+    return await b.readPkfInfo(audioPath);
+  } catch {
+    return null;
+  }
+}
+
+export async function writePkfInfoNative(payload: PkfInfoWritePayload): Promise<string | null> {
+  const b = nativeBridge();
+  if (!b?.writePkfInfo) return null;
+  try {
+    return await b.writePkfInfo(payload);
+  } catch {
+    return null;
   }
 }

@@ -12,19 +12,34 @@
 import { loadConfig } from "./play-config";
 
 export interface CuePoints {
-  cueIn: number;   // segundos: onde começar a tocar
-  cueOut: number;  // segundos: onde iniciar a saída (0 = desconhecido)
+  cueIn: number; // segundos: onde começar a tocar
+  cueOut: number; // segundos: onde iniciar a saída (0 = desconhecido)
   duration: number;
 }
 
+// Cache limitado para não reter indefinidamente resultados de uma biblioteca grande.
+// O áudio original nunca é alterado; somente os tempos detectados são guardados.
+const CACHE_LIMIT = 128;
 const cache = new Map<string, CuePoints>();
 const pending = new Map<string, Promise<CuePoints>>();
+
+function remember(url: string, points: CuePoints): void {
+  cache.delete(url);
+  cache.set(url, points);
+  while (cache.size > CACHE_LIMIT) {
+    const oldest = cache.keys().next().value as string | undefined;
+    if (!oldest) break;
+    cache.delete(oldest);
+  }
+}
 
 let decodeCtx: AudioContext | null = null;
 function ctx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!decodeCtx) {
-    const C = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const C =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!C) return null;
     decodeCtx = new C();
   }
@@ -38,7 +53,9 @@ function silenceThreshold(): number {
     const c = loadConfig() as Record<string, unknown>;
     const v = c["insercoes.deteccaoPontos.cueThresholdDb"];
     if (typeof v === "number" && v > 0) db = v;
-  } catch { /* SSR / sem storage */ }
+  } catch {
+    /* SSR / sem storage */
+  }
   return Math.pow(10, -db / 20); // amplitude linear (ex.: -45 dBFS ≈ 0.0056)
 }
 
@@ -82,12 +99,18 @@ function compute(buf: AudioBuffer, thr: number): CuePoints {
   // cue-in: primeiro ponto acima do limiar (com 50 ms de respiro antes).
   let cueIn = 0;
   for (let i = 0; i < n; i++) {
-    if (maxAt(chs, i) > thr) { cueIn = Math.max(0, i / sr - 0.05); break; }
+    if (maxAt(chs, i) > thr) {
+      cueIn = Math.max(0, i / sr - 0.05);
+      break;
+    }
   }
   // cue-out: último ponto acima do limiar (com 150 ms de cauda depois).
   let cueOut = buf.duration;
   for (let i = n - 1; i >= 0; i--) {
-    if (maxAt(chs, i) > thr) { cueOut = Math.min(buf.duration, i / sr + 0.15); break; }
+    if (maxAt(chs, i) > thr) {
+      cueOut = Math.min(buf.duration, i / sr + 0.15);
+      break;
+    }
   }
   // Sanidade: cue-out tem de vir depois do cue-in.
   if (cueOut <= cueIn + 0.2) cueOut = buf.duration;
@@ -97,7 +120,12 @@ function compute(buf: AudioBuffer, thr: number): CuePoints {
 // Analisa (e cacheia) os pontos de mixagem de uma URL tocável (blob:/data:/http).
 export async function analyzeCuePoints(url: string): Promise<CuePoints> {
   const hit = cache.get(url);
-  if (hit) return hit;
+  if (hit) {
+    // Promove a entrada mais usada para o fim do LRU.
+    cache.delete(url);
+    cache.set(url, hit);
+    return hit;
+  }
   const inflight = pending.get(url);
   if (inflight) return inflight;
 
@@ -110,10 +138,10 @@ export async function analyzeCuePoints(url: string): Promise<CuePoints> {
       const ab = await res.arrayBuffer();
       const buf = await c.decodeAudioData(ab);
       const cp = compute(buf, silenceThreshold());
-      cache.set(url, cp);
+      remember(url, cp);
       return cp;
     } catch {
-      cache.set(url, fallback);
+      remember(url, fallback);
       return fallback;
     } finally {
       pending.delete(url);
@@ -125,5 +153,14 @@ export async function analyzeCuePoints(url: string): Promise<CuePoints> {
 }
 
 export function getCachedCuePoints(url: string): CuePoints | undefined {
-  return cache.get(url);
+  const hit = cache.get(url);
+  if (!hit) return undefined;
+  cache.delete(url);
+  cache.set(url, hit);
+  return hit;
+}
+
+export function clearCuePointCache(): void {
+  cache.clear();
+  pending.clear();
 }
