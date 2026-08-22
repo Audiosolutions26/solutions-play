@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   Sliders,
   Wand2,
@@ -378,27 +378,41 @@ export function RecursosAvancadosDialog({
           </TabsContent>
 
           {/* Grade */}
-          <TabsContent value="grade" className="space-y-2 py-2">
-            <Label>Grade musical (HH:MM código, código, …)</Label>
+          <TabsContent value="grade" className="space-y-3 py-2">
+            <div>
+              <Label>Grade musical / Easy Clock Scheduling</Label>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Cada linha representa um clock. Edite os códigos e confira a grade visual antes de
+                gerar o Final Log.
+              </p>
+            </div>
             <textarea
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
               className={textareaCls}
               spellCheck={false}
             />
+            <ClockGridPreview value={grade} />
             <IssuesPanel issues={gradeIssues} />
             <CodeLegend />
           </TabsContent>
 
           {/* Mapa */}
-          <TabsContent value="mapa" className="space-y-2 py-2">
-            <Label>Mapa comercial (HH:MM código, código, …)</Label>
+          <TabsContent value="mapa" className="space-y-3 py-2">
+            <div>
+              <Label>Mapa comercial / Easy Clock Scheduling</Label>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Organize spots, vinhetas e hora certa por horário. O Mapa alimenta os intervalos
+                comerciais do Final Log.
+              </p>
+            </div>
             <textarea
               value={mapa}
               onChange={(e) => setMapa(e.target.value)}
               className={textareaCls}
               spellCheck={false}
             />
+            <ClockGridPreview value={mapa} commercial />
             <IssuesPanel issues={mapaIssues} />
             <CodeLegend />
           </TabsContent>
@@ -530,6 +544,58 @@ function PreviewGrid({ blocks }: { blocks: Block[] }) {
           </ol>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ClockGridPreview({ value, commercial = false }: { value: string; commercial?: boolean }) {
+  const rows = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [time, ...codes] = line.split(/\s+/);
+      return {
+        time,
+        codes: codes
+          .join(" ")
+          .split(",")
+          .map((code) => code.trim())
+          .filter(Boolean),
+      };
+    });
+  if (!rows.length) return null;
+  return (
+    <div className="overflow-hidden rounded border border-pl-panel-dark/50 bg-slate-950 text-white shadow-inner">
+      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-white/90">
+          Prévia dos clocks
+        </span>
+        <span className="text-[10px] text-white/55">
+          {commercial ? "MAPA COMERCIAL" : "GRADE MUSICAL"}
+        </span>
+      </div>
+      <div className="max-h-44 overflow-y-auto p-2">
+        <div className="grid grid-cols-[58px_1fr] gap-1 text-[10px]">
+          {rows.map((row, index) => (
+            <Fragment key={`${row.time}-${index}`}>
+              <div className="flex items-center rounded bg-white/10 px-2 font-mono font-bold text-cyan-200">
+                {row.time}
+              </div>
+              <div className="flex min-w-0 flex-wrap gap-1 rounded bg-white/5 p-1">
+                {row.codes.map((code, codeIndex) => (
+                  <span
+                    key={`${code}-${codeIndex}`}
+                    className={`rounded px-1.5 py-0.5 font-mono font-bold ${commercial ? "bg-rose-500/80 text-white" : "bg-emerald-500/80 text-white"}`}
+                  >
+                    {code}
+                  </span>
+                ))}
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
