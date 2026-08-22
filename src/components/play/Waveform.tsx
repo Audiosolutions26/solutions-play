@@ -26,19 +26,18 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "#1b2733";
+      ctx.fillStyle = "#050505";
       ctx.fillRect(0, 0, w, h);
-      // center line
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      // Linha central discreta, como nos monitores profissionais.
+      ctx.strokeStyle = "rgba(255,255,255,0.07)";
       ctx.beginPath();
       ctx.moveTo(0, h / 2);
       ctx.lineTo(w, h / 2);
       ctx.stroke();
       if (isPlaying) {
         engine.getWaveform(buf);
-        ctx.strokeStyle = "#e8821e";
-        ctx.fillStyle = "rgba(232,130,30,0.35)";
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#f08a24";
+        ctx.lineWidth = 0.85;
         ctx.beginPath();
         const z = zoomRef.current;
         // Zoom: amplia a amplitude (vertical) e "estica" o tempo (horizontal),

@@ -23,13 +23,10 @@ export function OnAirBar() {
       /* ignore */
     }
   };
-  const text = current
-    ? `${current.title}${current.artist ? " — " + current.artist : ""}`
-    : "Sem áudio no ar";
   const title = current?.title || "Nenhum áudio selecionado";
   const artist = current?.artist || (onAir ? "Aguardando programação" : "Sistema parado");
   return (
-    <div className="flex h-[78px] items-stretch border-y border-black bg-black">
+    <div className="flex h-[66px] items-stretch border-y border-black bg-black">
       <div
         className={`flex w-[116px] shrink-0 flex-col items-center justify-center leading-none ${
           onAir ? "bg-[#e00000] text-white" : "bg-zinc-700 text-white/70"
@@ -40,28 +37,23 @@ export function OnAirBar() {
           {onAir ? "AO VIVO" : "SEM ÁUDIO"}
         </span>
       </div>
-      <div className="relative min-w-0 flex-1 overflow-hidden bg-black">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-7 items-center border-b border-white/10 bg-black/70 px-3">
-          <span className="truncate text-[13px] font-extrabold uppercase tracking-wide text-[#f04b4b]">
+      <div className="relative min-w-0 flex-1 overflow-hidden bg-[#050505]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-6 items-center border-b border-white/10 bg-black/80 px-3">
+          <span className="truncate text-[12px] font-extrabold uppercase tracking-wide text-[#f04b4b]">
             {title}
           </span>
-          <span className="ml-2 truncate text-[11px] font-semibold uppercase text-[#ff6a2a]">
+          <span className="ml-2 truncate text-[10px] font-semibold uppercase text-[#ff6a2a]">
             {artist}
           </span>
           <span className="ml-auto shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/75">
             {onAir ? "PROGRAM" : "STANDBY"}
           </span>
         </div>
-        <div className="absolute inset-x-0 bottom-0 top-7">
+        <div className="absolute inset-x-0 bottom-0 top-6">
           <Waveform zoom={zoom} />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center overflow-hidden px-3">
-          <span className="pl-marquee whitespace-nowrap text-[10px] font-semibold text-orange-300/80 drop-shadow">
-            {text}
-          </span>
-        </div>
         {/* Controle de zoom (+/-) da visualização da waveform. */}
-        <div className="absolute right-1 bottom-1 z-10 flex items-center gap-1 rounded bg-black/70 px-1 py-0.5 backdrop-blur-sm">
+        <div className="absolute right-1 bottom-1 z-10 flex items-center gap-1 rounded bg-[#111]/90 px-1 py-0.5 backdrop-blur-sm">
           <button
             onClick={() => setZoomSafe(zoom - ZOOM_STEP)}
             disabled={zoom <= ZOOM_MIN}
