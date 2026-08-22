@@ -135,7 +135,7 @@ const MenubarCheckboxItem = React.forwardRef<
   <MenubarPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "relative flex min-h-6 cursor-default select-none items-center gap-0 rounded-sm py-1 pl-8 pr-2 text-[12px] outline-none transition-colors focus:bg-[#2d668c] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex min-h-6 cursor-default select-none items-center gap-0 rounded-sm px-2 py-1 text-[12px] outline-none transition-colors focus:bg-[#2d668c] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     checked={checked}
@@ -158,7 +158,7 @@ const MenubarRadioItem = React.forwardRef<
   <MenubarPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex min-h-6 cursor-default select-none items-center gap-0 rounded-sm py-1 pl-8 pr-2 text-[12px] outline-none transition-colors focus:bg-[#2d668c] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex min-h-6 cursor-default select-none items-center gap-0 rounded-sm px-2 py-1 text-[12px] outline-none transition-colors focus:bg-[#2d668c] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     {...props}

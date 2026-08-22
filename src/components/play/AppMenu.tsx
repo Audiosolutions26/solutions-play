@@ -337,12 +337,14 @@ export function AppMenu({
                 checked={panels.pastas}
                 onCheckedChange={() => onTogglePanel("pastas")}
               >
+                <MenuGlyph icon={FolderOpen} />
                 Pastas
               </MenubarCheckboxItem>
               <MenubarCheckboxItem
                 checked={panels.propriedades}
                 onCheckedChange={() => onTogglePanel("propriedades")}
               >
+                <MenuGlyph icon={Settings2} />
                 Propriedades
               </MenubarCheckboxItem>
               <MenubarSeparator />
