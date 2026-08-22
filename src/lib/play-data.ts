@@ -76,6 +76,24 @@ const mk = (
   ...extra,
 });
 
+// Formatação compartilhada da data da programação. Este bloco fica antes da
+// grade inicial porque é executado durante a inicialização do módulo.
+const weekdays = [
+  "domingo",
+  "segunda-feira",
+  "terça-feira",
+  "quarta-feira",
+  "quinta-feira",
+  "sexta-feira",
+  "sábado",
+];
+
+export function todayLabel(d = new Date()): string {
+  const dd = d.getDate().toString().padStart(2, "0");
+  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+  return `${dd}-${mm}-${d.getFullYear()} (${weekdays[d.getDay()]})`;
+}
+
 // A programação demonstrativa deve sempre abrir como a programação do dia atual.
 // O gerador/importador também usa todayLabel(); manter o mesmo padrão evita
 // que o Final Log inicial apareça com uma data antiga fixa.
@@ -304,22 +322,6 @@ export function makeFolderAudioTrack(name: string, filePath: string, category: C
 }
 
 // ---- Recursos Avançados (Grade / Mapa / Playlist.ini) ----
-
-const weekdays = [
-  "domingo",
-  "segunda-feira",
-  "terça-feira",
-  "quarta-feira",
-  "quinta-feira",
-  "sexta-feira",
-  "sábado",
-];
-
-export function todayLabel(d = new Date()): string {
-  const dd = d.getDate().toString().padStart(2, "0");
-  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
-  return `${dd}-${mm}-${d.getFullYear()} (${weekdays[d.getDay()]})`;
-}
 
 // Build a fresh track for generator output (codes that aren't real folders).
 export function makeTrack(
