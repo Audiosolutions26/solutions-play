@@ -28,6 +28,7 @@ import { AudioDevicesDialog } from "./AudioDevicesDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { ProgramFoldersDialog } from "./ProgramFoldersDialog";
 import { StatusPanel } from "./StatusPanel";
+import { RdsStatusPanel } from "./RdsStatusPanel";
 import { OperatorLogin, operators, type Operator } from "./OperatorLogin";
 import { PlayerControllers } from "./PlayerControllers";
 import { useAppUiState } from "@/hooks/use-app-ui-state";
@@ -280,6 +281,9 @@ export function PlayApp() {
                             )}
                           </Fragment>
                         ))}
+                        <div className="h-[194px] min-h-[170px] flex-none border-t border-pl-toolbar-dark">
+                          <RdsStatusPanel />
+                        </div>
                       </div>
                     </>
                   )}
