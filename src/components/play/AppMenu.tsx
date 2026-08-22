@@ -54,7 +54,7 @@ const panelList = [
 ];
 
 const triggerCls =
-  "cursor-pointer rounded px-2 py-0.5 text-[12px] font-medium text-white outline-none data-[state=open]:bg-white/20 focus:bg-white/20 hover:bg-white/15";
+  "cursor-pointer rounded-sm px-2 py-0.5 text-[12px] font-medium text-white outline-none transition-colors data-[state=open]:bg-[#2d668c] data-[state=open]:text-white focus:bg-[#2d668c] hover:bg-white/15";
 
 export function AppMenu({
   panels,
