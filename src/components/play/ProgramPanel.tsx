@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Music,
+  ListMusic,
   Megaphone,
   Radio,
   FileText,
@@ -455,6 +456,7 @@ function BlockView({
 export function ProgramPanel() {
   const { blocks, currentBlockId, current, addTrack } = usePlayer();
   const nextId = findNextId(blocks, current?.id ?? null);
+  const totalItems = blocks.reduce((sum, block) => sum + block.items.length, 0);
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [markersOpen, setMarkersOpen] = useState(false);
   const [clockBlock, setClockBlock] = useState<Block | null>(null);
@@ -497,8 +499,21 @@ export function ProgramPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 bg-pl-toolbar px-2 py-1 text-[12px] font-semibold text-white">
-        <Music className="h-4 w-4" /> Programação
+      <div className="flex min-h-9 items-center gap-2 border-b border-slate-950 bg-slate-800 px-3 py-1.5 text-white">
+        <ListMusic className="h-4 w-4 text-cyan-300" />
+        <div className="flex min-w-0 flex-col leading-none">
+          <span className="text-[11px] font-black uppercase tracking-wider">
+            Editor de Playlist
+          </span>
+          <span className="mt-1 text-[9px] text-white/55">
+            Final Log · {blocks.length} clocks · {totalItems} inserções
+          </span>
+        </div>
+        {current && (
+          <span className="ml-2 hidden max-w-[32%] truncate rounded bg-red-500/20 px-2 py-1 text-[9px] font-bold uppercase text-red-200 lg:block">
+            NO AR: {current.title}
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={insertPause}
