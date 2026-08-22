@@ -7,17 +7,17 @@ import { useCallback, useEffect, useState } from "react";
 export type DockId = "pastas" | "propriedades" | "quickstart";
 
 interface DockState {
-  rightWidth: number;                 // largura da coluna direita (% do split)
-  open: DockId[];                     // grids visíveis, de cima para baixo
-  weights: Record<DockId, number>;    // peso (altura relativa) de cada grid
+  rightWidth: number; // largura da coluna direita (% do split)
+  open: DockId[]; // grids visíveis, de cima para baixo
+  weights: Record<DockId, number>; // peso (altura relativa) de cada grid
 }
 
-const KEY = "solplay.dock.v1";
+const KEY = "solplay.dock.v2";
 
 const DEFAULT: DockState = {
-  rightWidth: 40,
-  open: ["pastas", "propriedades"],
-  weights: { pastas: 1.4, propriedades: 1, quickstart: 1.2 },
+  rightWidth: 45,
+  open: ["pastas", "quickstart", "propriedades"],
+  weights: { pastas: 1.15, propriedades: 0.85, quickstart: 1.35 },
 };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
@@ -34,7 +34,9 @@ function load(): DockState {
         weights: { ...DEFAULT.weights, ...(p.weights ?? {}) },
       };
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return DEFAULT;
 }
 
@@ -42,7 +44,11 @@ export function useDockLayout() {
   const [state, setState] = useState<DockState>(load);
 
   useEffect(() => {
-    try { window.localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* ignore */ }
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+      /* ignore */
+    }
   }, [state]);
 
   const setRightWidth = useCallback(
@@ -67,11 +73,19 @@ export function useDockLayout() {
     [],
   );
   const grow = useCallback(
-    (id: DockId) => setState((s) => ({ ...s, weights: { ...s.weights, [id]: clamp(s.weights[id] * 1.25, 0.25, 6) } })),
+    (id: DockId) =>
+      setState((s) => ({
+        ...s,
+        weights: { ...s.weights, [id]: clamp(s.weights[id] * 1.25, 0.25, 6) },
+      })),
     [],
   );
   const shrink = useCallback(
-    (id: DockId) => setState((s) => ({ ...s, weights: { ...s.weights, [id]: clamp(s.weights[id] / 1.25, 0.25, 6) } })),
+    (id: DockId) =>
+      setState((s) => ({
+        ...s,
+        weights: { ...s.weights, [id]: clamp(s.weights[id] / 1.25, 0.25, 6) },
+      })),
     [],
   );
   const setWeights = useCallback(
