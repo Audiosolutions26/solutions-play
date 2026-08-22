@@ -83,7 +83,7 @@ export function PlayApp() {
   const onHDrag = (i: number, _x: number, clientY: number) => {
     const r = rightColRef.current?.getBoundingClientRect();
     if (!r) return;
-    const ids = dock.open;
+    const ids = dock.open.filter((id) => id !== "pastas");
     const a = ids[i],
       b = ids[i + 1];
     const sum = ids.reduce((s, id) => s + dock.weights[id], 0) || 1;
@@ -168,12 +168,26 @@ export function PlayApp() {
                 <NotesPanel />
               ) : (
                 <>
-                  {/* Studio SOHO: playlist/Final Log no centro, painéis operacionais à direita */}
+                  {/* SOHO studio: biblioteca à esquerda, Final Log no centro e grids operacionais à direita. */}
+                  {dock.open.includes("pastas") && (
+                    <div className="hidden h-full w-[230px] min-w-[230px] shrink-0 flex-col border-r border-pl-toolbar-dark bg-pl-row lg:flex">
+                      <DockFrame
+                        title={dockMeta.pastas.title}
+                        icon={dockMeta.pastas.icon}
+                        grow={dock.weights.pastas}
+                        onGrow={() => dock.grow("pastas")}
+                        onShrink={() => dock.shrink("pastas")}
+                        onClose={() => dock.closePanel("pastas")}
+                      >
+                        {dockMeta.pastas.node}
+                      </DockFrame>
+                    </div>
+                  )}
                   <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col border-r border-pl-toolbar-dark bg-pl-row">
                     <ProgramPanel />
                   </div>
-                  {/* right: grids encaixáveis (redimensionáveis / fecháveis) */}
-                  {dock.open.length > 0 && (
+                  {/* right: histórico, propriedades e cart player encaixáveis. */}
+                  {dock.open.filter((id) => id !== "pastas").length > 0 && (
                     <>
                       <ResizeHandle orientation="vertical" onDrag={(x) => onVDrag(x)} />
                       <div
@@ -185,26 +199,28 @@ export function PlayApp() {
                         }}
                         onDrop={onDockDrop}
                       >
-                        {dock.open.map((id, i) => (
-                          <Fragment key={id}>
-                            <DockFrame
-                              title={dockMeta[id].title}
-                              icon={dockMeta[id].icon}
-                              grow={dock.weights[id]}
-                              onGrow={() => dock.grow(id)}
-                              onShrink={() => dock.shrink(id)}
-                              onClose={() => dock.closePanel(id)}
-                            >
-                              {dockMeta[id].node}
-                            </DockFrame>
-                            {i < dock.open.length - 1 && (
-                              <ResizeHandle
-                                orientation="horizontal"
-                                onDrag={(x, y) => onHDrag(i, x, y)}
-                              />
-                            )}
-                          </Fragment>
-                        ))}
+                        {dock.open
+                          .filter((id) => id !== "pastas")
+                          .map((id, i, rightDocks) => (
+                            <Fragment key={id}>
+                              <DockFrame
+                                title={dockMeta[id].title}
+                                icon={dockMeta[id].icon}
+                                grow={dock.weights[id]}
+                                onGrow={() => dock.grow(id)}
+                                onShrink={() => dock.shrink(id)}
+                                onClose={() => dock.closePanel(id)}
+                              >
+                                {dockMeta[id].node}
+                              </DockFrame>
+                              {i < rightDocks.length - 1 && (
+                                <ResizeHandle
+                                  orientation="horizontal"
+                                  onDrag={(x, y) => onHDrag(i, x, y)}
+                                />
+                              )}
+                            </Fragment>
+                          ))}
                       </div>
                     </>
                   )}
