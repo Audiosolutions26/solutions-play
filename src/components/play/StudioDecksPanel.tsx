@@ -15,6 +15,7 @@ import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { MARKER_DEFS, getMarkers, markerPositionSec, pseudoWave } from "@/lib/play-markers";
 import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
 import { MarkersDialog } from "./MarkersDialog";
+import { StitcherDialog } from "./StitcherDialog";
 
 function formatTime(value: number): string {
   return Number.isFinite(value) && value > 0 ? fmt(Math.round(value)) : "00:00";
@@ -302,6 +303,7 @@ export function StudioDecksPanel() {
   const { blocks, current, currentBlockId, isPlaying, position, playAt, setCue, nextManual, stop } =
     usePlayer();
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
+  const [stitcherOpen, setStitcherOpen] = useState(false);
   const firstBlock = blocks[0];
   const firstTrack = firstBlock?.items[0] ?? null;
   const nextTrack = firstBlock?.items[1] ?? blocks[1]?.items[0] ?? null;
@@ -319,6 +321,15 @@ export function StudioDecksPanel() {
           <div className="text-[9px] text-[#7893a6]">A/B · SOHO waveform</div>
         </div>
         <Volume2 className="h-4 w-4 text-[#4eaa64]" />
+        <button
+          type="button"
+          onClick={() => setStitcherOpen(true)}
+          disabled={!deckA || !nextTrack}
+          className="mt-1 inline-flex items-center justify-center rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20 disabled:opacity-30"
+          title="Montar teaser pelos Hooks"
+        >
+          STITCHER
+        </button>
       </div>
       <div className="flex h-[140px] min-w-0 flex-1 gap-2">
         <DeckCard
@@ -390,6 +401,12 @@ export function StudioDecksPanel() {
         onOpenChange={(open) => {
           if (!open) setMarkerTrack(null);
         }}
+      />
+      <StitcherDialog
+        current={deckA}
+        next={nextTrack}
+        open={stitcherOpen}
+        onOpenChange={setStitcherOpen}
       />
     </aside>
   );
