@@ -146,7 +146,7 @@ export function PlayApp() {
               }}
               onOpenProgramFolders={() => ui.setProgramFoldersOpen(true)}
             />
-            <OnAirBar />
+            {activeTab !== "Programação" && <OnAirBar />}
             {activeTab === "Programação" && <StudioDecksPanel />}
             <div ref={splitRef} className="flex h-0 min-h-0 flex-1 overflow-hidden">
               {activeTab === "QuickStart" ? (
