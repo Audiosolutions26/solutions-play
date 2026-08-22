@@ -26,7 +26,9 @@ function DeckCard({
     "grid h-6 w-6 place-items-center rounded bg-[#243543] text-[#9fc2d8] transition-colors hover:bg-[#314b5d] disabled:opacity-30";
 
   return (
-    <div className={`rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}>
+    <div
+      className={`min-w-0 flex-1 rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
+    >
       <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[#c8d9e5]">
         <span className="flex items-center gap-1">
           <Radio className="h-3 w-3" /> {label}
@@ -91,8 +93,8 @@ export function StudioDecksPanel() {
   const deckABlock = current ? currentBlockId : (firstBlock?.id ?? null);
 
   return (
-    <aside className="flex min-w-[230px] max-w-[290px] flex-col border-r border-[#304858] bg-[#0f1820] p-2 text-[#dce6ed]">
-      <div className="mb-2 flex items-center justify-between border-b border-[#2a4051] pb-2">
+    <aside className="flex min-h-[126px] w-full shrink-0 items-stretch gap-2 border-b border-[#304858] bg-[#0f1820] p-2 text-[#dce6ed]">
+      <div className="flex w-[150px] shrink-0 flex-col justify-center border-r border-[#2a4051] pr-2">
         <div>
           <div className="text-[11px] font-black uppercase tracking-widest text-[#dbe8f0]">
             Studio decks
@@ -101,7 +103,7 @@ export function StudioDecksPanel() {
         </div>
         <Volume2 className="h-4 w-4 text-[#4eaa64]" />
       </div>
-      <div className="space-y-2">
+      <div className="flex min-w-0 flex-1 gap-2">
         <DeckCard
           label="Deck A · NO AR"
           track={deckA}
@@ -121,7 +123,7 @@ export function StudioDecksPanel() {
           onPlay={nextManual}
         />
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-1 border-t border-[#2a4051] pt-2">
+      <div className="flex w-[150px] shrink-0 flex-col justify-center gap-1 border-l border-[#2a4051] pl-2">
         <button
           type="button"
           onClick={nextManual}
@@ -144,7 +146,7 @@ export function StudioDecksPanel() {
           <Square className="h-3.5 w-3.5" /> STOP
         </button>
       </div>
-      <div className="mt-auto rounded border border-[#2a4051] bg-[#18242e] p-2 text-[10px] text-[#8ea6b5]">
+      <div className="flex w-[160px] shrink-0 flex-col justify-center rounded border border-[#2a4051] bg-[#18242e] p-2 text-[10px] text-[#8ea6b5]">
         <div className="mb-1 font-bold uppercase tracking-wider text-[#c7d9e5]">Operação</div>
         <div className="flex justify-between">
           <span>Modo</span>
