@@ -65,23 +65,8 @@ export function TopBar({
 }) {
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
-      {/* title bar */}
-      <div className="flex items-center justify-between bg-pl-toolbar-dark px-2 py-0.5 text-[11px]">
-        <div className="flex min-w-0 items-center gap-2 font-semibold tracking-wide">
-          <Radio className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">Solutions-Play — Estação Demo</span>
-          <span className="shrink-0 rounded bg-emerald-500/80 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
-            STUDIO PRO · v2
-          </span>
-        </div>
-        <div className="flex gap-1">
-          <span className="grid h-3.5 w-3.5 place-items-center rounded-sm bg-white/15">_</span>
-          <span className="grid h-3.5 w-3.5 place-items-center rounded-sm bg-white/15">▢</span>
-          <span className="grid h-3.5 w-3.5 place-items-center rounded-sm bg-pl-banner">✕</span>
-        </div>
-      </div>
-      {/* menu */}
-      <div className="flex items-center gap-1 px-2 py-0.5">
+      {/* menu enxuto, no mesmo nível do SOHO; o título da janela fica a cargo do sistema operacional */}
+      <div className="flex h-[22px] items-center gap-1 border-b border-white/10 bg-pl-toolbar-dark px-1">
         <AppMenu
           panels={panels}
           onTogglePanel={onTogglePanel}
@@ -99,26 +84,26 @@ export function TopBar({
         />
       </div>
       {/* control bar: modos e atalhos do Studio, inspirados no SOHO */}
-      <div className="flex items-center gap-1 border-t border-white/10 bg-[#2d5f86] px-2 py-1 text-[9px] font-bold uppercase tracking-wide">
+      <div className="flex h-[22px] items-center gap-1 border-t border-white/10 bg-[#2d5f86] px-1 text-[9px] font-bold uppercase tracking-wide">
         <span className="mr-1 text-[8px] font-normal text-white/60">MODO</span>
-        <button type="button" className="rounded bg-[#2e9c58] px-2 py-1 text-white shadow-inner">
+        <button type="button" className="rounded bg-[#2e9c58] px-2 py-0.5 text-white shadow-inner">
           AUTO
         </button>
         <button
           type="button"
-          className="rounded bg-white/10 px-2 py-1 text-white/75 hover:bg-white/20"
+          className="rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20"
         >
           MANUAL
         </button>
         <button
           type="button"
-          className="rounded bg-white/10 px-2 py-1 text-white/75 hover:bg-white/20"
+          className="rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20"
         >
           RE-BROADCAST
         </button>
         <button
           type="button"
-          className="rounded bg-white/10 px-2 py-1 text-white/75 hover:bg-white/20"
+          className="rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20"
         >
           OFFLINE
         </button>
@@ -126,21 +111,21 @@ export function TopBar({
         <button
           type="button"
           onClick={() => onOpenAdvanced("gerar")}
-          className="rounded bg-white/15 px-2 py-1 text-white hover:bg-white/25"
+          className="rounded bg-white/15 px-2 py-0.5 text-white hover:bg-white/25"
         >
           FINAL LOG
         </button>
         <button
           type="button"
           onClick={() => onOpenAdvanced("grade")}
-          className="rounded bg-white/15 px-2 py-1 text-white hover:bg-white/25"
+          className="rounded bg-white/15 px-2 py-0.5 text-white hover:bg-white/25"
         >
           CLOCKS
         </button>
         <button
           type="button"
           onClick={onOpenQuickStart}
-          className="rounded bg-white/15 px-2 py-1 text-white hover:bg-white/25"
+          className="rounded bg-white/15 px-2 py-0.5 text-white hover:bg-white/25"
         >
           INSTANT JINGLES
         </button>
@@ -149,12 +134,12 @@ export function TopBar({
         </span>
       </div>
       {/* toolbar row */}
-      <div className="flex items-center gap-2 border-t border-white/15 px-2 py-1">
+      <div className="flex h-[34px] items-center gap-1 border-t border-white/15 px-1 py-0.5">
         <div className="flex items-center gap-0.5">
           {toolIcons.map((Icon, i) => (
             <button
               key={i}
-              className="grid h-7 w-7 place-items-center rounded border border-white/10 bg-white/10 hover:bg-white/25"
+              className="grid h-6 w-6 place-items-center rounded border border-white/10 bg-white/10 hover:bg-white/25"
               title="ferramenta"
             >
               <Icon className="h-4 w-4" />
@@ -163,7 +148,7 @@ export function TopBar({
         </div>
         <div className="ml-2 flex items-center gap-2">
           <Clock />
-          <div className="rounded bg-black/40 px-2 py-0.5 font-mono text-[13px] font-bold text-pl-vu-warn">
+          <div className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[12px] font-bold text-pl-vu-warn">
             56'02
           </div>
         </div>
