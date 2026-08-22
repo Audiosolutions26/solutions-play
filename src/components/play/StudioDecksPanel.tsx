@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Headphones, Mic2, Play, Radio, SkipForward, Square, Volume2 } from "lucide-react";
+import {
+  Bookmark,
+  Headphones,
+  Mic2,
+  Play,
+  Radio,
+  SkipForward,
+  Square,
+  Volume2,
+} from "lucide-react";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Track } from "@/lib/play-data";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { MARKER_DEFS, getMarkers, markerPositionSec, pseudoWave } from "@/lib/play-markers";
 import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
+import { MarkersDialog } from "./MarkersDialog";
 
 function formatTime(value: number): string {
   return Number.isFinite(value) && value > 0 ? fmt(Math.round(value)) : "00:00";
@@ -207,6 +217,7 @@ function DeckCard({
   isActive,
   onPlay,
   onCue,
+  onMarkers,
 }: {
   label: string;
   track: Track | null;
@@ -216,6 +227,7 @@ function DeckCard({
   isActive: boolean;
   onPlay: () => void;
   onCue: () => void;
+  onMarkers: () => void;
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
@@ -264,6 +276,15 @@ function DeckCard({
           </button>
           <button
             type="button"
+            onClick={onMarkers}
+            disabled={!track}
+            title="Editar marcadores da faixa"
+            className={buttonClass}
+          >
+            <Bookmark className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
             onClick={onPlay}
             disabled={!track}
             title="Carregar/tocar deck"
@@ -280,6 +301,7 @@ function DeckCard({
 export function StudioDecksPanel() {
   const { blocks, current, currentBlockId, isPlaying, position, playAt, setCue, nextManual, stop } =
     usePlayer();
+  const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const firstBlock = blocks[0];
   const firstTrack = firstBlock?.items[0] ?? null;
   const nextTrack = firstBlock?.items[1] ?? blocks[1]?.items[0] ?? null;
@@ -307,6 +329,7 @@ export function StudioDecksPanel() {
           position={position}
           isActive={Boolean(isPlaying && current?.id === deckA?.id)}
           onCue={() => setCue(true)}
+          onMarkers={() => setMarkerTrack(deckA)}
           onPlay={() => {
             if (deckABlock && deckA) playAt(deckABlock, deckA.id);
           }}
@@ -319,6 +342,7 @@ export function StudioDecksPanel() {
           position={0}
           isActive={false}
           onCue={() => setCue(true)}
+          onMarkers={() => setMarkerTrack(nextTrack)}
           onPlay={nextManual}
         />
       </div>
@@ -360,6 +384,13 @@ export function StudioDecksPanel() {
           <span className="font-mono text-[#6fb4d8]">ORIGINAL</span>
         </div>
       </div>
+      <MarkersDialog
+        track={markerTrack}
+        open={Boolean(markerTrack)}
+        onOpenChange={(open) => {
+          if (!open) setMarkerTrack(null);
+        }}
+      />
     </aside>
   );
 }
