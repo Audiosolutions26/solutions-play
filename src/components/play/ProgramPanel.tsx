@@ -222,12 +222,6 @@ function Row({
             if (sourceId && sourceId !== track.id) reorderTrack(sourceId, track.id, place);
           }}
           onClick={() => select(track.id)}
-          onMouseEnter={() => {
-            if (!isCurrent) void cuePlay(track, { reason: "hover" });
-          }}
-          onMouseLeave={() => {
-            if (!isCurrent) cueStop();
-          }}
           onDoubleClick={() => playAt(block.id, track.id)}
           className={`relative flex items-center gap-2 overflow-hidden border-b border-black/5 text-pl-text ${
             isCurrent || isNext ? "py-2 pr-2 pl-9" : "px-2 py-[3px]"
