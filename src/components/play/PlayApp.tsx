@@ -206,8 +206,8 @@ export function PlayApp() {
                           title={dockMeta.pastas.title}
                           icon={dockMeta.pastas.icon}
                           grow={dock.weights.pastas}
-                          onGrow={() => dock.grow("pastas")}
-                          onShrink={() => dock.shrink("pastas")}
+                          onGrow={() => dock.setPastasWidth(dock.pastasWidth * 1.16)}
+                          onShrink={() => dock.setPastasWidth(dock.pastasWidth / 1.16)}
                           onClose={() => dock.closePanel("pastas")}
                           draggable
                           side="left"
