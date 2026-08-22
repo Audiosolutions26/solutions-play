@@ -115,10 +115,10 @@ export function FoldersPanel({
         </div>
       )}
       {/* toolbar */}
-      <div className="flex items-center gap-1 border-b border-pl-panel-dark bg-pl-panel px-2 py-1">
+      <div className="flex items-center gap-1 border-b border-pl-toolbar-dark bg-pl-panel-dark px-2 py-1">
         <button
           onClick={() => setOpenId(null)}
-          className="grid h-7 w-7 place-items-center rounded border border-pl-panel-dark bg-white/60 text-pl-text hover:bg-white disabled:opacity-40"
+          className="grid h-7 w-7 place-items-center rounded border border-pl-toolbar-light bg-pl-toolbar text-pl-text hover:bg-pl-toolbar-light disabled:opacity-40"
           disabled={!open && !results}
           title="Voltar"
         >
@@ -149,7 +149,7 @@ export function FoldersPanel({
           <button
             onClick={onManage}
             title="Gerenciamento de atalhos"
-            className="grid h-7 w-7 place-items-center rounded border border-pl-panel-dark bg-white/60 text-pl-text hover:bg-white"
+            className="grid h-7 w-7 place-items-center rounded border border-pl-toolbar-light bg-pl-toolbar text-pl-text hover:bg-pl-toolbar-light"
           >
             <Settings2 className="h-4 w-4" />
           </button>
@@ -220,17 +220,17 @@ export function FoldersPanel({
 
       {/* search */}
       <div className="flex flex-wrap items-center gap-2 border-t border-pl-panel-dark bg-pl-panel px-2 py-1.5">
-        <div className="flex min-w-[150px] flex-1 items-center gap-1 rounded border border-pl-panel-dark bg-white px-1.5">
+        <div className="flex min-w-[150px] flex-1 items-center gap-1 rounded border border-pl-toolbar-light bg-pl-panel-dark px-1.5">
           <Search className="h-3.5 w-3.5 shrink-0 text-pl-toolbar" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Pesquisar biblioteca..."
-            className="h-7 min-w-0 flex-1 bg-transparent px-1 text-[12px] text-pl-text outline-none"
+            className="h-7 min-w-0 flex-1 bg-transparent px-1 text-[12px] text-pl-text outline-none placeholder:text-pl-text/45"
           />
         </div>
         <label
-          className="flex h-7 items-center gap-1 rounded border border-pl-panel-dark bg-white px-1.5 text-[10px] font-semibold text-pl-text"
+          className="flex h-7 items-center gap-1 rounded border border-pl-toolbar-light bg-pl-panel-dark px-1.5 text-[10px] font-semibold text-pl-text"
           title="Filtrar por categoria"
         >
           <ListFilter className="h-3.5 w-3.5 text-pl-toolbar" />
@@ -331,12 +331,12 @@ function TrackList({
                 onDoubleClick={() => onAdd(t)}
                 className={`group flex cursor-grab items-center gap-2 px-2 py-1 text-[12px] text-pl-text active:cursor-grabbing ${
                   isCue
-                    ? "bg-emerald-100 shadow-[inset_3px_0_0_0_#059669]"
+                    ? "bg-emerald-900/60 shadow-[inset_3px_0_0_0_#059669]"
                     : selId === t.id
                       ? "bg-pl-toolbar-light/40"
                       : i % 2
                         ? "bg-pl-row-alt"
-                        : "bg-white"
+                        : "bg-pl-row"
                 }`}
                 title="Clique direito para pré-escuta • arraste para a Programação"
               >
