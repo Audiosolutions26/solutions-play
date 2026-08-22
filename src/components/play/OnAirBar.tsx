@@ -8,7 +8,7 @@ const ZOOM_MAX = 6;
 const ZOOM_STEP = 0.5;
 
 export function OnAirBar() {
-  const { onAir, current } = usePlayer();
+  const { onAir, current, blocks, currentBlockId } = usePlayer();
   const [zoom, setZoom] = useState<number>(() => {
     if (typeof window === "undefined") return 1;
     const v = Number(window.localStorage.getItem("sp:waveZoom"));
@@ -25,6 +25,22 @@ export function OnAirBar() {
   };
   const title = current?.title || "Nenhum áudio selecionado";
   const artist = current?.artist || (onAir ? "Aguardando programação" : "Sistema parado");
+  const nextTrack = (() => {
+    if (current && currentBlockId) {
+      const blockIndex = blocks.findIndex((block) => block.id === currentBlockId);
+      const trackIndex =
+        blockIndex >= 0
+          ? blocks[blockIndex].items.findIndex((track) => track.id === current.id)
+          : -1;
+      if (blockIndex >= 0 && trackIndex >= 0 && blocks[blockIndex].items[trackIndex + 1]) {
+        return blocks[blockIndex].items[trackIndex + 1];
+      }
+      for (let index = blockIndex + 1; index < blocks.length; index += 1) {
+        if (blocks[index].items[0]) return blocks[index].items[0];
+      }
+    }
+    return blocks[0]?.items[1] ?? blocks[0]?.items[0] ?? null;
+  })();
   return (
     <div className="flex h-[66px] items-stretch border-y border-black bg-black">
       <div className="flex w-[116px] shrink-0 flex-col items-center justify-center bg-[#e00000] leading-none text-white">
@@ -47,6 +63,14 @@ export function OnAirBar() {
         </div>
         <div className="absolute inset-x-0 bottom-0 top-6">
           <Waveform zoom={zoom} />
+        </div>
+        <div className="pointer-events-none absolute bottom-1 left-3 z-10 max-w-[44%] rounded border border-white/10 bg-black/75 px-2 py-1 leading-none">
+          <span className="mr-1 text-[8px] font-bold uppercase tracking-widest text-white/45">
+            PRÓXIMA
+          </span>
+          <span className="text-[10px] font-semibold text-[#ff9b45]">
+            {nextTrack?.title || "Aguardando seleção"}
+          </span>
         </div>
         {/* Controle de zoom (+/-) da visualização da waveform. */}
         <div className="absolute right-1 bottom-1 z-10 flex items-center gap-1 rounded bg-[#111]/90 px-1 py-0.5 backdrop-blur-sm">
