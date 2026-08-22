@@ -47,11 +47,18 @@ export function OperatorLogin({
         <div className="flex items-center gap-2 bg-pl-toolbar-dark px-4 py-3 text-white">
           <Radio className="h-5 w-5" />
           <div className="flex-1">
-            <div className="text-sm font-bold leading-tight">Solutions-Play</div>
-            <div className="text-[11px] opacity-80">{onCancel ? "Trocar operador" : "Acesso do operador"}</div>
+            <div className="text-sm font-bold leading-tight">Solutions Play</div>
+            <div className="text-[11px] opacity-80">
+              {onCancel ? "Trocar operador" : "Acesso do operador"}
+            </div>
           </div>
           {onCancel && (
-            <button type="button" onClick={onCancel} title="Cancelar" className="rounded p-1 hover:bg-white/15">
+            <button
+              type="button"
+              onClick={onCancel}
+              title="Cancelar"
+              className="rounded p-1 hover:bg-white/15"
+            >
               <X className="h-4 w-4" />
             </button>
           )}
@@ -59,20 +66,26 @@ export function OperatorLogin({
 
         <div className="space-y-3 p-4">
           <label className="block text-[12px] font-semibold text-pl-text">
-            <span className="mb-1 flex items-center gap-1"><User className="h-3.5 w-3.5" /> Operador</span>
+            <span className="mb-1 flex items-center gap-1">
+              <User className="h-3.5 w-3.5" /> Operador
+            </span>
             <select
               value={selected.id}
               onChange={(e) => setSelected(operators.find((o) => o.id === e.target.value)!)}
               className="h-9 w-full rounded border border-pl-panel-dark bg-white px-2 text-[13px] text-pl-text outline-none focus:border-pl-toolbar"
             >
               {operators.map((o) => (
-                <option key={o.id} value={o.id}>{o.name} — {o.role}</option>
+                <option key={o.id} value={o.id}>
+                  {o.name} — {o.role}
+                </option>
               ))}
             </select>
           </label>
 
           <label className="block text-[12px] font-semibold text-pl-text">
-            <span className="mb-1 flex items-center gap-1"><Lock className="h-3.5 w-3.5" /> Senha</span>
+            <span className="mb-1 flex items-center gap-1">
+              <Lock className="h-3.5 w-3.5" /> Senha
+            </span>
             <input
               type="password"
               value={pin}
@@ -98,7 +111,9 @@ export function OperatorLogin({
               Cancelar
             </button>
           )}
-          <p className="text-center text-[11px] text-pl-text/60">Modo demonstração • senha do demo: 0000</p>
+          <p className="text-center text-[11px] text-pl-text/60">
+            Modo demonstração • senha do demo: 0000
+          </p>
         </div>
       </form>
     </div>

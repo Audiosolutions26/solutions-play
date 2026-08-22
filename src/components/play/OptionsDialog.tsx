@@ -2,17 +2,32 @@ import { useRef, useState } from "react";
 import { Settings, Plus, Trash2, KeyRound, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { configGuides, exportConfig, importConfig, type ConfigField, type ConfigGuide } from "@/lib/play-config";
+import {
+  configGuides,
+  exportConfig,
+  importConfig,
+  type ConfigField,
+  type ConfigGuide,
+} from "@/lib/play-config";
 import { useConfig } from "@/hooks/use-config";
 import { validateFieldValue, validateConfigState } from "@/lib/play-config-validate";
 import { operators as seedOperators, type Operator } from "./OperatorLogin";
@@ -36,7 +51,9 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
       <div className="flex items-center justify-between gap-3 rounded border border-pl-panel-dark/40 bg-white/60 px-3 py-2">
         <div className="min-w-0">
           <div className="text-[12px] font-medium text-pl-text">{field.label}</div>
-          {field.help && <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>}
+          {field.help && (
+            <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>
+          )}
         </div>
         <Switch checked={Boolean(value)} onCheckedChange={(v) => setDraft(fullKey, v)} />
       </div>
@@ -48,10 +65,14 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
       <div className="space-y-1">
         <Label className="text-[12px]">{field.label}</Label>
         <Select value={String(value)} onValueChange={(v) => setDraft(fullKey, v)}>
-          <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 text-[12px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {field.options?.map((o) => (
-              <SelectItem key={o.value} value={o.value} className="text-[12px]">{o.label}</SelectItem>
+              <SelectItem key={o.value} value={o.value} className="text-[12px]">
+                {o.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -62,7 +83,10 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
   // text / number / password / textarea
   return (
     <div className="space-y-1">
-      <Label className="text-[12px]">{field.label}{field.unit ? ` (${field.unit})` : ""}</Label>
+      <Label className="text-[12px]">
+        {field.label}
+        {field.unit ? ` (${field.unit})` : ""}
+      </Label>
       <Input
         type={field.type === "number" ? "number" : field.type === "password" ? "password" : "text"}
         className={cn("h-8 text-[12px]", error && "border-red-500 focus-visible:ring-red-500")}
@@ -74,9 +98,13 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
           setDraft(fullKey, field.type === "number" ? Number(e.target.value) : e.target.value)
         }
       />
-      {error
-        ? <div className="text-[11px] leading-tight text-red-600">{error}</div>
-        : field.help && <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>}
+      {error ? (
+        <div className="text-[11px] leading-tight text-red-600">{error}</div>
+      ) : (
+        field.help && (
+          <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>
+        )
+      )}
     </div>
   );
 }
@@ -84,11 +112,17 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
 function GuideView({ guide }: { guide: ConfigGuide }) {
   return (
     <div className="space-y-5">
-      {guide.description && <p className="text-[12px] text-muted-foreground">{guide.description}</p>}
+      {guide.description && (
+        <p className="text-[12px] text-muted-foreground">{guide.description}</p>
+      )}
       {guide.sections.map((section) => (
         <fieldset key={section.id} className="rounded-md border border-pl-panel-dark/40">
-          <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">{section.title}</legend>
-          {section.note && <p className="px-3 pb-1 text-[11px] text-muted-foreground">{section.note}</p>}
+          <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">
+            {section.title}
+          </legend>
+          {section.note && (
+            <p className="px-3 pb-1 text-[11px] text-muted-foreground">{section.note}</p>
+          )}
           <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2">
             {section.fields.map((f) => (
               <FieldRow key={f.key} field={f} fullKey={`${guide.id}.${section.id}.${f.key}`} />
@@ -112,7 +146,9 @@ function OperatorsView() {
       return;
     }
     setOps((o) => [...o, { id: `op${Date.now()}`, name: name.trim(), role, pin }]);
-    setName(""); setPin(""); setRole("Locutor");
+    setName("");
+    setPin("");
+    setRole("Locutor");
     toast.success("Operador adicionado (demo).");
   };
 
@@ -124,7 +160,9 @@ function OperatorsView() {
       </p>
 
       <fieldset className="rounded-md border border-pl-panel-dark/40">
-        <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">Operadores cadastrados</legend>
+        <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">
+          Operadores cadastrados
+        </legend>
         <div className="overflow-hidden">
           <table className="w-full text-[12px]">
             <thead className="bg-muted">
@@ -140,7 +178,9 @@ function OperatorsView() {
                 <tr key={o.id} className="border-t border-pl-panel-dark/30">
                   <td className="px-3 py-1.5">{o.name}</td>
                   <td className="px-3 py-1.5">{o.role}</td>
-                  <td className="px-3 py-1.5 font-mono"><KeyRound className="inline h-3 w-3" /> ••••</td>
+                  <td className="px-3 py-1.5 font-mono">
+                    <KeyRound className="inline h-3 w-3" /> ••••
+                  </td>
                   <td className="px-3 py-1.5 text-right">
                     <button
                       onClick={() => setOps((x) => x.filter((p) => p.id !== o.id))}
@@ -162,26 +202,42 @@ function OperatorsView() {
         <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-4">
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-[12px]">Nome</Label>
-            <Input className="h-8 text-[12px]" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              className="h-8 text-[12px]"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-[12px]">Função</Label>
             <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-[12px]">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {["Locutor", "Programador", "Administrador"].map((r) => (
-                  <SelectItem key={r} value={r} className="text-[12px]">{r}</SelectItem>
+                  <SelectItem key={r} value={r} className="text-[12px]">
+                    {r}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
             <Label className="text-[12px]">Senha (PIN)</Label>
-            <Input className="h-8 text-[12px]" type="password" value={pin} onChange={(e) => setPin(e.target.value)} />
+            <Input
+              className="h-8 text-[12px]"
+              type="password"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+            />
           </div>
         </div>
         <div className="px-3 pb-3">
-          <button onClick={add} className="inline-flex items-center gap-1 rounded bg-pl-toolbar px-3 py-1.5 text-[12px] font-semibold text-white hover:brightness-110">
+          <button
+            onClick={add}
+            className="inline-flex items-center gap-1 rounded bg-pl-toolbar px-3 py-1.5 text-[12px] font-semibold text-white hover:brightness-110"
+          >
             <Plus className="h-3.5 w-3.5" /> Adicionar operador
           </button>
         </div>
@@ -189,10 +245,15 @@ function OperatorsView() {
 
       <fieldset className="rounded-md border border-pl-panel-dark/40">
         <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">Pastas visíveis</legend>
-        <p className="px-3 pb-1 text-[11px] text-muted-foreground">Marque as pastas de trabalho visíveis na guia "Pastas".</p>
+        <p className="px-3 pb-1 text-[11px] text-muted-foreground">
+          Marque as pastas de trabalho visíveis na guia "Pastas".
+        </p>
         <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2">
           {folders.map((f) => (
-            <div key={f.id} className="flex items-center justify-between gap-2 rounded border border-pl-panel-dark/40 bg-white/60 px-3 py-1.5 text-[12px]">
+            <div
+              key={f.id}
+              className="flex items-center justify-between gap-2 rounded border border-pl-panel-dark/40 bg-white/60 px-3 py-1.5 text-[12px]"
+            >
               <span className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: f.color }} />
                 {f.name} <span className="text-muted-foreground">({f.tracks.length})</span>
@@ -259,8 +320,8 @@ export function OptionsDialog({
       setDraftAll(state);
       toast.success(
         `Configurações importadas: ${applied} aplicada(s)` +
-        (ignored.length ? `, ${ignored.length} ignorada(s).` : ".") +
-        " Revise e clique em Salvar.",
+          (ignored.length ? `, ${ignored.length} ignorada(s).` : ".") +
+          " Revise e clique em Salvar.",
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao importar arquivo.");
@@ -281,10 +342,11 @@ export function OptionsDialog({
       <DialogContent className="max-w-4xl gap-0 p-0">
         <DialogHeader className="border-b px-4 py-3">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <Settings className="h-5 w-5" /> Opções — Solutions-Play
+            <Settings className="h-5 w-5" /> Opções — Solutions Play
           </DialogTitle>
           <DialogDescription className="text-[12px]">
-            Menu Ferramentas › Opções — configurações da estação (modo demonstração, salvas localmente).
+            Menu Ferramentas › Opções — configurações da estação (modo demonstração, salvas
+            localmente).
           </DialogDescription>
         </DialogHeader>
 
@@ -296,7 +358,9 @@ export function OptionsDialog({
                 onClick={() => setActive(g.id)}
                 className={cn(
                   "mb-1 w-full rounded px-3 py-2 text-left text-[13px] font-medium transition-colors",
-                  active === g.id ? "bg-pl-toolbar text-white" : "text-pl-text hover:bg-pl-panel-dark/20",
+                  active === g.id
+                    ? "bg-pl-toolbar text-white"
+                    : "text-pl-text hover:bg-pl-panel-dark/20",
                 )}
               >
                 {g.title}
@@ -306,7 +370,11 @@ export function OptionsDialog({
 
           <ScrollArea className="flex-1">
             <div className="p-4">
-              {active === "operadores" ? <OperatorsView /> : guide ? <GuideView guide={guide} /> : null}
+              {active === "operadores" ? (
+                <OperatorsView />
+              ) : guide ? (
+                <GuideView guide={guide} />
+              ) : null}
             </div>
           </ScrollArea>
         </div>
@@ -317,10 +385,19 @@ export function OptionsDialog({
               {errorCount} campo(s) inválido(s)
             </span>
           )}
-          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportFile} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImportFile}
+          />
           <button
             onClick={() => fileRef.current?.click()}
-            className={cn("flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted", errorCount === 0 && "mr-auto")}
+            className={cn(
+              "flex items-center gap-1 rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted",
+              errorCount === 0 && "mr-auto",
+            )}
           >
             <Upload className="h-4 w-4" /> Importar
           </button>
@@ -331,7 +408,10 @@ export function OptionsDialog({
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button
-            onClick={() => { reset(); toast.message("Padrões restaurados (não salvo até clicar em Salvar)."); }}
+            onClick={() => {
+              reset();
+              toast.message("Padrões restaurados (não salvo até clicar em Salvar).");
+            }}
             className="rounded border px-3 py-2 text-[12px] font-medium hover:bg-muted"
           >
             Restaurar padrões

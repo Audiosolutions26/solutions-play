@@ -1,5 +1,38 @@
 import { useRef } from "react";
 import { toast } from "sonner";
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  ClipboardPaste,
+  Copy,
+  FileCode2,
+  FilePlus2,
+  FolderArchive,
+  FolderOpen,
+  Headphones,
+  HelpCircle,
+  Info,
+  Keyboard,
+  ListChecks,
+  LogIn,
+  LogOut,
+  PanelsTopLeft,
+  Play,
+  Printer,
+  Radio,
+  RefreshCw,
+  Save,
+  Search,
+  Scissors,
+  Settings2,
+  SkipForward,
+  Square,
+  Trash2,
+  Volume2,
+  Wand2,
+  type LucideIcon,
+} from "lucide-react";
 import { usePlayer } from "@/hooks/use-player";
 import { parseProgramText } from "@/lib/play-program-import";
 import { parseProgramXml } from "@/lib/play-program-xml";
@@ -40,6 +73,10 @@ interface Props {
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
+
+function MenuGlyph({ icon: Icon }: { icon: LucideIcon }) {
+  return <Icon aria-hidden="true" className="mr-2 h-3.5 w-3.5 shrink-0 text-[#8fb8cf]" />;
+}
 
 const panelList = [
   "Programação",
@@ -186,14 +223,27 @@ export function AppMenu({
       />
       {/* SOLUTIONS */}
       <MenubarMenu>
-        <MenubarTrigger className={triggerCls}>Solutions</MenubarTrigger>
+        <MenubarTrigger className={triggerCls}>Solutions Play</MenubarTrigger>
         <MenubarContent align="start">
-          <MenubarItem onSelect={novaProgramacao}>Nova programação</MenubarItem>
-          <MenubarItem onSelect={abrirPrograma}>Abrir programação…</MenubarItem>
-          <MenubarItem onSelect={onOpenProgramFolders}>Abrir das pastas Grades/Mapas…</MenubarItem>
-          <MenubarItem onSelect={salvarPrograma}>Salvar programação</MenubarItem>
+          <MenubarItem onSelect={novaProgramacao}>
+            <MenuGlyph icon={FilePlus2} />
+            Nova programação
+          </MenubarItem>
+          <MenubarItem onSelect={abrirPrograma}>
+            <MenuGlyph icon={FolderOpen} />
+            Abrir programação…
+          </MenubarItem>
+          <MenubarItem onSelect={onOpenProgramFolders}>
+            <MenuGlyph icon={FolderArchive} />
+            Abrir das pastas Grades/Mapas…
+          </MenubarItem>
+          <MenubarItem onSelect={salvarPrograma}>
+            <MenuGlyph icon={Save} />
+            Salvar programação
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>
+            <MenuGlyph icon={ListChecks} />
             Final Log — gerar e revisar programação
           </MenubarItem>
           <MenubarItem onSelect={() => onOpenAdvanced("grade")}>
@@ -207,10 +257,19 @@ export function AppMenu({
             Registrar comerciais (Ligação)
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={imprimirPrograma}>Imprimir programação…</MenubarItem>
+          <MenubarItem onSelect={imprimirPrograma}>
+            <MenuGlyph icon={Printer} />
+            Imprimir programação…
+          </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={onSwitchOperator}>Trocar operador…</MenubarItem>
-          <MenubarItem onSelect={onLogout}>Sair</MenubarItem>
+          <MenubarItem onSelect={onSwitchOperator}>
+            <MenuGlyph icon={LogIn} />
+            Trocar operador…
+          </MenubarItem>
+          <MenubarItem onSelect={onLogout}>
+            <MenuGlyph icon={LogOut} />
+            Sair
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -219,32 +278,46 @@ export function AppMenu({
         <MenubarTrigger className={triggerCls}>Editar</MenubarTrigger>
         <MenubarContent align="start">
           <MenubarItem onSelect={soon("Desfazer")}>
+            <MenuGlyph icon={ArrowUp} />
             Desfazer<MenubarShortcut>Ctrl+Z</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onSelect={soon("Refazer")}>
+            <MenuGlyph icon={ArrowDown} />
             Refazer<MenubarShortcut>Ctrl+Y</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={soon("Recortar")}>
+            <MenuGlyph icon={Scissors} />
             Recortar<MenubarShortcut>Ctrl+X</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onSelect={soon("Copiar")}>
+            <MenuGlyph icon={Copy} />
             Copiar<MenubarShortcut>Ctrl+C</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onSelect={soon("Colar")}>
+            <MenuGlyph icon={ClipboardPaste} />
             Colar<MenubarShortcut>Ctrl+V</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={removeSelected}>
+            <MenuGlyph icon={Trash2} />
             Remover inserção<MenubarShortcut>Del</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem onSelect={() => move(-1)}>Mover inserção p/ cima</MenubarItem>
-          <MenubarItem onSelect={() => move(1)}>Mover inserção p/ baixo</MenubarItem>
+          <MenubarItem onSelect={() => move(-1)}>
+            <MenuGlyph icon={ArrowUp} />
+            Mover inserção p/ cima
+          </MenubarItem>
+          <MenubarItem onSelect={() => move(1)}>
+            <MenuGlyph icon={ArrowDown} />
+            Mover inserção p/ baixo
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={soon("Localizar")}>
+            <MenuGlyph icon={Search} />
             Localizar arquivo…<MenubarShortcut>Ctrl+F</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onSelect={soon("Selecionar tudo")}>
+            <MenuGlyph icon={ListChecks} />
             Selecionar tudo<MenubarShortcut>Ctrl+A</MenubarShortcut>
           </MenubarItem>
         </MenubarContent>
@@ -255,7 +328,10 @@ export function AppMenu({
         <MenubarTrigger className={triggerCls}>Exibir</MenubarTrigger>
         <MenubarContent align="start">
           <MenubarSub>
-            <MenubarSubTrigger>Painéis</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <MenuGlyph icon={PanelsTopLeft} />
+              Painéis
+            </MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarCheckboxItem
                 checked={panels.pastas}
@@ -292,7 +368,10 @@ export function AppMenu({
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSub>
-            <MenubarSubTrigger>QuickStart</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <MenuGlyph icon={Radio} />
+              QuickStart
+            </MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onSelect={onOpenQuickStart}>Abrir painel QuickStart</MenubarItem>
               {onDockQuickStart && (
@@ -312,9 +391,12 @@ export function AppMenu({
           <MenubarItem onSelect={soon("Camera Controller")}>Camera Controller</MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Barras de ferramentas</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <MenuGlyph icon={Settings2} />
+              Barras de ferramentas
+            </MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarItem onSelect={soon("Barra Solutions-Play")}>Solutions-Play</MenubarItem>
+              <MenubarItem onSelect={soon("Barra Solutions Play")}>Solutions Play</MenubarItem>
               <MenubarItem onSelect={soon("Barra Pré-Escuta")}>Pré-Escuta</MenubarItem>
               <MenubarItem onSelect={soon("Barra Displays")}>Displays</MenubarItem>
             </MenubarSubContent>
@@ -322,7 +404,10 @@ export function AppMenu({
           <MenubarItem onSelect={soon("Guias de ancoragem")}>Guias de ancoragem</MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Modelos de aparência</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <MenuGlyph icon={Settings2} />
+              Modelos de aparência
+            </MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onSelect={soon("Aparência Clássico")}>Clássico</MenubarItem>
               <MenubarItem onSelect={soon("Aparência Azul")}>Azul</MenubarItem>
@@ -337,13 +422,21 @@ export function AppMenu({
         <MenubarTrigger className={triggerCls}>Ferramentas</MenubarTrigger>
         <MenubarContent align="start">
           <MenubarItem onSelect={() => togglePlay()}>
+            <MenuGlyph icon={isPlaying ? Square : Play} />
             {isPlaying ? "Pausar" : "Tocar"}
             <MenubarShortcut>Espaço</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem onSelect={() => stop()}>Parar</MenubarItem>
-          <MenubarItem onSelect={() => next()}>Próxima inserção</MenubarItem>
+          <MenubarItem onSelect={() => stop()}>
+            <MenuGlyph icon={Square} />
+            Parar
+          </MenubarItem>
+          <MenubarItem onSelect={() => next()}>
+            <MenuGlyph icon={SkipForward} />
+            Próxima inserção
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarCheckboxItem checked={cue} onCheckedChange={(v) => setCue(!!v)}>
+            <MenuGlyph icon={Headphones} />
             Pré-escuta (CUE)
           </MenubarCheckboxItem>
           <MenubarItem
@@ -356,19 +449,36 @@ export function AppMenu({
               onOpenTab("Programação");
             }}
           >
+            <MenuGlyph icon={CalendarDays} />
             Hora Certa
           </MenubarItem>
-          <MenubarItem onSelect={onOpenBeep}>Beep…</MenubarItem>
-          <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>Gerar mapas comerciais</MenubarItem>
+          <MenubarItem onSelect={onOpenBeep}>
+            <MenuGlyph icon={Radio} />
+            Beep…
+          </MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>
+            <MenuGlyph icon={Wand2} />
+            Gerar mapas comerciais
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={onOpenSecoes}>
+            <MenuGlyph icon={Settings2} />
             Seções (Arduino/LPT/Satélite/RDS/Sensores)…
           </MenubarItem>
-          <MenubarItem onSelect={onOpenDevices}>Dispositivos de áudio…</MenubarItem>
-          <MenubarItem onSelect={onOpenShortcuts}>Gerenciamento de atalhos…</MenubarItem>
+          <MenubarItem onSelect={onOpenDevices}>
+            <MenuGlyph icon={Volume2} />
+            Dispositivos de áudio…
+          </MenubarItem>
+          <MenubarItem onSelect={onOpenShortcuts}>
+            <MenuGlyph icon={Keyboard} />
+            Gerenciamento de atalhos…
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Opções</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <MenuGlyph icon={Settings2} />
+              Opções
+            </MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onSelect={() => onOpenOptions("licenca")}>Licença</MenubarItem>
               <MenubarItem onSelect={() => onOpenOptions("geral")}>Geral</MenubarItem>
@@ -379,8 +489,14 @@ export function AppMenu({
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSeparator />
-          <MenubarItem onSelect={() => onOpenAdvanced("ini")}>Recursos Avançados…</MenubarItem>
-          <MenubarItem onSelect={() => onOpenOptions("geral")}>Personalizar…</MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("ini")}>
+            <MenuGlyph icon={FileCode2} />
+            Recursos Avançados…
+          </MenubarItem>
+          <MenubarItem onSelect={() => onOpenOptions("geral")}>
+            <MenuGlyph icon={Settings2} />
+            Personalizar…
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -389,14 +505,25 @@ export function AppMenu({
         <MenubarTrigger className={triggerCls}>Ajuda</MenubarTrigger>
         <MenubarContent align="start">
           <MenubarItem onSelect={soon("Guia de configuração e uso")}>
+            <MenuGlyph icon={HelpCircle} />
             Guia de configuração e uso
           </MenubarItem>
-          <MenubarItem onSelect={soon("Suporte Solutions")}>Suporte Solutions</MenubarItem>
-          <MenubarItem onSelect={soon("Acesso remoto")}>Acesso remoto</MenubarItem>
+          <MenubarItem onSelect={soon("Suporte Solutions")}>
+            <MenuGlyph icon={HelpCircle} />
+            Suporte Solutions
+          </MenubarItem>
+          <MenubarItem onSelect={soon("Acesso remoto")}>
+            <MenuGlyph icon={Radio} />
+            Acesso remoto
+          </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={abrirReleases}>Verificar atualizações</MenubarItem>
-          <MenubarItem onSelect={() => toast.info("Solutions-Play • modo demonstração • v1.0")}>
-            Sobre o Solutions-Play
+          <MenubarItem onSelect={abrirReleases}>
+            <MenuGlyph icon={RefreshCw} />
+            Verificar atualizações
+          </MenubarItem>
+          <MenubarItem onSelect={() => toast.info("Solutions Play • modo demonstração • v1.0")}>
+            <MenuGlyph icon={Info} />
+            Sobre o Solutions Play
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>

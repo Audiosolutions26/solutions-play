@@ -409,7 +409,7 @@ async function createWindow() {
     minWidth: 1024,
     minHeight: 640,
     backgroundColor: "#1b2733",
-    title: "Solutions-Play",
+    title: "Solutions Play",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,

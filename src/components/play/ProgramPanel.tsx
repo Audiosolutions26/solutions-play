@@ -501,7 +501,7 @@ export function ProgramPanel() {
           <ListMusic className="h-4 w-4 text-[#9ed6f4]" />
           <div className="flex min-w-0 flex-col leading-none">
             <span className="text-[11px] font-black uppercase tracking-wider">
-              Final Log · Editor de Playlist
+              Final Log · Editor de programação
             </span>
             <span className="mt-1 text-[9px] text-white/55">
               {blocks.length} clocks · {totalItems} inserções · arraste para reorganizar

@@ -330,7 +330,7 @@ export function StudioDecksPanel() {
           <div className="text-[11px] font-black uppercase tracking-widest text-[#dbe8f0]">
             Studio decks
           </div>
-          <div className="text-[9px] text-[#7893a6]">A/B · SOHO waveform</div>
+          <div className="text-[9px] text-[#7893a6]">A/B · Solutions Play waveform</div>
         </div>
         <Volume2 className="h-4 w-4 text-[#4eaa64]" />
         <div className="mt-1 flex gap-1">

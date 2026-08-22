@@ -15,7 +15,9 @@
 const path = require("path");
 const fs = require("fs");
 
-function rmrf(p) { if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true }); }
+function rmrf(p) {
+  if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true });
+}
 function copy(src, dst) {
   const stat = fs.statSync(src);
   if (stat.isDirectory()) {
@@ -82,7 +84,9 @@ function main() {
     process.exit(1);
   }
   if (!fs.existsSync(path.join(root, "dist", "index.html"))) {
-    console.error("[pack] Build web não encontrado (dist/index.html). Rode `npm run desktop:web` antes.");
+    console.error(
+      "[pack] Build web não encontrado (dist/index.html). Rode `npm run desktop:web` antes.",
+    );
     process.exit(1);
   }
 
@@ -107,9 +111,10 @@ function main() {
   }
 
   const runtimeDir = path.dirname(electronBin);
-  const exeName = process.platform === "win32" || electronBin.toLowerCase().endsWith(".exe")
-    ? "Solutions-Play.exe"
-    : "Solutions-Play";
+  const exeName =
+    process.platform === "win32" || electronBin.toLowerCase().endsWith(".exe")
+      ? "Solutions Play.exe"
+      : "Solutions Play";
   const exe = path.join(runtimeDir, exeName);
   if (electronBin !== exe) fs.renameSync(electronBin, exe);
 
@@ -131,10 +136,15 @@ function main() {
   fs.writeFileSync(
     path.join(appDir, "package.json"),
     JSON.stringify(
-      { name: "solutions-play", productName: "Solutions-Play", version: "1.0.0", main: "electron/main.cjs" },
+      {
+        name: "solutions-play",
+        productName: "Solutions Play",
+        version: "1.0.0",
+        main: "electron/main.cjs",
+      },
       null,
-      2
-    )
+      2,
+    ),
   );
 
   console.log("\n[pack] ✔ App gerado com sucesso!");

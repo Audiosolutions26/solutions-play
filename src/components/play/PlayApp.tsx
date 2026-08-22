@@ -316,7 +316,7 @@ export function PlayApp() {
                 </button>
               ))}
               <span className="ml-auto pr-2 text-[10px] text-white/70">
-                {operator.name} • {operator.role} • Solutions-Play demo
+                {operator.name} • {operator.role} • Solutions Play demo
               </span>
             </div>
           </div>

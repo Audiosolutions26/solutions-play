@@ -1,14 +1,33 @@
 import { useCallback, useEffect, useState } from "react";
-import { FolderOpen, RefreshCw, FileText, ListMusic, Radio, Download, FolderInput } from "lucide-react";
+import {
+  FolderOpen,
+  RefreshCw,
+  FileText,
+  ListMusic,
+  Radio,
+  Download,
+  FolderInput,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { usePlayer } from "@/hooks/use-player";
 import { parseProgramText } from "@/lib/play-program-import";
 import {
-  isDesktop, programDirsNative, listProgramFilesNative, readTextFileNative,
-  openProgramFolderNative, type ProgramDirs, type ProgramFile, type ProgramKind,
+  isDesktop,
+  programDirsNative,
+  listProgramFilesNative,
+  readTextFileNative,
+  openProgramFolderNative,
+  type ProgramDirs,
+  type ProgramFile,
+  type ProgramKind,
 } from "@/lib/play-native";
 
 const KINDS: { kind: ProgramKind; label: string; sub: string; icon: typeof ListMusic }[] = [
@@ -63,7 +82,7 @@ export function ProgramFoldersDialog({
     replaceBlocks(blocks);
     toast.success(
       `${file.name}: ${stats.blocks} blocos, ${stats.inserts} inserções` +
-      (stats.unresolved ? ` (${stats.unresolved} arquivo(s) não localizado(s))` : ""),
+        (stats.unresolved ? ` (${stats.unresolved} arquivo(s) não localizado(s))` : ""),
     );
     onOpenChange(false);
     onLoaded?.();
@@ -78,15 +97,16 @@ export function ProgramFoldersDialog({
           </DialogTitle>
           <DialogDescription>
             A raiz do programa contém as pastas <strong>Grades</strong> (programação musical) e{" "}
-            <strong>Mapas</strong> (programação comercial). Os arquivos <code>.txt</code> ficam nessas pastas.
+            <strong>Mapas</strong> (programação comercial). Os arquivos <code>.txt</code> ficam
+            nessas pastas.
           </DialogDescription>
         </DialogHeader>
 
         {!desktop ? (
           <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
             As pastas Grades e Mapas ficam no sistema de arquivos e só estão disponíveis no
-            aplicativo desktop (Solutions-Play.exe). No navegador, use “Abrir programação…”
-            para selecionar um arquivo <code>.txt</code> manualmente.
+            aplicativo desktop (Solutions Play.exe). No navegador, use “Abrir programação…” para
+            selecionar um arquivo <code>.txt</code> manualmente.
           </div>
         ) : (
           <>
@@ -147,8 +167,12 @@ export function ProgramFoldersDialog({
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
             </button>
           )}
-          <button onClick={() => onOpenChange(false)}
-            className="rounded border px-4 py-2 text-sm font-medium hover:bg-muted">Fechar</button>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="rounded border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Fechar
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
