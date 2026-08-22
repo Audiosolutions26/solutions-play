@@ -393,6 +393,7 @@ export function RecursosAvancadosDialog({
               spellCheck={false}
             />
             <ClockGridPreview value={grade} />
+            <EasyClockWeekGrid />
             <IssuesPanel issues={gradeIssues} />
             <CodeLegend />
           </TabsContent>
@@ -594,6 +595,103 @@ function ClockGridPreview({ value, commercial = false }: { value: string; commer
               </div>
             </Fragment>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const CLOCK_DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const CLOCK_OPTIONS = ["MUSICAL", "COMERCIAL", "AUTO"] as const;
+
+function EasyClockWeekGrid() {
+  const [assignments, setAssignments] = useState<Record<string, string>>(() => {
+    const fallback: Record<string, string> = {};
+    for (let day = 0; day < 7; day += 1) {
+      for (let hour = 0; hour < 24; hour += 1) {
+        fallback[`${day}-${hour}`] = hour >= 6 && hour < 18 ? "MUSICAL" : "AUTO";
+      }
+    }
+    if (typeof window === "undefined") return fallback;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("solplay.easy-clocks.v1") || "null");
+      return saved && typeof saved === "object" ? { ...fallback, ...saved } : fallback;
+    } catch {
+      return fallback;
+    }
+  });
+
+  const cycleCell = (day: number, hour: number) => {
+    const key = `${day}-${hour}`;
+    setAssignments((previous) => {
+      const current = previous[key] || CLOCK_OPTIONS[0];
+      const next =
+        CLOCK_OPTIONS[
+          (CLOCK_OPTIONS.indexOf(current as (typeof CLOCK_OPTIONS)[number]) + 1) %
+            CLOCK_OPTIONS.length
+        ];
+      const updated = { ...previous, [key]: next };
+      try {
+        window.localStorage.setItem("solplay.easy-clocks.v1", JSON.stringify(updated));
+      } catch {
+        /* armazenamento opcional */
+      }
+      return updated;
+    });
+  };
+
+  return (
+    <div className="overflow-hidden rounded border border-pl-panel-dark/50 bg-slate-950 text-white shadow-inner">
+      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-white/90">
+            Easy Clock Scheduling
+          </span>
+          <p className="mt-0.5 text-[10px] text-white/55">
+            Clique em uma célula para alternar o clock atribuído à hora.
+          </p>
+        </div>
+        <span className="rounded bg-amber-400/90 px-2 py-1 text-[10px] font-bold text-slate-950">
+          BACKUP: AUTO
+        </span>
+      </div>
+      <div className="overflow-x-auto p-2">
+        <div className="min-w-[720px]">
+          <div className="grid grid-cols-[44px_repeat(24,minmax(25px,1fr))] gap-px text-[9px]">
+            <div />
+            {Array.from({ length: 24 }, (_, hour) => (
+              <div key={hour} className="py-1 text-center font-mono text-white/45">
+                {String(hour).padStart(2, "0")}
+              </div>
+            ))}
+            {CLOCK_DAYS.map((day, dayIndex) => (
+              <Fragment key={day}>
+                <div className="flex items-center rounded bg-white/10 px-1 font-semibold text-cyan-200">
+                  {day}
+                </div>
+                {Array.from({ length: 24 }, (_, hour) => {
+                  const value = assignments[`${dayIndex}-${hour}`] || "AUTO";
+                  const color =
+                    value === "MUSICAL"
+                      ? "bg-emerald-500/80"
+                      : value === "COMERCIAL"
+                        ? "bg-rose-500/80"
+                        : "bg-slate-600";
+                  return (
+                    <button
+                      key={`${day}-${hour}`}
+                      type="button"
+                      onClick={() => cycleCell(dayIndex, hour)}
+                      title={`${day} ${String(hour).padStart(2, "0")}:00 · ${value}`}
+                      className={`h-6 rounded ${color} text-[8px] font-bold text-white transition hover:brightness-125`}
+                    >
+                      {value === "COMERCIAL" ? "COM" : value.slice(0, 3)}
+                    </button>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </div>
         </div>
       </div>
     </div>
