@@ -27,7 +27,7 @@ function DeckCard({
 
   return (
     <div
-      className={`min-w-0 flex-1 rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
+      className={`h-[140px] min-w-0 flex-1 rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
     >
       <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[#c8d9e5]">
         <span className="flex items-center gap-1">
@@ -93,7 +93,7 @@ export function StudioDecksPanel() {
   const deckABlock = current ? currentBlockId : (firstBlock?.id ?? null);
 
   return (
-    <aside className="flex min-h-[126px] w-full shrink-0 items-stretch gap-2 border-b border-[#304858] bg-[#0f1820] p-2 text-[#dce6ed]">
+    <aside className="flex h-[164px] max-h-[164px] w-full shrink-0 items-stretch gap-2 overflow-hidden border-b border-[#304858] bg-[#0f1820] p-2 text-[#dce6ed]">
       <div className="flex w-[150px] shrink-0 flex-col justify-center border-r border-[#2a4051] pr-2">
         <div>
           <div className="text-[11px] font-black uppercase tracking-widest text-[#dbe8f0]">
@@ -103,7 +103,7 @@ export function StudioDecksPanel() {
         </div>
         <Volume2 className="h-4 w-4 text-[#4eaa64]" />
       </div>
-      <div className="flex min-w-0 flex-1 gap-2">
+      <div className="flex h-[140px] min-w-0 flex-1 gap-2">
         <DeckCard
           label="Deck A · NO AR"
           track={deckA}
