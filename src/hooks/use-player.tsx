@@ -30,6 +30,8 @@ import { getMarkers, markerPositionSec } from "@/lib/play-markers";
 import { resolveTransitionPlan, type TransitionPlan } from "@/lib/play-transition";
 import { applyTrackOutput, type OutputFn } from "@/lib/play-outputs";
 
+export type OperationMode = "AUTO" | "MANUAL" | "RE-BROADCAST" | "OFFLINE";
+
 interface PlayerState {
   blocks: Block[];
   current: Track | null;
@@ -37,6 +39,8 @@ interface PlayerState {
   isPlaying: boolean;
   position: number;
   onAir: boolean;
+  mode: OperationMode;
+  setMode: (mode: OperationMode) => void;
   cue: boolean;
   selectedId: string | null;
   playAt: (
@@ -74,6 +78,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [position, setPosition] = useState(0);
   const [cue, setCue] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mode, setModeState] = useState<OperationMode>("AUTO");
+
+  const setMode = useCallback(
+    (nextMode: OperationMode) => {
+      setModeState(nextMode);
+      if (nextMode === "OFFLINE") {
+        engine.stop();
+        setIsPlaying(false);
+      }
+    },
+    [engine],
+  );
 
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
@@ -156,6 +172,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       outputFn?: OutputFn,
       fadeOutMs = fadeMs,
     ) => {
+      if (mode === "OFFLINE") return;
       const block = blocksRef.current.find((b) => b.id === blockId);
       const track = block?.items.find((t) => t.id === trackId);
       if (!track) return;
@@ -211,7 +228,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       else engine.stop();
       setIsPlaying(true);
     },
-    [engine, prefetchCue],
+    [engine, mode, prefetchCue],
   );
 
   const next = useCallback(
@@ -234,10 +251,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // paradas no fim e o crossfade nunca dispara.
   useEffect(() => {
     engine.setOnEnded(() => {
-      if (!transitioningRef.current) next();
+      if (mode === "AUTO" && !transitioningRef.current) next();
     });
     return () => engine.setOnEnded(null);
-  }, [engine, next]);
+  }, [engine, mode, next]);
 
   // Passagem manual (botão "Próxima"): aplica o fade configurado em
   // "Fade nas passagens manuais" (manual p.106).
@@ -457,12 +474,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           }
           // Mixagem não destrutiva: a próxima voice é aberta no instante
           // calculado pelo `nextEntry` da atual e pelo `mixIn` da próxima.
-          if (hasAudio && plan && !transitioningRef.current && pos >= plan.nextTriggerAtSec) {
+          if (
+            mode === "AUTO" &&
+            hasAudio &&
+            plan &&
+            !transitioningRef.current &&
+            pos >= plan.nextTriggerAtSec
+          ) {
             transitioningRef.current = true;
             next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, plan.fadeOutMs);
             return;
           }
-          if (endPoint > 0 && pos >= endPoint) {
+          if (mode === "AUTO" && endPoint > 0 && pos >= endPoint) {
             next();
             return;
           }
@@ -474,7 +497,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, next, engine]);
+  }, [isPlaying, mode, next, engine]);
 
   const value = useMemo<PlayerState>(
     () => ({
@@ -484,6 +507,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       isPlaying,
       position,
       onAir: isPlaying,
+      mode,
+      setMode,
       cue,
       selectedId,
       playAt,
@@ -509,6 +534,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       currentBlockId,
       isPlaying,
       position,
+      mode,
+      setMode,
       cue,
       selectedId,
       playAt,

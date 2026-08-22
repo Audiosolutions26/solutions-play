@@ -301,8 +301,18 @@ function DeckCard({
 }
 
 export function StudioDecksPanel() {
-  const { blocks, current, currentBlockId, isPlaying, position, playAt, setCue, nextManual, stop } =
-    usePlayer();
+  const {
+    blocks,
+    current,
+    currentBlockId,
+    isPlaying,
+    position,
+    mode,
+    playAt,
+    setCue,
+    nextManual,
+    stop,
+  } = usePlayer();
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [stitcherOpen, setStitcherOpen] = useState(false);
   const [voiceTrackingOpen, setVoiceTrackingOpen] = useState(false);
@@ -397,7 +407,7 @@ export function StudioDecksPanel() {
         <div className="mb-1 font-bold uppercase tracking-wider text-[#c7d9e5]">Operação</div>
         <div className="flex justify-between">
           <span>Modo</span>
-          <span className="font-mono text-[#4eaa64]">AUTO</span>
+          <span className="font-mono text-[#4eaa64]">{mode}</span>
         </div>
         <div className="flex justify-between">
           <span>Mix</span>

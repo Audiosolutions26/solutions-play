@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+import { usePlayer, type OperationMode } from "@/hooks/use-player";
 import {
   FolderOpen,
   Save,
@@ -63,6 +65,16 @@ export function TopBar({
   onDockQuickStart?: () => void;
   onOpenProgramFolders: () => void;
 }) {
+  const { mode, setMode } = usePlayer();
+  const changeMode = (nextMode: OperationMode) => {
+    setMode(nextMode);
+    toast.success(`Modo ${nextMode} ativado`);
+  };
+  const modeClass = (candidate: OperationMode) =>
+    mode === candidate
+      ? "rounded bg-[#2e9c58] px-2 py-0.5 text-white shadow-inner"
+      : "rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20";
+
   return (
     <div className="select-none bg-gradient-to-b from-pl-toolbar-light to-pl-toolbar-dark text-white">
       {/* menu enxuto, no mesmo nível do SOHO; o título da janela fica a cargo do sistema operacional */}
@@ -86,24 +98,23 @@ export function TopBar({
       {/* control bar: modos e atalhos do Studio, inspirados no SOHO */}
       <div className="flex h-[22px] items-center gap-1 border-t border-white/10 bg-[#2d5f86] px-1 text-[9px] font-bold uppercase tracking-wide">
         <span className="mr-1 text-[8px] font-normal text-white/60">MODO</span>
-        <button type="button" className="rounded bg-[#2e9c58] px-2 py-0.5 text-white shadow-inner">
+        <button type="button" onClick={() => changeMode("AUTO")} className={modeClass("AUTO")}>
           AUTO
         </button>
-        <button
-          type="button"
-          className="rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20"
-        >
+        <button type="button" onClick={() => changeMode("MANUAL")} className={modeClass("MANUAL")}>
           MANUAL
         </button>
         <button
           type="button"
-          className="rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20"
+          onClick={() => changeMode("RE-BROADCAST")}
+          className={modeClass("RE-BROADCAST")}
         >
           RE-BROADCAST
         </button>
         <button
           type="button"
-          className="rounded bg-white/10 px-2 py-0.5 text-white/75 hover:bg-white/20"
+          onClick={() => changeMode("OFFLINE")}
+          className={modeClass("OFFLINE")}
         >
           OFFLINE
         </button>
