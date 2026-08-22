@@ -24,20 +24,13 @@ import { AppMenu, type PanelVisibility } from "./AppMenu";
 const toolIcons = [
   FolderOpen,
   Save,
-  Printer,
-  Scissors,
-  Copy,
-  Clipboard,
   RefreshCw,
   Info,
   ListMusic,
   Radio,
   Calendar,
   Mic2,
-  Wand2,
-  Zap,
   Settings,
-  Search,
   HelpCircle,
 ];
 
@@ -105,17 +98,54 @@ export function TopBar({
           onOpenProgramFolders={onOpenProgramFolders}
         />
       </div>
-      {/* studio modules: fluxo operacional do SOHO Pro */}
-      <div className="flex flex-wrap items-center gap-1 border-t border-white/10 bg-slate-950/25 px-2 py-1 text-[9px] font-bold tracking-wide text-white/90">
-        <span className="rounded bg-red-500/80 px-2 py-0.5">STUDIO</span>
-        <span className="rounded bg-cyan-500/65 px-2 py-0.5">PLAYLIST EDITING</span>
-        <span className="rounded bg-indigo-500/65 px-2 py-0.5">FINAL LOG</span>
-        <span className="rounded bg-emerald-500/70 px-2 py-0.5">EASY CLOCKS</span>
-        <span className="rounded bg-amber-500/75 px-2 py-0.5 text-black">MIX-POINTS</span>
-        <span className="rounded bg-violet-500/70 px-2 py-0.5">VOICE TRACK</span>
-        <span className="rounded bg-sky-500/65 px-2 py-0.5">CUE / A-B</span>
-        <span className="ml-auto text-[8px] font-normal normal-case tracking-normal text-white/65">
-          ganho original preservado · operação local
+      {/* control bar: modos e atalhos do Studio, inspirados no SOHO */}
+      <div className="flex items-center gap-1 border-t border-white/10 bg-[#2d5f86] px-2 py-1 text-[9px] font-bold uppercase tracking-wide">
+        <span className="mr-1 text-[8px] font-normal text-white/60">MODO</span>
+        <button type="button" className="rounded bg-[#2e9c58] px-2 py-1 text-white shadow-inner">
+          AUTO
+        </button>
+        <button
+          type="button"
+          className="rounded bg-white/10 px-2 py-1 text-white/75 hover:bg-white/20"
+        >
+          MANUAL
+        </button>
+        <button
+          type="button"
+          className="rounded bg-white/10 px-2 py-1 text-white/75 hover:bg-white/20"
+        >
+          RE-BROADCAST
+        </button>
+        <button
+          type="button"
+          className="rounded bg-white/10 px-2 py-1 text-white/75 hover:bg-white/20"
+        >
+          OFFLINE
+        </button>
+        <span className="mx-1 h-4 w-px bg-white/20" />
+        <button
+          type="button"
+          onClick={() => onOpenAdvanced("gerar")}
+          className="rounded bg-white/15 px-2 py-1 text-white hover:bg-white/25"
+        >
+          FINAL LOG
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenAdvanced("grade")}
+          className="rounded bg-white/15 px-2 py-1 text-white hover:bg-white/25"
+        >
+          CLOCKS
+        </button>
+        <button
+          type="button"
+          onClick={onOpenQuickStart}
+          className="rounded bg-white/15 px-2 py-1 text-white hover:bg-white/25"
+        >
+          INSTANT JINGLES
+        </button>
+        <span className="ml-auto hidden text-[8px] font-normal normal-case tracking-normal text-white/65 lg:inline">
+          ganho original · saída local
         </span>
       </div>
       {/* toolbar row */}
