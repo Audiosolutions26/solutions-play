@@ -305,7 +305,7 @@ export class AudioEngine {
 
   // Toca uma URL. Com fadeMs > 0 e uma voz já tocando, faz a MIXAGEM
   // (crossfade) entre a inserção que sai e a que entra — manual p.106.
-  playUrl(url: string, fromOffset = 0, fadeMs = 0, equalPower = true) {
+  playUrl(url: string, fromOffset = 0, fadeMs = 0, equalPower = true, fadeOutMs = fadeMs) {
     this.ensure();
     if (!this.ctx || !this.master) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
@@ -325,9 +325,11 @@ export class AudioEngine {
     }
 
     const now = this.ctx.currentTime;
-    const fade = Math.max(0, fadeMs) / 1000;
+    const fadeIn = Math.max(0, fadeMs) / 1000;
+    const fadeOut = Math.max(0, fadeOutMs) / 1000;
+    const overlap = Math.max(fadeIn, fadeOut);
 
-    if (prev && this.playing && fade > 0) {
+    if (prev && this.playing && overlap > 0) {
       // Crossfade: nova voz sobe de 0→1; voz anterior desce 1→0 e é descartada.
       // Equal-power (padrão) mantém o volume percebido constante na mixagem.
       const gIn = voice.gain.gain;
@@ -337,13 +339,17 @@ export class AudioEngine {
       gOut.cancelScheduledValues(now);
       gOut.setValueAtTime(gOut.value, now);
       if (equalPower) {
-        gIn.setValueCurveAtTime(EP_IN, now, fade);
-        gOut.setValueCurveAtTime(EP_OUT, now, fade);
+        if (fadeIn > 0) gIn.setValueCurveAtTime(EP_IN, now, fadeIn);
+        else gIn.setValueAtTime(1, now);
+        if (fadeOut > 0) gOut.setValueCurveAtTime(EP_OUT, now, fadeOut);
+        else gOut.setValueAtTime(0, now);
       } else {
-        gIn.linearRampToValueAtTime(1, now + fade);
-        gOut.linearRampToValueAtTime(0, now + fade);
+        if (fadeIn > 0) gIn.linearRampToValueAtTime(1, now + fadeIn);
+        else gIn.setValueAtTime(1, now);
+        if (fadeOut > 0) gOut.linearRampToValueAtTime(0, now + fadeOut);
+        else gOut.setValueAtTime(0, now);
       }
-      this.disposeVoiceAfter(prev, fade);
+      this.disposeVoiceAfter(prev, overlap);
     } else {
       // Sem mixagem: corta a anterior e entra direto.
       this.disposeVoice(prev);

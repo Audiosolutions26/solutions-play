@@ -1,8 +1,25 @@
 import { useMemo, useState } from "react";
-import { Sliders, Wand2, FileCode2, Map, Download, AlertTriangle, AlertCircle, CheckCircle2, Save, FolderOpen, Trash2 } from "lucide-react";
+import {
+  Sliders,
+  Wand2,
+  FileCode2,
+  Map,
+  Download,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  Save,
+  FolderOpen,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -10,11 +27,13 @@ import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
 import { DEFAULT_GRADE, DEFAULT_MAPA, fmt, type Block } from "@/lib/play-data";
 import { generateProgram, codeLegend, validateGrid, type CodeIssue } from "@/lib/play-gen";
+import { buildPlaylistIni, serializeResult, downloadText, baseName } from "@/lib/play-export";
 import {
-  buildPlaylistIni, serializeResult, downloadText, baseName,
-} from "@/lib/play-export";
-import {
-  loadPresets, savePreset, deletePreset, getPreset, type GenPreset,
+  loadPresets,
+  savePreset,
+  deletePreset,
+  getPreset,
+  type GenPreset,
 } from "@/lib/play-presets";
 import { validateIniFile, validateIniFormat } from "@/lib/play-config-validate";
 
@@ -92,8 +111,9 @@ export function RecursosAvancadosDialog({
 
   const gradeIssues = useMemo(() => validateGrid(grade, "musical"), [grade]);
   const mapaIssues = useMemo(() => validateGrid(mapa, "comercial"), [mapa]);
-  const errorCount = gradeIssues.filter((i) => i.severity === "error").length
-    + mapaIssues.filter((i) => i.severity === "error").length;
+  const errorCount =
+    gradeIssues.filter((i) => i.severity === "error").length +
+    mapaIssues.filter((i) => i.severity === "error").length;
 
   const preview = useMemo<Block[]>(
     () => (errorCount > 0 ? [] : generateProgram(grade, mapa)),
@@ -174,10 +194,12 @@ export function RecursosAvancadosDialog({
     // Exporta o índice e o resultado de cada bloco no formato definido.
     downloadText("Playlist.ini", buildPlaylistIni(iniConfig));
     const exported: string[] = [];
-    ([
-      ["comercial", comFormat, comFile],
-      ["musical", musFormat, musFile],
-    ] as const).forEach(([kind, format, template]) => {
+    (
+      [
+        ["comercial", comFormat, comFile],
+        ["musical", musFormat, musFile],
+      ] as const
+    ).forEach(([kind, format, template]) => {
       const sub = blocks.filter((b) => b.category === kind);
       if (!sub.length) return;
       const name = baseName(template);
@@ -186,7 +208,9 @@ export function RecursosAvancadosDialog({
     });
 
     const total = blocks.reduce((s, b) => s + b.items.length, 0);
-    toast.success(`Programação gerada (${blocks.length} blocos, ${total} inserções) e exportada: Playlist.ini, ${exported.join(", ")}`);
+    toast.success(
+      `Programação gerada (${blocks.length} blocos, ${total} inserções) e exportada: Playlist.ini, ${exported.join(", ")}`,
+    );
     onOpenChange(false);
     onGenerated();
   };
@@ -202,39 +226,67 @@ export function RecursosAvancadosDialog({
             <Sliders className="h-5 w-5" /> Recursos Avançados
           </DialogTitle>
           <DialogDescription>
-            Configuração de leitura (Playlist.ini), Grade musical, Mapa comercial e geração automática.
+            Edição de playlist, Grade/Mapa de clocks, Final Log diário e exportação compatível.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-wrap items-end gap-2 rounded border bg-muted/40 p-2">
           <div className="flex-1 min-w-[160px] space-y-1">
-            <Label htmlFor="presetName" className="text-[11px]">Preset (Grade + Mapa + regras)</Label>
-            <Input id="presetName" list="preset-list" value={presetName} placeholder="Nome do preset…"
-              onChange={(e) => setPresetName(e.target.value)} className="h-9 text-sm" />
+            <Label htmlFor="presetName" className="text-[11px]">
+              Preset (Grade + Mapa + regras)
+            </Label>
+            <Input
+              id="presetName"
+              list="preset-list"
+              value={presetName}
+              placeholder="Nome do preset…"
+              onChange={(e) => setPresetName(e.target.value)}
+              className="h-9 text-sm"
+            />
             <datalist id="preset-list">
-              {presets.map((p) => <option key={p.name} value={p.name} />)}
+              {presets.map((p) => (
+                <option key={p.name} value={p.name} />
+              ))}
             </datalist>
           </div>
-          <button onClick={salvarPreset}
-            className="flex h-9 items-center gap-1 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-3 text-sm font-semibold text-white hover:brightness-110">
+          <button
+            onClick={salvarPreset}
+            className="flex h-9 items-center gap-1 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-3 text-sm font-semibold text-white hover:brightness-110"
+          >
             <Save className="h-4 w-4" /> Salvar
           </button>
-          <button onClick={() => carregarPreset(presetName)}
-            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium hover:bg-muted">
+          <button
+            onClick={() => carregarPreset(presetName)}
+            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium hover:bg-muted"
+          >
             <FolderOpen className="h-4 w-4" /> Carregar
           </button>
-          <button onClick={excluirPreset}
-            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium text-red-600 hover:bg-red-50">
+          <button
+            onClick={excluirPreset}
+            className="flex h-9 items-center gap-1 rounded border px-3 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
             <Trash2 className="h-4 w-4" /> Excluir
           </button>
         </div>
 
         <Tabs key={defaultTab} defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="ini"><FileCode2 className="mr-1 h-4 w-4" />Playlist.ini</TabsTrigger>
-            <TabsTrigger value="grade"><Map className="mr-1 h-4 w-4" />Grade</TabsTrigger>
-            <TabsTrigger value="mapa"><Map className="mr-1 h-4 w-4" />Mapa</TabsTrigger>
-            <TabsTrigger value="gerar"><Wand2 className="mr-1 h-4 w-4" />Gerar</TabsTrigger>
+            <TabsTrigger value="ini">
+              <FileCode2 className="mr-1 h-4 w-4" />
+              Playlist.ini
+            </TabsTrigger>
+            <TabsTrigger value="grade">
+              <Map className="mr-1 h-4 w-4" />
+              Grade
+            </TabsTrigger>
+            <TabsTrigger value="mapa">
+              <Map className="mr-1 h-4 w-4" />
+              Mapa
+            </TabsTrigger>
+            <TabsTrigger value="gerar">
+              <Wand2 className="mr-1 h-4 w-4" />
+              Final Log
+            </TabsTrigger>
           </TabsList>
 
           {/* Playlist.ini */}
@@ -243,27 +295,45 @@ export function RecursosAvancadosDialog({
               <div className="space-y-2 rounded border p-3">
                 <div className="text-sm font-semibold">[BLOCO COMERCIAL]</div>
                 <Label htmlFor="cf">FORMATO</Label>
-                <select id="cf" value={comFormat} onChange={(e) => setComFormat(e.target.value)}
-                  className="h-9 w-full rounded border border-pl-panel-dark bg-white px-2 text-sm">
-                  <option>AUTO</option><option>TXT1</option>
+                <select
+                  id="cf"
+                  value={comFormat}
+                  onChange={(e) => setComFormat(e.target.value)}
+                  className="h-9 w-full rounded border border-pl-panel-dark bg-white px-2 text-sm"
+                >
+                  <option>AUTO</option>
+                  <option>TXT1</option>
                 </select>
                 <Label htmlFor="cfile">ARQUIVO</Label>
-                <Input id="cfile" value={comFile} onChange={(e) => setComFile(e.target.value)}
+                <Input
+                  id="cfile"
+                  value={comFile}
+                  onChange={(e) => setComFile(e.target.value)}
                   aria-invalid={!!comFileErr}
-                  className={`font-mono text-xs ${comFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`} />
+                  className={`font-mono text-xs ${comFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                />
                 {comFileErr && <p className="text-[11px] text-red-600">{comFileErr}</p>}
               </div>
               <div className="space-y-2 rounded border p-3">
                 <div className="text-sm font-semibold">[BLOCO MUSICAL]</div>
                 <Label htmlFor="mf">FORMATO</Label>
-                <select id="mf" value={musFormat} onChange={(e) => setMusFormat(e.target.value)}
-                  className="h-9 w-full rounded border border-pl-panel-dark bg-white px-2 text-sm">
-                  <option>AUTO</option><option>TXT1</option>
+                <select
+                  id="mf"
+                  value={musFormat}
+                  onChange={(e) => setMusFormat(e.target.value)}
+                  className="h-9 w-full rounded border border-pl-panel-dark bg-white px-2 text-sm"
+                >
+                  <option>AUTO</option>
+                  <option>TXT1</option>
                 </select>
                 <Label htmlFor="mfile">ARQUIVO</Label>
-                <Input id="mfile" value={musFile} onChange={(e) => setMusFile(e.target.value)}
+                <Input
+                  id="mfile"
+                  value={musFile}
+                  onChange={(e) => setMusFile(e.target.value)}
                   aria-invalid={!!musFileErr}
-                  className={`font-mono text-xs ${musFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`} />
+                  className={`font-mono text-xs ${musFileErr ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                />
                 {musFileErr && <p className="text-[11px] text-red-600">{musFileErr}</p>}
               </div>
             </div>
@@ -271,24 +341,32 @@ export function RecursosAvancadosDialog({
               <div className="mb-2 text-sm font-semibold">Variáveis disponíveis</div>
               <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[12px] sm:grid-cols-3">
                 {variables.map(([v, d]) => (
-                  <div key={v}><code className="rounded bg-muted px-1 font-mono">{v}</code> — {d}</div>
+                  <div key={v}>
+                    <code className="rounded bg-muted px-1 font-mono">{v}</code> — {d}
+                  </div>
                 ))}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={exportarIni}
+              <button
+                onClick={exportarIni}
                 disabled={iniErrors.length > 0}
-                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
+                className="flex items-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark px-4 py-2 text-sm font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <FileCode2 className="h-4 w-4" /> Exportar Playlist.ini
               </button>
-              <button onClick={() => baixarResultado("comercial")}
+              <button
+                onClick={() => baixarResultado("comercial")}
                 disabled={!!comFileErr || !!comFmtErr}
-                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Download className="h-4 w-4" /> Baixar resultado comercial
               </button>
-              <button onClick={() => baixarResultado("musical")}
+              <button
+                onClick={() => baixarResultado("musical")}
                 disabled={!!musFileErr || !!musFmtErr}
-                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
+                className="flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Download className="h-4 w-4" /> Baixar resultado musical
               </button>
             </div>
@@ -302,7 +380,12 @@ export function RecursosAvancadosDialog({
           {/* Grade */}
           <TabsContent value="grade" className="space-y-2 py-2">
             <Label>Grade musical (HH:MM código, código, …)</Label>
-            <textarea value={grade} onChange={(e) => setGrade(e.target.value)} className={textareaCls} spellCheck={false} />
+            <textarea
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              className={textareaCls}
+              spellCheck={false}
+            />
             <IssuesPanel issues={gradeIssues} />
             <CodeLegend />
           </TabsContent>
@@ -310,7 +393,12 @@ export function RecursosAvancadosDialog({
           {/* Mapa */}
           <TabsContent value="mapa" className="space-y-2 py-2">
             <Label>Mapa comercial (HH:MM código, código, …)</Label>
-            <textarea value={mapa} onChange={(e) => setMapa(e.target.value)} className={textareaCls} spellCheck={false} />
+            <textarea
+              value={mapa}
+              onChange={(e) => setMapa(e.target.value)}
+              className={textareaCls}
+              spellCheck={false}
+            />
             <IssuesPanel issues={mapaIssues} />
             <CodeLegend />
           </TabsContent>
@@ -318,8 +406,9 @@ export function RecursosAvancadosDialog({
           {/* Gerar */}
           <TabsContent value="gerar" className="space-y-3 py-2 text-sm">
             <p className="text-muted-foreground">
-              O Solutions-Play sorteia músicas/comerciais das pastas conforme os códigos da Grade e do Mapa,
-              montando a programação automaticamente (substitui a programação atual).
+              O Final Log monta a programação diária a partir dos clocks da Grade e do Mapa. Revise
+              a prévia antes de aplicar ao playout; a programação atual só é substituída quando você
+              confirmar a geração.
             </p>
             <div className="rounded border p-3">
               <div className="mb-1 font-semibold">Resumo</div>
@@ -338,22 +427,30 @@ export function RecursosAvancadosDialog({
                 <PreviewGrid blocks={preview} />
               </div>
             )}
-            <button onClick={gerar}
+            <button
+              onClick={gerar}
               disabled={errorCount > 0}
-              className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
-              <Wand2 className="h-4 w-4" /> Gerar programação automática
+              className="flex w-full items-center justify-center gap-2 rounded bg-gradient-to-b from-pl-transport to-pl-transport-dark py-2.5 font-semibold text-white hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Wand2 className="h-4 w-4" /> Gerar Final Log e aplicar ao playout
             </button>
-            <button onClick={gerarEExportar}
+            <button
+              onClick={gerarEExportar}
               disabled={errorCount > 0 || iniErrors.length > 0}
-              className="flex w-full items-center justify-center gap-2 rounded border border-pl-transport py-2.5 font-semibold text-pl-transport hover:bg-pl-transport/10 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50">
-              <Download className="h-4 w-4" /> Gerar e exportar (Playlist.ini + arquivos)
+              className="flex w-full items-center justify-center gap-2 rounded border border-pl-transport py-2.5 font-semibold text-pl-transport hover:bg-pl-transport/10 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" /> Gerar Final Log e exportar arquivos
             </button>
           </TabsContent>
         </Tabs>
 
         <DialogFooter>
-          <button onClick={() => onOpenChange(false)}
-            className="rounded border px-4 py-2 text-sm font-medium hover:bg-muted">Fechar</button>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="rounded border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Fechar
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -400,24 +497,34 @@ function PreviewGrid({ blocks }: { blocks: Block[] }) {
           <div className="flex items-center justify-between gap-2 border-b bg-muted/60 px-2 py-1 text-[12px] font-semibold">
             <span className="flex items-center gap-2">
               <span className="font-mono">{b.time}</span>
-              <span className={`rounded border px-1.5 text-[10px] uppercase ${catStyle[b.category] ?? ""}`}>
+              <span
+                className={`rounded border px-1.5 text-[10px] uppercase ${catStyle[b.category] ?? ""}`}
+              >
                 {b.category}
               </span>
             </span>
-            <span className="text-[10px] font-normal text-muted-foreground">{b.items.length} inserções</span>
+            <span className="text-[10px] font-normal text-muted-foreground">
+              {b.items.length} inserções
+            </span>
           </div>
           <ol className="divide-y text-[12px]">
             {b.items.map((t, i) => (
               <li key={t.id} className="flex items-center gap-2 px-2 py-1">
-                <span className="w-5 text-right font-mono text-[10px] text-muted-foreground">{i + 1}</span>
-                <span className={`rounded border px-1 text-[10px] uppercase ${catStyle[t.category] ?? ""}`}>
+                <span className="w-5 text-right font-mono text-[10px] text-muted-foreground">
+                  {i + 1}
+                </span>
+                <span
+                  className={`rounded border px-1 text-[10px] uppercase ${catStyle[t.category] ?? ""}`}
+                >
                   {t.category.slice(0, 3)}
                 </span>
                 <span className="flex-1 break-words">
                   {t.title}
                   {t.artist ? <span className="text-muted-foreground"> — {t.artist}</span> : null}
                 </span>
-                <span className="font-mono text-[10px] text-muted-foreground">{fmt(t.duration)}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {fmt(t.duration)}
+                </span>
               </li>
             ))}
           </ol>
@@ -443,11 +550,18 @@ function IssuesPanel({ issues }: { issues: CodeIssue[] }) {
         {errors.length} erro(s), {warnings.length} aviso(s)
       </div>
       {issues.map((i, idx) => (
-        <div key={idx} className={`flex items-start gap-2 ${i.severity === "error" ? "text-red-600" : "text-amber-600"}`}>
-          {i.severity === "error"
-            ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
-          <span>Linha {i.line}: {i.message}</span>
+        <div
+          key={idx}
+          className={`flex items-start gap-2 ${i.severity === "error" ? "text-red-600" : "text-amber-600"}`}
+        >
+          {i.severity === "error" ? (
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          )}
+          <span>
+            Linha {i.line}: {i.message}
+          </span>
         </div>
       ))}
     </div>

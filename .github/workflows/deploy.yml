@@ -73,6 +73,7 @@ jobs:
             find /var/www/solutionsplay/releases -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +6 | cut -d' ' -f2- | xargs -r rm -rf
 
   prepare-desktop-source:
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[web-preview]')
     name: Prepare Windows source artifact
     runs-on: ubuntu-latest
     steps:
@@ -95,6 +96,7 @@ jobs:
           retention-days: 1
 
   desktop-build:
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[web-preview]')
     name: Build Windows executable
     needs: prepare-desktop-source
     runs-on: windows-latest

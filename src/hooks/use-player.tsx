@@ -148,7 +148,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const playAt = useCallback(
-    (blockId: string, trackId: string, fadeMs = 0, fromOffset?: number, outputFn?: OutputFn) => {
+    (
+      blockId: string,
+      trackId: string,
+      fadeMs = 0,
+      fromOffset?: number,
+      outputFn?: OutputFn,
+      fadeOutMs = fadeMs,
+    ) => {
       const block = blocksRef.current.find((b) => b.id === blockId);
       const track = block?.items.find((t) => t.id === trackId);
       if (!track) return;
@@ -181,7 +188,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 ? cached.cueIn
                 : 0;
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
-        engine.playUrl(u, startAt, fadeMs, ep);
+        engine.playUrl(u, startAt, fadeMs, ep, fadeOutMs);
         if (detect) {
           void analyzeCuePoints(u).then((cp) => {
             if (currentRef.current.track?.id === trackId) {
@@ -208,11 +215,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const next = useCallback(
-    (fadeMs = 0, fromOffset = 0, outputFn?: OutputFn) => {
+    (fadeMs = 0, fromOffset = 0, outputFn?: OutputFn, fadeOutMs = fadeMs) => {
       const cur = currentRef.current;
       if (!cur.track || !cur.blockId) return;
       const nx = findNext(cur.blockId, cur.track.id);
-      if (nx) playAt(nx.block.id, nx.track.id, fadeMs, fromOffset, outputFn);
+      if (nx) playAt(nx.block.id, nx.track.id, fadeMs, fromOffset, outputFn, fadeOutMs);
       else {
         engine.stop();
         setIsPlaying(false);
@@ -452,7 +459,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           // calculado pelo `nextEntry` da atual e pelo `mixIn` da próxima.
           if (hasAudio && plan && !transitioningRef.current && pos >= plan.nextTriggerAtSec) {
             transitioningRef.current = true;
-            next(Math.max(plan.mixMs, plan.fadeInMs, plan.fadeOutMs), plan.nextStartOffsetSec);
+            next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, plan.fadeOutMs);
             return;
           }
           if (endPoint > 0 && pos >= endPoint) {

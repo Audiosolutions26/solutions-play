@@ -158,7 +158,13 @@ export function AppMenu({
           <MenubarItem onSelect={soon("Salvar programação")}>Salvar programação</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>
-            Gerar programação automática
+            Final Log — gerar e revisar programação
+          </MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("grade")}>
+            Editor de clocks — Grade musical
+          </MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>
+            Editor de clocks — Mapa comercial
           </MenubarItem>
           <MenubarItem onSelect={soon("Importar áudios")}>Importar áudios…</MenubarItem>
           <MenubarItem onSelect={soon("Registrar comerciais")}>
