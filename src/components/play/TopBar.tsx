@@ -49,6 +49,7 @@ export function TopBar({
   onOpenShortcuts,
   onDockQuickStart,
   onOpenProgramFolders,
+  onOpenTab,
 }: {
   panels: PanelVisibility;
   onTogglePanel: (key: keyof PanelVisibility) => void;
@@ -63,6 +64,7 @@ export function TopBar({
   onOpenShortcuts: () => void;
   onDockQuickStart?: () => void;
   onOpenProgramFolders: () => void;
+  onOpenTab: (tab: string) => void;
 }) {
   const { mode, setMode } = usePlayer();
   const changeMode = (nextMode: OperationMode) => {
@@ -92,6 +94,7 @@ export function TopBar({
           onOpenShortcuts={onOpenShortcuts}
           onDockQuickStart={onDockQuickStart}
           onOpenProgramFolders={onOpenProgramFolders}
+          onOpenTab={onOpenTab}
         />
       </div>
       {/* control bar: modos e atalhos do Studio, inspirados no SOHO */}

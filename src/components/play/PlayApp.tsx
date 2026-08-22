@@ -171,6 +171,7 @@ export function PlayApp() {
                 toast.success("QuickStart fixado nos painéis");
               }}
               onOpenProgramFolders={() => ui.setProgramFoldersOpen(true)}
+              onOpenTab={(tab) => setActiveTab(tab)}
             />
             {activeTab !== "Programação" && <OnAirBar />}
             {activeTab === "Programação" && <StudioDecksPanel />}

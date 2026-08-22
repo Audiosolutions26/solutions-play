@@ -36,6 +36,7 @@ interface Props {
   onOpenShortcuts: () => void;
   onDockQuickStart?: () => void;
   onOpenProgramFolders: () => void;
+  onOpenTab: (tab: string) => void;
 }
 
 const soon = (name: string) => () => toast.info(`${name}: recurso em breve`);
@@ -69,6 +70,7 @@ export function AppMenu({
   onOpenShortcuts,
   onDockQuickStart,
   onOpenProgramFolders,
+  onOpenTab,
 }: Props) {
   const {
     togglePlay,
@@ -269,7 +271,21 @@ export function AppMenu({
               </MenubarCheckboxItem>
               <MenubarSeparator />
               {panelList.map((p) => (
-                <MenubarItem key={p} onSelect={soon(p)}>
+                <MenubarItem
+                  key={p}
+                  onSelect={() => {
+                    if (p === "Aparência") {
+                      onOpenOptions("geral");
+                      return;
+                    }
+                    if (p === "Display No Ar") {
+                      toast.info("O Display No Ar está integrado ao Studio Decks.");
+                      return;
+                    }
+                    const tab = p === "Músicas Executadas" ? "Músicas executadas" : p;
+                    onOpenTab(tab);
+                  }}
+                >
                   {p}
                 </MenubarItem>
               ))}
@@ -282,9 +298,15 @@ export function AppMenu({
               {onDockQuickStart && (
                 <MenubarItem onSelect={onDockQuickStart}>Fixar como grid nos painéis</MenubarItem>
               )}
-              <MenubarItem onSelect={soon("QuickStart Efeitos")}>Painel Efeitos</MenubarItem>
+              <MenubarItem
+                onSelect={() =>
+                  toast.info("Use os pads do QuickStart para disparar efeitos no ar.")
+                }
+              >
+                Painel Efeitos
+              </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem onSelect={soon("QuickStart Configurações")}>Configurações…</MenubarItem>
+              <MenubarItem onSelect={() => onOpenOptions("insercoes")}>Configurações…</MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
           <MenubarItem onSelect={soon("Camera Controller")}>Camera Controller</MenubarItem>
@@ -324,7 +346,18 @@ export function AppMenu({
           <MenubarCheckboxItem checked={cue} onCheckedChange={(v) => setCue(!!v)}>
             Pré-escuta (CUE)
           </MenubarCheckboxItem>
-          <MenubarItem onSelect={soon("Hora Certa")}>Hora Certa</MenubarItem>
+          <MenubarItem
+            onSelect={() => {
+              if (!currentBlockId) {
+                toast.info("Abra uma programação antes de inserir a Hora Certa.");
+                return;
+              }
+              toast.info("Use o botão Hora Certa no Final Log para inserir no bloco selecionado.");
+              onOpenTab("Programação");
+            }}
+          >
+            Hora Certa
+          </MenubarItem>
           <MenubarItem onSelect={onOpenBeep}>Beep…</MenubarItem>
           <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>Gerar mapas comerciais</MenubarItem>
           <MenubarSeparator />
