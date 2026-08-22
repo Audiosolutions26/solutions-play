@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Folder, Info, Zap } from "lucide-react";
+import { Folder, History, Info, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { PlayerProvider } from "@/hooks/use-player";
 import { ConfigProvider } from "@/hooks/use-config";
@@ -63,6 +63,7 @@ export function PlayApp() {
   // Conteúdo de cada grid encaixável (sem o cabeçalho próprio — o DockFrame
   // fornece o cabeçalho padrão com os controles de tamanho/fechar).
   const dockMeta: Record<DockId, { title: string; icon: typeof Folder; node: React.ReactNode }> = {
+    historico: { title: "Histórico", icon: History, node: <PlayedPanel /> },
     pastas: {
       title: "Pastas de trabalho",
       icon: Folder,

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 // Permite redimensionar (arrastar divisórias ou botões +/−), fechar e fixar
 // novos grids (ex.: arrastar o QuickStart para dentro dos quadros visíveis).
 
-export type DockId = "pastas" | "propriedades" | "quickstart";
+export type DockId = "historico" | "pastas" | "propriedades" | "quickstart";
 
 interface DockState {
   rightWidth: number; // largura da coluna direita (% do split)
@@ -16,8 +16,8 @@ const KEY = "solplay.dock.v3";
 
 const DEFAULT: DockState = {
   rightWidth: 34,
-  open: ["propriedades", "pastas", "quickstart"],
-  weights: { pastas: 1.15, propriedades: 1.05, quickstart: 1.45 },
+  open: ["historico", "propriedades", "pastas", "quickstart"],
+  weights: { historico: 1.05, pastas: 1.15, propriedades: 1.05, quickstart: 1.45 },
 };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
@@ -28,9 +28,14 @@ function load(): DockState {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<DockState>;
+      const storedOpen =
+        Array.isArray(p.open) && p.open.length ? (p.open as DockId[]) : DEFAULT.open;
+      const open: DockId[] = storedOpen.includes("historico")
+        ? storedOpen
+        : ["historico", ...storedOpen];
       return {
         rightWidth: p.rightWidth ?? DEFAULT.rightWidth,
-        open: Array.isArray(p.open) && p.open.length ? p.open : DEFAULT.open,
+        open,
         weights: { ...DEFAULT.weights, ...(p.weights ?? {}) },
       };
     }
