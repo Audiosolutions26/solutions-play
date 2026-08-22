@@ -6,37 +6,37 @@
 
 /* ---- Solutions-Play broadcast palette (faithful to classic layout) ---- */
 @theme {
-  --color-pl-toolbar: #4a7fb5;
-  --color-pl-toolbar-dark: #2f5680;
-  --color-pl-toolbar-light: #6f9fcc;
-  --color-pl-panel: #dfe9f3;
-  --color-pl-panel-dark: #c3d4e6;
-  --color-pl-musical: #d2f0d0;
-  --color-pl-musical-head: #7fc98a;
-  --color-pl-musical-head-2: #4fb16a;
-  --color-pl-musical-accent: #2f9e44;
-  --color-pl-comercial: #ffe2c2;
-  --color-pl-comercial-head: #f0a85a;
-  --color-pl-comercial-head-2: #e07e1c;
-  --color-pl-comercial-accent: #d97316;
-  --color-pl-vinheta: #fdf2cc;
-  --color-pl-texto: #f3d9e8;
-  --color-pl-onair: #f3a14a;
-  --color-pl-onair-text: #5a2d00;
-  --color-pl-onair-bg: #18267e;
-  --color-pl-onair-band: #ef7e12;
-  --color-pl-prox-bg: #fdf06a;
-  --color-pl-prox-band: #ef7e12;
-  --color-pl-banner: #d11f1f;
-  --color-pl-transport: #2f9e44;
-  --color-pl-transport-dark: #1f7a30;
-  --color-pl-wave: #e8821e;
-  --color-pl-vu: #3ad13a;
-  --color-pl-vu-warn: #f5d442;
-  --color-pl-vu-peak: #e23b3b;
-  --color-pl-row: #f4f8fc;
-  --color-pl-row-alt: #e9f1f8;
-  --color-pl-text: #1c2b3a;
+  --color-pl-toolbar: #20384c;
+  --color-pl-toolbar-dark: #0c141c;
+  --color-pl-toolbar-light: #2d5878;
+  --color-pl-panel: #1a252e;
+  --color-pl-panel-dark: #101820;
+  --color-pl-musical: #203428;
+  --color-pl-musical-head: #315d3a;
+  --color-pl-musical-head-2: #24472d;
+  --color-pl-musical-accent: #4eaa64;
+  --color-pl-comercial: #3b2d20;
+  --color-pl-comercial-head: #85592b;
+  --color-pl-comercial-head-2: #5d3e20;
+  --color-pl-comercial-accent: #d47b28;
+  --color-pl-vinheta: #353126;
+  --color-pl-texto: #3b2d3b;
+  --color-pl-onair: #dce9f2;
+  --color-pl-onair-text: #111820;
+  --color-pl-onair-bg: #151e27;
+  --color-pl-onair-band: #d71920;
+  --color-pl-prox-bg: #584d20;
+  --color-pl-prox-band: #e4a523;
+  --color-pl-banner: #d71920;
+  --color-pl-transport: #2f9e58;
+  --color-pl-transport-dark: #1e693d;
+  --color-pl-wave: #f09a2b;
+  --color-pl-vu: #3fd35c;
+  --color-pl-vu-warn: #f3d34e;
+  --color-pl-vu-peak: #f04444;
+  --color-pl-row: #111a22;
+  --color-pl-row-alt: #17232d;
+  --color-pl-text: #dce6ed;
 }
 
 /*
@@ -97,7 +97,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.25rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -180,15 +180,37 @@
 
 /* marquee for NO AR scrolling text */
 @keyframes pl-marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
-.pl-marquee { animation: pl-marquee 18s linear infinite; }
+.pl-marquee {
+  animation: pl-marquee 18s linear infinite;
+}
 
 /* QuickStart pad progress sweep */
-@keyframes ql { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes ql {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
 
 /* thin scrollbars inside panels */
-.pl-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
-.pl-scroll::-webkit-scrollbar-thumb { background: var(--color-pl-panel-dark); border-radius: 6px; border: 2px solid var(--color-pl-panel); }
-.pl-scroll::-webkit-scrollbar-track { background: var(--color-pl-panel); }
+.pl-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.pl-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-pl-panel-dark);
+  border-radius: 6px;
+  border: 2px solid var(--color-pl-panel);
+}
+.pl-scroll::-webkit-scrollbar-track {
+  background: var(--color-pl-panel);
+}
