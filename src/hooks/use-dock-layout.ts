@@ -8,6 +8,8 @@ export type DockId = "historico" | "pastas" | "propriedades" | "quickstart";
 
 interface DockState {
   rightWidth: number; // largura da coluna direita (% do split)
+  pastasSide: "left" | "right"; // zona de encaixe da Biblioteca/Pastas de trabalho
+  pastasWidth: number; // largura percentual da Biblioteca quando encaixada à esquerda
   open: DockId[]; // grids visíveis, de cima para baixo
   weights: Record<DockId, number>; // peso (altura relativa) de cada grid
 }
@@ -16,6 +18,8 @@ const KEY = "solplay.dock.v3";
 
 const DEFAULT: DockState = {
   rightWidth: 34,
+  pastasSide: "left",
+  pastasWidth: 16,
   open: ["historico", "propriedades", "pastas", "quickstart"],
   weights: { historico: 1.05, pastas: 1.15, propriedades: 1.05, quickstart: 1.45 },
 };
@@ -34,7 +38,9 @@ function load(): DockState {
         ? storedOpen
         : ["historico", ...storedOpen];
       return {
-        rightWidth: p.rightWidth ?? DEFAULT.rightWidth,
+        rightWidth: clamp(Number(p.rightWidth ?? DEFAULT.rightWidth), 22, 72),
+        pastasSide: p.pastasSide === "right" ? "right" : DEFAULT.pastasSide,
+        pastasWidth: clamp(Number(p.pastasWidth ?? DEFAULT.pastasWidth), 14, 32),
         open,
         weights: { ...DEFAULT.weights, ...(p.weights ?? {}) },
       };
@@ -58,6 +64,14 @@ export function useDockLayout() {
 
   const setRightWidth = useCallback(
     (pct: number) => setState((s) => ({ ...s, rightWidth: clamp(pct, 22, 72) })),
+    [],
+  );
+  const setPastasSide = useCallback(
+    (side: "left" | "right") => setState((s) => ({ ...s, pastasSide: side })),
+    [],
+  );
+  const setPastasWidth = useCallback(
+    (pct: number) => setState((s) => ({ ...s, pastasWidth: clamp(pct, 14, 32) })),
     [],
   );
   const openPanel = useCallback(
@@ -107,5 +121,16 @@ export function useDockLayout() {
     [],
   );
 
-  return { ...state, setRightWidth, openPanel, closePanel, togglePanel, grow, shrink, setWeights };
+  return {
+    ...state,
+    setRightWidth,
+    setPastasSide,
+    setPastasWidth,
+    openPanel,
+    closePanel,
+    togglePanel,
+    grow,
+    shrink,
+    setWeights,
+  };
 }

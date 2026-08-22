@@ -80,11 +80,14 @@ export function PlayApp() {
     dock.setRightWidth(((r.right - clientX) / r.width) * 100);
   };
 
-  // Arrastar a divisória horizontal entre os grids open[i] e open[i+1].
+  // Arrastar a divisória horizontal entre os grids da coluna direita.
   const onHDrag = (i: number, _x: number, clientY: number) => {
     const r = rightColRef.current?.getBoundingClientRect();
     if (!r) return;
-    const ids = dock.open.filter((id) => id !== "pastas");
+    const ids =
+      dock.pastasSide === "right" && dock.open.includes("pastas")
+        ? ["pastas" as DockId, ...dock.open.filter((id) => id !== "pastas")]
+        : dock.open.filter((id) => id !== "pastas");
     const a = ids[i],
       b = ids[i + 1];
     const sum = ids.reduce((s, id) => s + dock.weights[id], 0) || 1;
@@ -102,13 +105,36 @@ export function PlayApp() {
     dock.setWeights({ [a]: (combinedW * newA) / combinedPx, [b]: (combinedW * newB) / combinedPx });
   };
 
+  const movePastas = (side: "left" | "right") => {
+    dock.setPastasSide(side);
+    dock.openPanel("pastas");
+    toast.success(`Pastas de trabalho encaixado à ${side === "left" ? "esquerda" : "direita"}`);
+  };
+
   const onDockDrop = (e: React.DragEvent) => {
     const id = e.dataTransfer.getData(DOCK_DATA) as DockId;
     if (!id) return;
     e.preventDefault();
+    if (id === "pastas") {
+      movePastas("right");
+      return;
+    }
     if (dock.open.includes(id)) return;
     dock.openPanel(id);
-    toast.success("QuickStart fixado nos painéis");
+    toast.success("Painel fixado nos painéis operacionais");
+  };
+
+  const onMainDrop = (e: React.DragEvent) => {
+    const id = e.dataTransfer.getData(DOCK_DATA) as DockId;
+    if (!id) return;
+    e.preventDefault();
+    if (id === "pastas") movePastas("left");
+  };
+
+  const onPastasWidthDrag = (clientX: number) => {
+    const r = splitRef.current?.getBoundingClientRect();
+    if (!r) return;
+    dock.setPastasWidth(((clientX - r.left) / r.width) * 100);
   };
 
   // Aplica o roteamento de saídas salvo ao iniciar (manual p.111).
@@ -169,26 +195,45 @@ export function PlayApp() {
                 <NotesPanel />
               ) : (
                 <>
-                  {/* SOHO studio: biblioteca à esquerda, Final Log no centro e grids operacionais à direita. */}
-                  {dock.open.includes("pastas") && (
-                    <div className="hidden h-full w-[230px] min-w-[230px] shrink-0 flex-col border-r border-pl-toolbar-dark bg-pl-row lg:flex">
-                      <DockFrame
-                        title={dockMeta.pastas.title}
-                        icon={dockMeta.pastas.icon}
-                        grow={dock.weights.pastas}
-                        onGrow={() => dock.grow("pastas")}
-                        onShrink={() => dock.shrink("pastas")}
-                        onClose={() => dock.closePanel("pastas")}
+                  {/* SOHO studio: Biblioteca, Final Log e grids operacionais em zonas encaixáveis. */}
+                  {dock.open.includes("pastas") && dock.pastasSide === "left" && (
+                    <>
+                      <div
+                        style={{ width: `${dock.pastasWidth}%` }}
+                        className="hidden h-full min-w-[210px] max-w-[420px] shrink-0 flex-col border-r border-pl-toolbar-dark bg-pl-row lg:flex"
                       >
-                        {dockMeta.pastas.node}
-                      </DockFrame>
-                    </div>
+                        <DockFrame
+                          title={dockMeta.pastas.title}
+                          icon={dockMeta.pastas.icon}
+                          grow={dock.weights.pastas}
+                          onGrow={() => dock.grow("pastas")}
+                          onShrink={() => dock.shrink("pastas")}
+                          onClose={() => dock.closePanel("pastas")}
+                          draggable
+                          side="left"
+                          onMoveSide={movePastas}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData(DOCK_DATA, "pastas");
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                        >
+                          {dockMeta.pastas.node}
+                        </DockFrame>
+                      </div>
+                      <ResizeHandle orientation="vertical" onDrag={(x) => onPastasWidthDrag(x)} />
+                    </>
                   )}
-                  <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col border-r border-pl-toolbar-dark bg-pl-row">
+                  <div
+                    className="flex h-full min-h-0 min-w-0 flex-1 flex-col border-r border-pl-toolbar-dark bg-pl-row"
+                    onDragOver={(e) => {
+                      if (e.dataTransfer.types.includes(DOCK_DATA)) e.preventDefault();
+                    }}
+                    onDrop={onMainDrop}
+                  >
                     <ProgramPanel />
                   </div>
-                  {/* right: histórico, propriedades e cart player encaixáveis. */}
-                  {dock.open.filter((id) => id !== "pastas").length > 0 && (
+                  {/* direita: Pastas (quando movida), Histórico, Propriedades e QuickStart. */}
+                  {dock.open.length > 0 && (
                     <>
                       <ResizeHandle orientation="vertical" onDrag={(x) => onVDrag(x)} />
                       <div
@@ -200,28 +245,40 @@ export function PlayApp() {
                         }}
                         onDrop={onDockDrop}
                       >
-                        {dock.open
-                          .filter((id) => id !== "pastas")
-                          .map((id, i, rightDocks) => (
-                            <Fragment key={id}>
-                              <DockFrame
-                                title={dockMeta[id].title}
-                                icon={dockMeta[id].icon}
-                                grow={dock.weights[id]}
-                                onGrow={() => dock.grow(id)}
-                                onShrink={() => dock.shrink(id)}
-                                onClose={() => dock.closePanel(id)}
-                              >
-                                {dockMeta[id].node}
-                              </DockFrame>
-                              {i < rightDocks.length - 1 && (
-                                <ResizeHandle
-                                  orientation="horizontal"
-                                  onDrag={(x, y) => onHDrag(i, x, y)}
-                                />
-                              )}
-                            </Fragment>
-                          ))}
+                        {(dock.pastasSide === "right" && dock.open.includes("pastas")
+                          ? ["pastas" as DockId, ...dock.open.filter((id) => id !== "pastas")]
+                          : dock.open.filter((id) => id !== "pastas")
+                        ).map((id, i, rightDocks) => (
+                          <Fragment key={id}>
+                            <DockFrame
+                              title={dockMeta[id].title}
+                              icon={dockMeta[id].icon}
+                              grow={dock.weights[id]}
+                              onGrow={() => dock.grow(id)}
+                              onShrink={() => dock.shrink(id)}
+                              onClose={() => dock.closePanel(id)}
+                              draggable={id === "pastas"}
+                              side={id === "pastas" ? "right" : undefined}
+                              onMoveSide={id === "pastas" ? movePastas : undefined}
+                              onDragStart={
+                                id === "pastas"
+                                  ? (e) => {
+                                      e.dataTransfer.setData(DOCK_DATA, "pastas");
+                                      e.dataTransfer.effectAllowed = "move";
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {dockMeta[id].node}
+                            </DockFrame>
+                            {i < rightDocks.length - 1 && (
+                              <ResizeHandle
+                                orientation="horizontal"
+                                onDrag={(x, y) => onHDrag(i, x, y)}
+                              />
+                            )}
+                          </Fragment>
+                        ))}
                       </div>
                     </>
                   )}

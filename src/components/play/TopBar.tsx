@@ -19,7 +19,6 @@ import {
   Zap,
   HelpCircle,
 } from "lucide-react";
-import { VuMeter } from "./VuMeter";
 import { Clock } from "./Clock";
 import { AppMenu, type PanelVisibility } from "./AppMenu";
 
@@ -163,10 +162,7 @@ export function TopBar({
             56'02
           </div>
         </div>
-        <div className="ml-auto flex items-end gap-3 pr-1">
-          <VuMeter label="L" />
-          <VuMeter label="R" />
-        </div>
+        <div className="ml-auto" aria-hidden="true" />
       </div>
     </div>
   );
