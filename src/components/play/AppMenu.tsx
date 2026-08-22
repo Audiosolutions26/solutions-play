@@ -88,6 +88,40 @@ export function AppMenu({
 
   const abrirPrograma = () => fileInputRef.current?.click();
 
+  const novaProgramacao = () => {
+    if (window.confirm("Criar uma nova programação? A grade atual será substituída.")) {
+      replaceBlocks([]);
+      toast.success("Nova programação criada");
+    }
+  };
+
+  const salvarPrograma = () => {
+    const payload = JSON.stringify(
+      { version: 1, exportedAt: new Date().toISOString(), blocks },
+      null,
+      2,
+    );
+    const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `solutions-play-programacao-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success("Programação salva em arquivo JSON");
+  };
+
+  const imprimirPrograma = () => {
+    window.print();
+  };
+
+  const abrirReleases = () => {
+    window.open(
+      "https://github.com/Audiosolutions26/solutions-play/releases",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   const onProgramFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -152,10 +186,10 @@ export function AppMenu({
       <MenubarMenu>
         <MenubarTrigger className={triggerCls}>Solutions</MenubarTrigger>
         <MenubarContent align="start">
-          <MenubarItem onSelect={soon("Nova programação")}>Nova programação</MenubarItem>
+          <MenubarItem onSelect={novaProgramacao}>Nova programação</MenubarItem>
           <MenubarItem onSelect={abrirPrograma}>Abrir programação…</MenubarItem>
           <MenubarItem onSelect={onOpenProgramFolders}>Abrir das pastas Grades/Mapas…</MenubarItem>
-          <MenubarItem onSelect={soon("Salvar programação")}>Salvar programação</MenubarItem>
+          <MenubarItem onSelect={salvarPrograma}>Salvar programação</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={() => onOpenAdvanced("gerar")}>
             Final Log — gerar e revisar programação
@@ -166,12 +200,12 @@ export function AppMenu({
           <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>
             Editor de clocks — Mapa comercial
           </MenubarItem>
-          <MenubarItem onSelect={soon("Importar áudios")}>Importar áudios…</MenubarItem>
-          <MenubarItem onSelect={soon("Registrar comerciais")}>
+          <MenubarItem onSelect={onOpenProgramFolders}>Importar áudios…</MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>
             Registrar comerciais (Ligação)
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Imprimir")}>Imprimir programação…</MenubarItem>
+          <MenubarItem onSelect={imprimirPrograma}>Imprimir programação…</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={onSwitchOperator}>Trocar operador…</MenubarItem>
           <MenubarItem onSelect={onLogout}>Sair</MenubarItem>
@@ -292,7 +326,7 @@ export function AppMenu({
           </MenubarCheckboxItem>
           <MenubarItem onSelect={soon("Hora Certa")}>Hora Certa</MenubarItem>
           <MenubarItem onSelect={onOpenBeep}>Beep…</MenubarItem>
-          <MenubarItem onSelect={soon("Mapas comerciais")}>Gerar mapas comerciais</MenubarItem>
+          <MenubarItem onSelect={() => onOpenAdvanced("mapa")}>Gerar mapas comerciais</MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={onOpenSecoes}>
             Seções (Arduino/LPT/Satélite/RDS/Sensores)…
@@ -313,7 +347,7 @@ export function AppMenu({
           </MenubarSub>
           <MenubarSeparator />
           <MenubarItem onSelect={() => onOpenAdvanced("ini")}>Recursos Avançados…</MenubarItem>
-          <MenubarItem onSelect={soon("Personalizar")}>Personalizar…</MenubarItem>
+          <MenubarItem onSelect={() => onOpenOptions("geral")}>Personalizar…</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -327,9 +361,7 @@ export function AppMenu({
           <MenubarItem onSelect={soon("Suporte Solutions")}>Suporte Solutions</MenubarItem>
           <MenubarItem onSelect={soon("Acesso remoto")}>Acesso remoto</MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onSelect={soon("Verificar atualizações")}>
-            Verificar atualizações
-          </MenubarItem>
+          <MenubarItem onSelect={abrirReleases}>Verificar atualizações</MenubarItem>
           <MenubarItem onSelect={() => toast.info("Solutions-Play • modo demonstração • v1.0")}>
             Sobre o Solutions-Play
           </MenubarItem>
