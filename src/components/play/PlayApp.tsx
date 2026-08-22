@@ -146,7 +146,8 @@ export function PlayApp() {
               onOpenProgramFolders={() => ui.setProgramFoldersOpen(true)}
             />
             <OnAirBar />
-            <div ref={splitRef} className="flex min-h-0 flex-1">
+            {activeTab === "Programação" && <StudioDecksPanel />}
+            <div ref={splitRef} className="flex h-0 min-h-0 flex-1 overflow-hidden">
               {activeTab === "QuickStart" ? (
                 <QuickStartPanel />
               ) : activeTab === "Status" ? (
@@ -167,9 +168,8 @@ export function PlayApp() {
                 <NotesPanel />
               ) : (
                 <>
-                  {/* Studio SOHO: decks à esquerda, playlist/Final Log no centro */}
-                  <StudioDecksPanel />
-                  <div className="flex min-w-0 flex-1 flex-col border-r border-pl-toolbar-dark bg-slate-100">
+                  {/* Studio SOHO: playlist/Final Log no centro, painéis operacionais à direita */}
+                  <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col border-r border-pl-toolbar-dark bg-pl-row">
                     <ProgramPanel />
                   </div>
                   {/* right: grids encaixáveis (redimensionáveis / fecháveis) */}
@@ -179,7 +179,7 @@ export function PlayApp() {
                       <div
                         ref={rightColRef}
                         style={{ width: `${dock.rightWidth}%` }}
-                        className="flex min-w-[300px] flex-col"
+                        className="flex h-full min-w-[300px] flex-col"
                         onDragOver={(e) => {
                           if (e.dataTransfer.types.includes(DOCK_DATA)) e.preventDefault();
                         }}
