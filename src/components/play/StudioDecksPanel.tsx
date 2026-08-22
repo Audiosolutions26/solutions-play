@@ -1,64 +1,258 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Headphones, Mic2, Play, Radio, SkipForward, Square, Volume2 } from "lucide-react";
 import { usePlayer } from "@/hooks/use-player";
-import { fmt } from "@/lib/play-data";
+import { fmt, type Track } from "@/lib/play-data";
+import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
+import { MARKER_DEFS, getMarkers, markerPositionSec, pseudoWave } from "@/lib/play-markers";
+import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
 
-type DeckTrack = { id: string; title: string; artist?: string; duration: number } | null;
+function formatTime(value: number): string {
+  return Number.isFinite(value) && value > 0 ? fmt(Math.round(value)) : "00:00";
+}
+
+function drawEnvelope(
+  ctx: CanvasRenderingContext2D,
+  left: Float32Array | undefined,
+  right: Float32Array | undefined,
+  fallback: number[],
+  w: number,
+  h: number,
+  fill: string,
+) {
+  const mid = h / 2;
+  const half = Math.max(4, h * 0.43);
+  const count = left?.length || fallback.length;
+  const sample = (index: number, channel: "left" | "right") => {
+    if (channel === "left" && left) return left[index] ?? 0;
+    if (channel === "right" && right) return right[index] ?? left?.[index] ?? 0;
+    return fallback[index] ?? 0;
+  };
+
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(0, mid);
+  for (let x = 0; x <= w; x += 1) {
+    const idx = Math.min(count - 1, Math.floor((x / Math.max(1, w)) * count));
+    ctx.lineTo(x, mid - sample(idx, "left") * half);
+  }
+  ctx.lineTo(w, mid);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(0, mid);
+  for (let x = 0; x <= w; x += 1) {
+    const idx = Math.min(count - 1, Math.floor((x / Math.max(1, w)) * count));
+    ctx.lineTo(x, mid + sample(idx, "right") * half);
+  }
+  ctx.lineTo(w, mid);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function DeckWaveform({
+  track,
+  position,
+  isActive,
+  accent,
+}: {
+  track: Track | null;
+  position: number;
+  isActive: boolean;
+  accent: "blue" | "orange";
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [waveform, setWaveform] = useState<WaveformPeaks | null>(null);
+  const fallbackWave = useMemo(
+    () => (track ? pseudoWave(Math.round((track.freq + track.duration) * 7) + 1, 1800) : []),
+    [track],
+  );
+  const durationSec = waveform?.durationSec || track?.duration || 1;
+  const markers = useMemo(() => (track ? getMarkers(track.id) : []), [track]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setWaveform(null);
+    if (!track)
+      return () => {
+        cancelled = true;
+      };
+    const url = getTrackAudioUrl(track.id) || track.audioUrl;
+    void (url ? Promise.resolve(url) : resolveTrackAudio(track))
+      .then((resolved) => (resolved && !cancelled ? analyzeWaveform(resolved, 1800) : null))
+      .then((peaks) => {
+        if (!cancelled && peaks) setWaveform(peaks);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [track]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = rect.width;
+    const h = rect.height;
+    const progress = isActive ? Math.max(0, Math.min(1, position / durationSec)) : 0;
+    const baseWave = accent === "blue" ? "rgba(128, 157, 173, 0.48)" : "rgba(166, 125, 73, 0.5)";
+    const activeWave =
+      accent === "blue" ? "rgba(205, 231, 244, 0.92)" : "rgba(247, 193, 105, 0.95)";
+    const left = waveform?.left;
+    const right = waveform?.right ?? left;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#070b0f";
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = "rgba(206, 225, 235, 0.1)";
+    ctx.lineWidth = 1;
+    for (let tick = 0; tick <= 4; tick += 1) {
+      const x = (w * tick) / 4;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.stroke();
+
+    drawEnvelope(ctx, left, right, fallbackWave, w, h, baseWave);
+    if (progress > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, w * progress, h);
+      ctx.clip();
+      drawEnvelope(ctx, left, right, fallbackWave, w, h, activeWave);
+      ctx.restore();
+    }
+
+    for (const marker of markers) {
+      const sec = markerPositionSec(marker, durationSec);
+      const x = (sec / durationSec) * w;
+      const def = MARKER_DEFS.find((item) => item.kind === marker.kind);
+      if (!def) continue;
+      ctx.save();
+      ctx.strokeStyle = def.color;
+      ctx.lineWidth = marker.locked ? 2 : 1;
+      ctx.setLineDash(marker.locked ? [3, 2] : [2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = def.color;
+      ctx.beginPath();
+      ctx.moveTo(x - 4, 0);
+      ctx.lineTo(x + 4, 0);
+      ctx.lineTo(x, 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (isActive) {
+      const cursorX = w * progress;
+      ctx.strokeStyle = "#f6f8fa";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cursorX, 0);
+      ctx.lineTo(cursorX, h);
+      ctx.stroke();
+      ctx.fillStyle = "#f6f8fa";
+      ctx.beginPath();
+      ctx.moveTo(cursorX - 4, h - 6);
+      ctx.lineTo(cursorX + 4, h - 6);
+      ctx.lineTo(cursorX, h);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "rgba(218, 231, 238, 0.55)";
+    ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("00:00", 4, h - 3);
+    ctx.textAlign = "right";
+    ctx.fillText(formatTime(durationSec), w - 4, h - 3);
+  }, [accent, durationSec, fallbackWave, isActive, markers, position, waveform]);
+
+  return (
+    <div className="relative h-[66px] overflow-hidden rounded border border-white/10 bg-[#070b0f]">
+      <canvas ref={canvasRef} className="block h-full w-full" aria-label="Waveform da faixa" />
+      {!waveform && track?.audioUrl && (
+        <span className="pointer-events-none absolute left-2 top-1 rounded bg-black/50 px-1 text-[8px] uppercase tracking-wider text-white/60">
+          analisando áudio
+        </span>
+      )}
+    </div>
+  );
+}
 
 function DeckCard({
   label,
   track,
   blockId,
   accent,
+  position,
+  isActive,
   onPlay,
   onCue,
 }: {
   label: string;
-  track: DeckTrack;
+  track: Track | null;
   blockId: string | null;
   accent: "blue" | "orange";
+  position: number;
+  isActive: boolean;
   onPlay: () => void;
   onCue: () => void;
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
-  const waveClass = accent === "blue" ? "bg-[#4e9dcc]" : "bg-[#e39b37]";
   const buttonClass =
     "grid h-6 w-6 place-items-center rounded bg-[#243543] text-[#9fc2d8] transition-colors hover:bg-[#314b5d] disabled:opacity-30";
+  const duration = track?.duration || 0;
+  const elapsed = isActive ? Math.min(position, duration || position) : 0;
 
   return (
     <div
-      className={`h-[140px] min-w-0 flex-1 rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
+      className={`h-[140px] min-w-0 flex-1 overflow-hidden rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
     >
-      <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[#c8d9e5]">
-        <span className="flex items-center gap-1">
-          <Radio className="h-3 w-3" /> {label}
+      <div className="mb-1 flex items-start justify-between gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c8d9e5]">
+        <span className="flex min-w-0 items-center gap-1 truncate">
+          <Radio className="h-3 w-3 shrink-0" /> {label}
         </span>
-        <span className="rounded bg-[#243543] px-1.5 py-0.5 font-mono text-[9px] text-[#9fc2d8]">
-          {blockId ? "READY" : "EMPTY"}
-        </span>
-      </div>
-      <div className="mb-2 h-12 overflow-hidden rounded border border-white/5 bg-[#0b1218] px-2 py-1">
-        <div className="flex h-full items-end gap-px opacity-90">
-          {Array.from({ length: 32 }, (_, index) => (
-            <span
-              key={index}
-              className={`flex-1 rounded-t ${waveClass}`}
-              style={{ height: `${18 + ((index * 17) % 62)}%` }}
-            />
-          ))}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-mono text-[13px] font-black tracking-tight text-[#6ee77b]">
+            {track ? formatTime(elapsed) : "--:--"}
+          </span>
+          <span className="rounded bg-[#243543] px-1.5 py-0.5 font-mono text-[9px] text-[#9fc2d8]">
+            {blockId ? "READY" : "EMPTY"}
+          </span>
         </div>
       </div>
-      <div className="min-h-[42px]">
-        <div className="truncate text-[12px] font-bold text-[#e7f0f5]">
-          {track?.title || "Nenhuma faixa carregada"}
+      <DeckWaveform track={track} position={position} isActive={isActive} accent={accent} />
+      <div className="mt-1 flex min-h-[25px] items-center justify-between gap-2 border-t border-[#2a3d4a] pt-1 text-[10px] text-[#91a7b5]">
+        <div className="min-w-0">
+          <div className="truncate text-[11px] font-bold text-[#e7f0f5]">
+            {track?.title || "Nenhuma faixa carregada"}
+          </div>
+          <div className="truncate text-[9px] text-[#91a7b5]">
+            {track?.artist || "Arraste uma faixa da playlist"}
+          </div>
         </div>
-        <div className="truncate text-[10px] text-[#91a7b5]">
-          {track?.artist || "Arraste uma faixa da playlist"}
-        </div>
-      </div>
-      <div className="mt-2 flex items-center justify-between border-t border-[#2a3d4a] pt-2 text-[10px] text-[#91a7b5]">
-        <span className="font-mono">{track ? fmt(track.duration) : "—"}</span>
-        <div className="flex gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="font-mono text-[9px] text-[#a5bac6]">{track ? fmt(duration) : "—"}</span>
           <button
             type="button"
             onClick={onCue}
@@ -84,7 +278,8 @@ function DeckCard({
 }
 
 export function StudioDecksPanel() {
-  const { blocks, current, currentBlockId, playAt, setCue, nextManual, stop } = usePlayer();
+  const { blocks, current, currentBlockId, isPlaying, position, playAt, setCue, nextManual, stop } =
+    usePlayer();
   const firstBlock = blocks[0];
   const firstTrack = firstBlock?.items[0] ?? null;
   const nextTrack = firstBlock?.items[1] ?? blocks[1]?.items[0] ?? null;
@@ -99,7 +294,7 @@ export function StudioDecksPanel() {
           <div className="text-[11px] font-black uppercase tracking-widest text-[#dbe8f0]">
             Studio decks
           </div>
-          <div className="text-[9px] text-[#7893a6]">A/B · SOHO workflow</div>
+          <div className="text-[9px] text-[#7893a6]">A/B · SOHO waveform</div>
         </div>
         <Volume2 className="h-4 w-4 text-[#4eaa64]" />
       </div>
@@ -109,6 +304,8 @@ export function StudioDecksPanel() {
           track={deckA}
           blockId={deckABlock}
           accent="blue"
+          position={position}
+          isActive={Boolean(isPlaying && current?.id === deckA?.id)}
           onCue={() => setCue(true)}
           onPlay={() => {
             if (deckABlock && deckA) playAt(deckABlock, deckA.id);
@@ -119,6 +316,8 @@ export function StudioDecksPanel() {
           track={nextTrack}
           blockId={nextBlockId}
           accent="orange"
+          position={0}
+          isActive={false}
           onCue={() => setCue(true)}
           onPlay={nextManual}
         />
