@@ -12,12 +12,12 @@ interface DockState {
   weights: Record<DockId, number>; // peso (altura relativa) de cada grid
 }
 
-const KEY = "solplay.dock.v2";
+const KEY = "solplay.dock.v3";
 
 const DEFAULT: DockState = {
-  rightWidth: 45,
-  open: ["pastas", "quickstart", "propriedades"],
-  weights: { pastas: 1.15, propriedades: 0.85, quickstart: 1.35 },
+  rightWidth: 34,
+  open: ["propriedades", "pastas", "quickstart"],
+  weights: { pastas: 1.15, propriedades: 1.05, quickstart: 1.45 },
 };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
