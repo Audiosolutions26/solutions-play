@@ -27,14 +27,10 @@ export function OnAirBar() {
   const artist = current?.artist || (onAir ? "Aguardando programação" : "Sistema parado");
   return (
     <div className="flex h-[66px] items-stretch border-y border-black bg-black">
-      <div
-        className={`flex w-[116px] shrink-0 flex-col items-center justify-center leading-none ${
-          onAir ? "bg-[#e00000] text-white" : "bg-zinc-700 text-white/70"
-        }`}
-      >
-        <span className="text-[22px] font-black tracking-tight">{onAir ? "NO AR" : "PARADO"}</span>
+      <div className="flex w-[116px] shrink-0 flex-col items-center justify-center bg-[#e00000] leading-none text-white">
+        <span className="text-[22px] font-black tracking-tight">NO AR</span>
         <span className="mt-1 text-[10px] font-bold uppercase tracking-wider">
-          {onAir ? "AO VIVO" : "SEM ÁUDIO"}
+          {onAir ? "AO VIVO" : "PAUSADO"}
         </span>
       </div>
       <div className="relative min-w-0 flex-1 overflow-hidden bg-[#050505]">
@@ -46,7 +42,7 @@ export function OnAirBar() {
             {artist}
           </span>
           <span className="ml-auto shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/75">
-            {onAir ? "PROGRAM" : "STANDBY"}
+            {onAir ? "PROGRAM" : "PAUSA"}
           </span>
         </div>
         <div className="absolute inset-x-0 bottom-0 top-6">
