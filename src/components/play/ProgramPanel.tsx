@@ -457,6 +457,9 @@ export function ProgramPanel() {
   const { blocks, currentBlockId, current, addTrack } = usePlayer();
   const nextId = findNextId(blocks, current?.id ?? null);
   const totalItems = blocks.reduce((sum, block) => sum + block.items.length, 0);
+  const nextTrack = nextId
+    ? (blocks.flatMap((block) => block.items).find((track) => track.id === nextId) ?? null)
+    : null;
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [markersOpen, setMarkersOpen] = useState(false);
   const [clockBlock, setClockBlock] = useState<Block | null>(null);
@@ -499,36 +502,49 @@ export function ProgramPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex min-h-9 items-center gap-2 border-b border-slate-950 bg-slate-800 px-3 py-1.5 text-white">
-        <ListMusic className="h-4 w-4 text-cyan-300" />
-        <div className="flex min-w-0 flex-col leading-none">
-          <span className="text-[11px] font-black uppercase tracking-wider">
-            Editor de Playlist
-          </span>
-          <span className="mt-1 text-[9px] text-white/55">
-            Final Log · {blocks.length} clocks · {totalItems} inserções
-          </span>
+      <div className="border-b border-[#315b79] bg-[#244b68] px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <ListMusic className="h-4 w-4 text-[#9ed6f4]" />
+          <div className="flex min-w-0 flex-col leading-none">
+            <span className="text-[11px] font-black uppercase tracking-wider">
+              Final Log · Editor de Playlist
+            </span>
+            <span className="mt-1 text-[9px] text-white/55">
+              {blocks.length} clocks · {totalItems} inserções · arraste para reorganizar
+            </span>
+          </div>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={insertPause}
+              title="Inserir Pausa"
+              className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
+            >
+              <Pause className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={insertHoraCerta}
+              title="Inserir Hora Certa"
+              className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
+            >
+              <Clock className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-        {current && (
-          <span className="ml-2 hidden max-w-[32%] truncate rounded bg-red-500/20 px-2 py-1 text-[9px] font-bold uppercase text-red-200 lg:block">
-            NO AR: {current.title}
-          </span>
-        )}
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            onClick={insertPause}
-            title="Inserir Pausa"
-            className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
-          >
-            <Pause className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={insertHoraCerta}
-            title="Inserir Hora Certa"
-            className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
-          >
-            <Clock className="h-3.5 w-3.5" />
-          </button>
+        <div className="mt-2 grid grid-cols-3 gap-1 text-[9px]">
+          <div className="rounded border border-red-300/25 bg-red-500/20 px-2 py-1">
+            <span className="mr-1 font-bold uppercase tracking-wider text-red-200">NOW</span>
+            <span className="truncate text-white/90">{current?.title || "Sistema parado"}</span>
+          </div>
+          <div className="rounded border border-amber-300/25 bg-amber-500/15 px-2 py-1">
+            <span className="mr-1 font-bold uppercase tracking-wider text-amber-200">NEXT</span>
+            <span className="truncate text-white/90">{nextTrack?.title || "Nenhuma faixa"}</span>
+          </div>
+          <div className="rounded border border-white/10 bg-black/15 px-2 py-1">
+            <span className="mr-1 font-bold uppercase tracking-wider text-white/50">LOG</span>
+            <span className="text-white/80">
+              {blocks[0]?.time || "--:--"} · {blocks[0]?.title || "Programação"}
+            </span>
+          </div>
         </div>
       </div>
       <TransportBar />
