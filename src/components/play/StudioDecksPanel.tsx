@@ -16,6 +16,7 @@ import { MARKER_DEFS, getMarkers, markerPositionSec, pseudoWave } from "@/lib/pl
 import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
 import { MarkersDialog } from "./MarkersDialog";
 import { StitcherDialog } from "./StitcherDialog";
+import { VoiceTrackingDialog } from "./VoiceTrackingDialog";
 
 function formatTime(value: number): string {
   return Number.isFinite(value) && value > 0 ? fmt(Math.round(value)) : "00:00";
@@ -304,6 +305,7 @@ export function StudioDecksPanel() {
     usePlayer();
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [stitcherOpen, setStitcherOpen] = useState(false);
+  const [voiceTrackingOpen, setVoiceTrackingOpen] = useState(false);
   const firstBlock = blocks[0];
   const firstTrack = firstBlock?.items[0] ?? null;
   const nextTrack = firstBlock?.items[1] ?? blocks[1]?.items[0] ?? null;
@@ -321,15 +323,26 @@ export function StudioDecksPanel() {
           <div className="text-[9px] text-[#7893a6]">A/B · SOHO waveform</div>
         </div>
         <Volume2 className="h-4 w-4 text-[#4eaa64]" />
-        <button
-          type="button"
-          onClick={() => setStitcherOpen(true)}
-          disabled={!deckA || !nextTrack}
-          className="mt-1 inline-flex items-center justify-center rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20 disabled:opacity-30"
-          title="Montar teaser pelos Hooks"
-        >
-          STITCHER
-        </button>
+        <div className="mt-1 flex gap-1">
+          <button
+            type="button"
+            onClick={() => setStitcherOpen(true)}
+            disabled={!deckA || !nextTrack}
+            className="inline-flex flex-1 items-center justify-center rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1 py-1 text-[8px] font-bold uppercase tracking-wider text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20 disabled:opacity-30"
+            title="Montar teaser pelos Hooks"
+          >
+            STITCHER
+          </button>
+          <button
+            type="button"
+            onClick={() => setVoiceTrackingOpen(true)}
+            disabled={!deckA}
+            className="inline-flex flex-1 items-center justify-center rounded border border-red-500/40 bg-red-500/10 px-1 py-1 text-[8px] font-bold uppercase tracking-wider text-red-200 transition-colors hover:bg-red-500/20 disabled:opacity-30"
+            title="Gravar Voice Tracking"
+          >
+            VOICE
+          </button>
+        </div>
       </div>
       <div className="flex h-[140px] min-w-0 flex-1 gap-2">
         <DeckCard
@@ -407,6 +420,11 @@ export function StudioDecksPanel() {
         next={nextTrack}
         open={stitcherOpen}
         onOpenChange={setStitcherOpen}
+      />
+      <VoiceTrackingDialog
+        track={deckA}
+        open={voiceTrackingOpen}
+        onOpenChange={setVoiceTrackingOpen}
       />
     </aside>
   );
