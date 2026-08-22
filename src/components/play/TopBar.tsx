@@ -78,7 +78,7 @@ export function TopBar({
           <Radio className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">Solutions-Play — Estação Demo</span>
           <span className="shrink-0 rounded bg-emerald-500/80 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
-            v2 • ÁUDIO AUTOMÁTICO
+            STUDIO PRO · v2
           </span>
         </div>
         <div className="flex gap-1">
@@ -105,15 +105,17 @@ export function TopBar({
           onOpenProgramFolders={onOpenProgramFolders}
         />
       </div>
-      {/* status strip: recursos da evolução Playlist Digital */}
-      <div className="flex flex-wrap items-center gap-1 border-t border-white/10 bg-black/10 px-2 py-0.5 text-[9px] font-semibold tracking-wide text-white/85">
-        <span className="rounded bg-blue-500/60 px-1.5 py-0.5">MARCADORES NÃO DESTRUTIVOS</span>
-        <span className="rounded bg-violet-500/60 px-1.5 py-0.5">WAVEFORM REAL</span>
-        <span className="rounded bg-cyan-500/60 px-1.5 py-0.5">CUE + PASSAGEM −5s</span>
-        <span className="rounded bg-amber-500/70 px-1.5 py-0.5 text-black">MIXAGEM AUTOMÁTICA</span>
-        <span className="rounded bg-emerald-500/70 px-1.5 py-0.5">MÚLTIPLAS SAÍDAS</span>
+      {/* studio modules: fluxo operacional do SOHO Pro */}
+      <div className="flex flex-wrap items-center gap-1 border-t border-white/10 bg-slate-950/25 px-2 py-1 text-[9px] font-bold tracking-wide text-white/90">
+        <span className="rounded bg-red-500/80 px-2 py-0.5">STUDIO</span>
+        <span className="rounded bg-cyan-500/65 px-2 py-0.5">PLAYLIST EDITING</span>
+        <span className="rounded bg-indigo-500/65 px-2 py-0.5">FINAL LOG</span>
+        <span className="rounded bg-emerald-500/70 px-2 py-0.5">EASY CLOCKS</span>
+        <span className="rounded bg-amber-500/75 px-2 py-0.5 text-black">MIX-POINTS</span>
+        <span className="rounded bg-violet-500/70 px-2 py-0.5">VOICE TRACK</span>
+        <span className="rounded bg-sky-500/65 px-2 py-0.5">CUE / A-B</span>
         <span className="ml-auto text-[8px] font-normal normal-case tracking-normal text-white/65">
-          ganho original preservado
+          ganho original preservado · operação local
         </span>
       </div>
       {/* toolbar row */}
