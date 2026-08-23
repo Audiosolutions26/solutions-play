@@ -42,6 +42,7 @@ const MRK_TYPE_MAP: Record<string, MarkerKind> = {
   stamp: "carimbo",
   chorus: "refraoStart",
   next: "nextEntry",
+  fade_in: "fadeInEnd",
   fade_out: "fadeOutStart",
   custom: "annotation",
 };
