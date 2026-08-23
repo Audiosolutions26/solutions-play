@@ -133,30 +133,60 @@ export const initialBlocks: Block[] = [
         year: "2023",
         audioUrl: claytonRomarioAsset.url,
       }),
-      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, {
+      mk("Brinda Aê (Ao Vivo)", "Grupo Menos É Mais", 175, "musical", 188, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisBrindaAsset.url,
+      }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 210, {
         album: "Ao Vivo",
         year: "2024",
         audioUrl: felipeRodrigoGostaAsset.url,
       }),
-      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, {
+      mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisChampanheAsset.url,
+      }),
+      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 246, {
         album: "Ao Vivo",
         year: "2024",
         audioUrl: felipeRodrigoIgnoraAsset.url,
+      }),
+      mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisCoracaoAsset.url,
       }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, {
         album: "Pagode do Ferrugem",
         year: "2024",
         audioUrl: ferrugemArrependidacoAsset.url,
       }),
+      mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisPPecadoAsset.url,
+      }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 174, {
         album: "Pra Beber e Chorar",
         year: "2023",
         audioUrl: daniloDaviApagaAsset.url,
       }),
+      mk("Pela Última Vez (Ao Vivo)", "Grupo Menos É Mais", 170, "musical", 220, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisUltimaVezAsset.url,
+      }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, {
         album: "Pra Beber e Chorar",
         year: "2023",
         audioUrl: daniloDaviGavetasAsset.url,
+      }),
+      mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisSaudadeAsset.url,
       }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 261, {
         album: "Beco do Flashback",
