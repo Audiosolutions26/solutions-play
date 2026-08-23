@@ -7,6 +7,12 @@ import diegoVictorAsset from "@/assets/diego_victor.asset.json";
 import felipeRodrigoGostaAsset from "@/assets/felipe_rodrigo_gosta_de_rua.asset.json";
 import felipeRodrigoIgnoraAsset from "@/assets/felipe_rodrigo_ignora.asset.json";
 import ferrugemArrependidacoAsset from "@/assets/ferrugem_arrependidaco.asset.json";
+import menosMaisBrindaAsset from "@/assets/menos_mais_brinda_ae.asset.json";
+import menosMaisChampanheAsset from "@/assets/menos_mais_champanhe.asset.json";
+import menosMaisCoracaoAsset from "@/assets/menos_mais_coracao_partido.asset.json";
+import menosMaisPPecadoAsset from "@/assets/menos_mais_p_pecado.asset.json";
+import menosMaisUltimaVezAsset from "@/assets/menos_mais_pela_ultima_vez.asset.json";
+import menosMaisSaudadeAsset from "@/assets/menos_mais_saudade_inconveniente.asset.json";
 
 // Demo data for Solutions-Play (local demo mode, no backend).
 
