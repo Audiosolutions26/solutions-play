@@ -202,8 +202,11 @@ export const folders: Folder[] = [
     code: "ACV",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 220, { audioUrl: anaCastelaAsset.url }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 246, { audioUrl: claytonRomarioAsset.url }),
+      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 174, { audioUrl: diegoVictorAsset.url }),
+      mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
     ],
   },
   {
