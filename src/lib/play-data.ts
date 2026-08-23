@@ -338,7 +338,26 @@ export const initialBlocks: Block[] = [
         year: "2023",
         audioUrl: simoneErroGostosoAsset.url,
       }),
-
+      mk("Bebe e Vem Me Procurar / Quem Ama Sente Saudade", "Turma do Pagode", 215, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: turmaPagodeBebeAsset.url,
+      }),
+      mk("Eu Me Apaixonei", "Vitinho Imperador", 168, "musical", 210, {
+        album: "Single",
+        year: "2024",
+        audioUrl: vitinhoApaixoneiAsset.url,
+      }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, {
+        album: "Escolhas",
+        year: "2023",
+        audioUrl: zeNetoBarulhoAsset.url,
+      }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, {
+        album: "Escolhas",
+        year: "2023",
+        audioUrl: zeNetoCadeiraAsset.url,
+      }),
 
     ],
   },
