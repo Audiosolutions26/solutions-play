@@ -1,10 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { usePlayer } from "@/hooks/use-player";
-import { getMarkers, markerPositionSec } from "@/lib/play-markers";
+import { MARKER_DEFS, markerPositionSec, type Marker } from "@/lib/play-markers";
+import { useTrackMarkers } from "@/hooks/use-track-markers";
 
 export function Waveform({ zoom = 1 }: { zoom?: number }) {
-  const { getEngine, isPlaying, current } = usePlayer();
+  const { getEngine, isPlaying, current, jumpToMarker } = usePlayer();
+  const { markers } = useTrackMarkers(current?.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
+  const [visibleKinds, setVisibleKinds] = useState<Set<string>>(new Set(MARKER_DEFS.map(d => d.kind)));
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
 
@@ -94,8 +98,8 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
 
         // 4. Desenha MARCAÇÕES (Markers) - CUE-IN, CUE-OUT, etc.
         if (current) {
-          const markers = getMarkers(current.id);
           markers.forEach(marker => {
+            if (!visibleKinds.has(marker.kind)) return;
             const markerPos = markerPositionSec(marker, duration);
             const x = (markerPos - pos) * pixelsPerSecond + offset;
             
@@ -123,6 +127,15 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
               ctx.moveTo(x, 0);
               ctx.lineTo(x, h);
               ctx.stroke();
+              
+              // Se o marcador estiver fora dos limites do áudio, destaca em vermelho (validação)
+              if (markerPos < 0 || markerPos > duration) {
+                ctx.strokeStyle = "#ff0000";
+                ctx.lineWidth = 3;
+                ctx.setLineDash([]);
+                ctx.stroke();
+              }
+              
               ctx.setLineDash([]);
 
               // Rótulo do marcador
@@ -150,8 +163,120 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [getEngine, isPlaying, current]);
+  }, [getEngine, isPlaying, current, markers, visibleKinds]);
 
-  return <canvas ref={canvasRef} className="h-full w-full cursor-crosshair" />;
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !current) return;
+    const engine = getEngine();
+    const duration = engine.mediaDuration();
+    if (duration <= 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const w = rect.width;
+    const z = zoom;
+    const pos = engine.position();
+    const pixelsPerSecond = (w * z) / duration;
+    const offset = w * 0.1;
+
+    // Converte X do clique para tempo
+    const clickTime = (x - offset) / pixelsPerSecond + pos;
+
+    // Procura o marcador mais próximo do clique (threshold de 5 pixels)
+    const thresholdSec = 5 / pixelsPerSecond;
+    const closest = markers.find(m => {
+      const mPos = markerPositionSec(m, duration);
+      return Math.abs(mPos - clickTime) < thresholdSec;
+    });
+
+    if (closest) {
+      setSelectedMarker(closest);
+    } else {
+      setSelectedMarker(null);
+    }
+  };
+
+  // Atalhos de teclado para navegação entre marcadores
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.shiftKey) return;
+      
+      switch (e.key.toLowerCase()) {
+        case "[": jumpToMarker("startPoint"); break;
+        case "]": jumpToMarker("endPoint"); break;
+        case "i": jumpToMarker("introEnd"); break;
+        case "o": jumpToMarker("fadeOutStart"); break;
+        case "r": jumpToMarker("refraoStart"); break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [jumpToMarker]);
+
+  return (
+    <div className="flex h-full w-full">
+      <div className="relative flex-1 overflow-hidden">
+        <canvas 
+          ref={canvasRef} 
+          onClick={handleCanvasClick}
+          className="h-full w-full cursor-crosshair" 
+        />
+        
+        {/* Filtros de marcadores */}
+        <div className="absolute left-2 bottom-2 flex flex-wrap gap-1">
+          {MARKER_DEFS.filter(d => markers.some(m => m.kind === d.kind)).map(def => (
+            <button
+              key={def.kind}
+              onClick={() => {
+                const next = new Set(visibleKinds);
+                if (next.has(def.kind)) next.delete(def.kind);
+                else next.add(def.kind);
+                setVisibleKinds(next);
+              }}
+              className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase transition-colors ${
+                visibleKinds.has(def.kind) ? "bg-white/20 text-white" : "bg-black/40 text-white/40"
+              }`}
+              style={{ borderBottom: `2px solid ${visibleKinds.has(def.kind) ? def.color : 'transparent'}` }}
+            >
+              {def.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Painel lateral de detalhes do marcador */}
+      {selectedMarker && (
+        <div className="w-48 shrink-0 border-l border-white/10 bg-black/40 p-2 text-[10px]">
+          <div className="mb-2 font-bold uppercase text-white/60">Detalhes do Marcador</div>
+          <div className="flex flex-col gap-2">
+            <div>
+              <div className="text-white/40 uppercase">Tipo</div>
+              <div className="font-bold text-white">{MARKER_DEFS.find(d => d.kind === selectedMarker.kind)?.label || selectedMarker.kind}</div>
+            </div>
+            <div>
+              <div className="text-white/40 uppercase">Tempo</div>
+              <div className="font-mono text-[12px] font-bold text-[#fffa65]">
+                {markerPositionSec(selectedMarker, getEngine().mediaDuration() || current?.duration || 0).toFixed(2)}s
+              </div>
+            </div>
+            {selectedMarker.note && (
+              <div>
+                <div className="text-white/40 uppercase">Nota</div>
+                <div className="text-white">{selectedMarker.note}</div>
+              </div>
+            )}
+            <button
+              onClick={() => setSelectedMarker(null)}
+              className="mt-2 rounded bg-white/10 py-1 hover:bg-white/20"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
