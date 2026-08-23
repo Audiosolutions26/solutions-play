@@ -273,6 +273,32 @@ export const initialBlocks: Block[] = [
         year: "2024",
         audioUrl: luanSantanaOlhoAsset.url,
       }),
+      mk("Saudade do Carai", "Mari Fernandez", 178, "musical", 220, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: mariFernandezAsset.url,
+      }),
+      mk("Ilusão De Ótica (Ao Vivo)", "Matheus & Kauan", 165, "musical", 196, {
+        album: "Praiou",
+        year: "2024",
+        audioUrl: matheusKauanAsset.url,
+      }),
+      mk("Insegurança / Fim de Noite (Ao Vivo)", "Mj Records", 210, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: mjRecordsAsset.url,
+      }),
+      mk("Saudade Estranha (Ao Vivo)", "Murilo Huff", 192, "musical", 210, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: muriloHuffEstranhaAsset.url,
+      }),
+      mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: muriloHuffSoComElaAsset.url,
+      }),
+
 
 
     ],
