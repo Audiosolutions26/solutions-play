@@ -43,6 +43,7 @@ const MRK_TYPE_MAP: Record<string, MarkerKind> = {
   chorus: "refraoStart",
   next: "nextEntry",
   fade_in: "fadeInEnd",
+  fade_in: "fadeInEnd",
   fade_out: "fadeOutStart",
   custom: "annotation",
 };

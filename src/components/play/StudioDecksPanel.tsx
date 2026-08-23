@@ -157,6 +157,17 @@ function DeckWaveform({
       const x = (sec / durationSec) * w;
       const def = MARKER_DEFS.find((item) => item.kind === marker.kind);
       if (!def) continue;
+
+      // Mapeia rótulos específicos para o deck compacto se necessário
+      let label = def.label;
+      switch(marker.kind) {
+        case "startPoint": label = "CUE-IN"; break;
+        case "endPoint": label = "CUE-OUT"; break;
+        case "nextEntry": label = "MIX-OUT"; break;
+        case "fadeInEnd": label = "FADE-IN"; break;
+        case "fadeOutStart": label = "FADE-OUT"; break;
+      }
+
       ctx.save();
       ctx.strokeStyle = def.color;
       ctx.lineWidth = marker.locked ? 2 : 1;
@@ -173,6 +184,12 @@ function DeckWaveform({
       ctx.lineTo(x, 6);
       ctx.closePath();
       ctx.fill();
+      
+      // Adiciona rótulo no deck também
+      ctx.fillStyle = def.color;
+      ctx.font = "bold 7px ui-mono, monospace";
+      ctx.fillText(label.toUpperCase(), x + 2, 10);
+      
       ctx.restore();
     }
 
