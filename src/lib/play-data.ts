@@ -7,6 +7,12 @@ import diegoVictorAsset from "@/assets/diego_victor.asset.json";
 import felipeRodrigoGostaAsset from "@/assets/felipe_rodrigo_gosta_de_rua.asset.json";
 import felipeRodrigoIgnoraAsset from "@/assets/felipe_rodrigo_ignora.asset.json";
 import ferrugemArrependidacoAsset from "@/assets/ferrugem_arrependidaco.asset.json";
+import menosMaisBrindaAsset from "@/assets/menos_mais_brinda_ae.asset.json";
+import menosMaisChampanheAsset from "@/assets/menos_mais_champanhe.asset.json";
+import menosMaisCoracaoAsset from "@/assets/menos_mais_coracao_partido.asset.json";
+import menosMaisPPecadoAsset from "@/assets/menos_mais_p_pecado.asset.json";
+import menosMaisUltimaVezAsset from "@/assets/menos_mais_pela_ultima_vez.asset.json";
+import menosMaisSaudadeAsset from "@/assets/menos_mais_saudade_inconveniente.asset.json";
 
 // Demo data for Solutions-Play (local demo mode, no backend).
 
@@ -127,30 +133,60 @@ export const initialBlocks: Block[] = [
         year: "2023",
         audioUrl: claytonRomarioAsset.url,
       }),
-      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, {
+      mk("Brinda Aê (Ao Vivo)", "Grupo Menos É Mais", 175, "musical", 188, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisBrindaAsset.url,
+      }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 210, {
         album: "Ao Vivo",
         year: "2024",
         audioUrl: felipeRodrigoGostaAsset.url,
       }),
-      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, {
+      mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisChampanheAsset.url,
+      }),
+      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 246, {
         album: "Ao Vivo",
         year: "2024",
         audioUrl: felipeRodrigoIgnoraAsset.url,
+      }),
+      mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisCoracaoAsset.url,
       }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, {
         album: "Pagode do Ferrugem",
         year: "2024",
         audioUrl: ferrugemArrependidacoAsset.url,
       }),
+      mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisPPecadoAsset.url,
+      }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 174, {
         album: "Pra Beber e Chorar",
         year: "2023",
         audioUrl: daniloDaviApagaAsset.url,
       }),
+      mk("Pela Última Vez (Ao Vivo)", "Grupo Menos É Mais", 170, "musical", 220, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisUltimaVezAsset.url,
+      }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, {
         album: "Pra Beber e Chorar",
         year: "2023",
         audioUrl: daniloDaviGavetasAsset.url,
+      }),
+      mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, {
+        album: "Confia",
+        year: "2023",
+        audioUrl: menosMaisSaudadeAsset.url,
       }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 261, {
         album: "Beco do Flashback",
@@ -202,11 +238,15 @@ export const folders: Folder[] = [
     code: "ACV",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 220, { audioUrl: anaCastelaAsset.url }),
+      mk("Brinda Aê (Ao Vivo)", "Grupo Menos É Mais", 175, "musical", 188, { audioUrl: menosMaisBrindaAsset.url }),
       mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 246, { audioUrl: claytonRomarioAsset.url }),
+      mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, { audioUrl: menosMaisChampanheAsset.url }),
       mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 174, { audioUrl: diegoVictorAsset.url }),
+      mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
+      mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
     ],
   },
   {
@@ -218,7 +258,9 @@ export const folders: Folder[] = [
     tracks: [
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
       mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
+      mk("Pela Última Vez (Ao Vivo)", "Grupo Menos É Mais", 170, "musical", 220, { audioUrl: menosMaisUltimaVezAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 165, { audioUrl: daniloDaviGavetasAsset.url }),
+      mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, { audioUrl: menosMaisSaudadeAsset.url }),
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
     ],
   },
@@ -230,8 +272,11 @@ export const folders: Folder[] = [
     code: "FB",
     tracks: [
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
+      mk("Brinda Aê (Ao Vivo)", "Grupo Menos É Mais", 175, "musical", 188, { audioUrl: menosMaisBrindaAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 261, { audioUrl: claytonRomarioAsset.url }),
+      mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, { audioUrl: menosMaisChampanheAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
+      mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
     ],
   },
@@ -243,8 +288,11 @@ export const folders: Folder[] = [
     code: "INTER",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 277, { audioUrl: anaCastelaAsset.url }),
+      mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
       mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
+      mk("Pela Última Vez (Ao Vivo)", "Grupo Menos É Mais", 170, "musical", 220, { audioUrl: menosMaisUltimaVezAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, { audioUrl: daniloDaviGavetasAsset.url }),
+      mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, { audioUrl: menosMaisSaudadeAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
     ],
   },
