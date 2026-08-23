@@ -368,6 +368,14 @@ function parseV1(raw: Record<string, unknown>): PkfInfoDocument | null {
 export function parsePkfInfo(text: string): PkfInfoDocument | null {
   try {
     const raw = JSON.parse(text) as Record<string, unknown>;
+    
+    // Suporte ao formato .mrk (mrk_editor) detectado pelo schema
+    if (raw.audio && Array.isArray(raw.markers) && typeof (raw.audio as any).duration_ms === 'number') {
+      // É um arquivo .mrk do Python. O importMrkInfoForTrack já lida com isso,
+      // mas mantemos o parser genérico aqui para compatibilidade de fluxo.
+      return null; // O chamador deve usar o fluxo de .mrk específico
+    }
+
     if (raw.format !== PKFINFO_FORMAT) return null;
     const version = raw.version as PkfInfoVersion;
     if (version === LEGACY_VERSION) return parseV1(raw);
@@ -479,10 +487,16 @@ export async function generatePkfInfoForFolder(
 /** Importa documentos válidos e não mexe nos marcadores travados existentes. */
 export async function importPkfInfoForTracks(tracks: Track[]): Promise<number> {
   const candidates = tracks.filter((track) => Boolean(track.filePath));
-  const imported = await mapWithConcurrency(candidates, 8, async (track) => {
+  const results = await mapWithConcurrency(candidates, 8, async (track) => {
+    // 1. Tenta importar .mrk primeiro (formato do editor externo)
+    const mrkImported = await importMrkInfoForTrack(track);
+    if (mrkImported) return true;
+
+    // 2. Fallback para .pkfinfo nativo
     const raw = await readPkfInfoNative(track.filePath as string);
     const parsed = raw ? parsePkfInfo(raw) : null;
     if (!parsed) return false;
+    
     const existing = getMarkers(track.id);
     const existingLocked = existing.filter((marker) => marker.locked);
     const incoming = parsed.markers.filter(
@@ -491,5 +505,5 @@ export async function importPkfInfoForTracks(tracks: Track[]): Promise<number> {
     saveMarkers(track.id, sortMarkers([...existingLocked, ...incoming], parsed.duration));
     return true;
   });
-  return imported.filter(Boolean).length;
+  return results.filter(Boolean).length;
 }

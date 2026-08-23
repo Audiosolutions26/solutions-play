@@ -64,14 +64,16 @@ export async function importMrkInfoForTrack(track: Track): Promise<boolean> {
   if (!track.filePath) return false;
 
   try {
-    // Reutilizamos readPkfInfoNative pois ele já resolve caminhos relativos no Electron.
-    // O backend no main.cjs será atualizado para tentar .mrk se .pkfinfo falhar.
+    // O Electron agora tenta ler .mrk se .pkfinfo não existir no mesmo handler sp:read-pkfinfo.
     const raw = await readPkfInfoNative(track.filePath);
     if (!raw) return false;
 
-    // Tenta parsear como .mrk (o mrk_editor usa um schema diferente do .pkfinfo)
-    const doc = JSON.parse(raw) as Partial<MrkDocument>;
-    if (!doc.audio || !Array.isArray(doc.markers)) return false;
+    // Detecta se é o formato .mrk verificando a presença de audio.duration_ms
+    const parsedRaw = JSON.parse(raw);
+    if (!parsedRaw.audio || typeof parsedRaw.audio.duration_ms !== 'number') return false;
+
+    const doc = parsedRaw as MrkDocument;
+
 
     const durationSec = doc.audio.duration_ms / 1000;
     const markers = mrkToMarkers(doc as MrkDocument, durationSec);
