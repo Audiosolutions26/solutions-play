@@ -391,6 +391,10 @@ export const initialBlocks: Block[] = [
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 185, {
         audioUrl: claytonRomarioAsset.url,
       }),
+      mk("Bebe e Vem Me Procurar / Quem Ama Sente Saudade", "Turma do Pagode", 215, "musical", 188, { audioUrl: turmaPagodeBebeAsset.url }),
+      mk("Eu Me Apaixonei", "Vitinho Imperador", 168, "musical", 210, { audioUrl: vitinhoApaixoneiAsset.url }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, { audioUrl: zeNetoBarulhoAsset.url }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, { audioUrl: zeNetoCadeiraAsset.url }),
     ],
   },
 ];
