@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Track } from "@/lib/play-data";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
-import { MARKER_DEFS, markerPositionSec, pseudoWave } from "@/lib/play-markers";
+import { MARKER_DEFS, markerPositionSec, pseudoWave, getMarkers } from "@/lib/play-markers";
 import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
 import { MarkersDialog } from "./MarkersDialog";
 import { StitcherDialog } from "./StitcherDialog";
@@ -224,6 +224,7 @@ function DeckCard({
   onCue,
   onMarkers,
   onExport,
+  markers,
 }: {
   label: string;
   track: Track | null;
@@ -235,6 +236,7 @@ function DeckCard({
   onCue: () => void;
   onMarkers: () => void;
   onExport: () => void;
+  markers: any[];
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
@@ -245,7 +247,7 @@ function DeckCard({
 
   return (
     <div
-      className={`h-[140px] min-w-0 flex-1 overflow-hidden rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
+      className={`relative h-[140px] min-w-0 flex-1 overflow-hidden rounded border p-2 shadow-[0_1px_5px_rgba(0,0,0,.35)] ${accentClass}`}
     >
       <div className="mb-1 flex items-start justify-between gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c8d9e5]">
         <span className="flex min-w-0 items-center gap-1 truncate">
@@ -261,6 +263,13 @@ function DeckCard({
         </div>
       </div>
       <DeckWaveform track={track} position={position} isActive={isActive} accent={accent} />
+      {track && markers && markers.length > 0 && (
+        <div className="absolute top-10 right-3 flex gap-1 pointer-events-none z-10">
+          {markers.slice(0, 5).map((m: any, i: number) => (
+            <span key={i} className="h-1.5 w-1.5 rounded-full border border-black/20" style={{ backgroundColor: MARKER_DEFS.find(d => d.kind === m.kind)?.color || '#fff' }} />
+          ))}
+        </div>
+      )}
       <div className="mt-1 flex min-h-[25px] items-center justify-between gap-2 border-t border-[#2a3d4a] pt-1 text-[10px] text-[#91a7b5]">
         <div className="min-w-0">
           <div className="truncate text-[11px] font-bold text-[#e7f0f5]">
@@ -409,6 +418,7 @@ export function StudioDecksPanel() {
           onPlay={() => {
             if (deckABlock && deckA) playAt(deckABlock, deckA.id);
           }}
+          markers={getMarkers(deckA?.id || '')}
         />
         <DeckCard
           label="Deck B · PRÓXIMA"
@@ -421,13 +431,11 @@ export function StudioDecksPanel() {
           onMarkers={() => setMarkerTrack(deckB)}
           onExport={() => {
             if (deckB) {
-              // Função local para exportar deck B se necessário, 
-              // ou apenas usar a exportCurrentMarkers se o player suportasse múltiplas instâncias.
-              // Por enquanto, o player é centralizado no 'current'.
               toast.info("Exportação disponível apenas para o Deck A (No Ar)");
             }
           }}
           onPlay={nextManual}
+          markers={getMarkers(deckB?.id || '')}
         />
       </div>
       <div className="flex w-[150px] shrink-0 flex-col justify-center gap-1 border-l border-[#2a4051] pl-2">
