@@ -116,13 +116,21 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   let beatAlignedAt = 0;
   if (currentBpm > 60) {
     const beatLen = 60 / currentBpm;
-    // Quantiza o ponto final para a batida mais próxima
+    // Quantiza o ponto final para a batida mais próxima (priorizando manter energia)
     beatAlignedAt = Math.round(currentEnd.sec / beatLen) * beatLen;
+    // Evita silêncio: se a batida alinhada for depois do cue-out real, recua uma batida
+    if (beatAlignedAt > currentEnd.sec) {
+      beatAlignedAt -= beatLen;
+    }
+    // Evita silêncio: se a batida alinhada for antes do cue-in, ignora
+    if (beatAlignedAt < currentStart.sec) {
+      beatAlignedAt = 0;
+    }
   }
 
   const defaultTransition = beatAlignedAt > 0 
-    ? Math.max(currentStart.sec, beatAlignedAt - mixMs / 1000)
-    : Math.max(currentStart.sec, currentEnd.sec - mixMs / 1000);
+    ? Math.max(currentStart.sec, beatAlignedAt)
+    : Math.max(currentStart.sec, currentEnd.sec);
 
   const markedTransition =
     input.useMarkerMix === false

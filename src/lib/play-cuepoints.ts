@@ -120,7 +120,7 @@ function compute(buf: AudioBuffer, thr: number): CuePoints {
   // Análise automática adicional
   const bpm = detectBPM(buf);
   const loudness = calculateLoudness(buf);
-  const autoMixReason = `Silêncio detectado em ${cueIn.toFixed(2)}s e ${cueOut.toFixed(2)}s. BPM: ${bpm}.`;
+  const autoMixReason = `Análise Automática: In ${cueIn.toFixed(2)}s, Out ${cueOut.toFixed(2)}s. BPM: ${bpm}. Normalizado via LUFS.`;
 
   // Sanidade
   if (cueOut <= cueIn + 0.2) cueOut = buf.duration;
