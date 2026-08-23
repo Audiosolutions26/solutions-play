@@ -20,6 +20,8 @@ import {
   Mic,
   Newspaper,
   Disc3,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
@@ -447,7 +449,13 @@ function BlockView({
   );
 }
 
-export function ProgramPanel() {
+export function ProgramPanel({
+  isExpanded,
+  onToggleExpand,
+}: {
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}) {
   const { blocks, currentBlockId, current, addTrack } = usePlayer();
   const nextId = findNextId(blocks, current?.id ?? null);
   const totalItems = blocks.reduce((sum, block) => sum + block.items.length, 0);
@@ -522,6 +530,19 @@ export function ProgramPanel() {
             >
               <Clock className="h-3.5 w-3.5" />
             </button>
+            {onToggleExpand && (
+              <button
+                onClick={onToggleExpand}
+                title={isExpanded ? "Reduzir Editor" : "Expandir Editor"}
+                className="grid h-6 w-6 place-items-center rounded bg-white/15 hover:bg-white/30"
+              >
+                {isExpanded ? (
+                  <Minimize2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Maximize2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-2 grid grid-cols-3 gap-1 text-[9px]">

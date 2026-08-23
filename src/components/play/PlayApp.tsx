@@ -198,7 +198,7 @@ export function PlayApp() {
               ) : (
                 <>
                   {/* SOHO studio: Biblioteca, Final Log e grids operacionais em zonas encaixáveis. */}
-                  {dock.open.includes("pastas") && dock.pastasSide === "left" && (
+                  {!ui.isProgramExpanded && dock.open.includes("pastas") && dock.pastasSide === "left" && (
                     <>
                       <div
                         style={{ width: `${dock.pastasWidth}%` }}
@@ -232,10 +232,13 @@ export function PlayApp() {
                     }}
                     onDrop={onMainDrop}
                   >
-                    <ProgramPanel />
+                    <ProgramPanel
+                      isExpanded={ui.isProgramExpanded}
+                      onToggleExpand={() => ui.setProgramExpanded(!ui.isProgramExpanded)}
+                    />
                   </div>
                   {/* direita: Pastas (quando movida), Histórico, Propriedades e QuickStart. */}
-                  {dock.open.length > 0 && (
+                  {!ui.isProgramExpanded && dock.open.length > 0 && (
                     <>
                       <ResizeHandle orientation="vertical" onDrag={(x) => onVDrag(x)} />
                       <div
