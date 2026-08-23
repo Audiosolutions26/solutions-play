@@ -62,6 +62,16 @@ export function RdsStatusPanel({ onOpenSettings }: { onOpenSettings?: () => void
     for (let i = trackIndex + 1; i < currentBlock.items.length; i++) {
       total += currentBlock.items[i].duration;
     }
+
+    // 3. Se o bloco atual não é comercial, soma blocos seguintes até achar um comercial
+    if (currentBlock.category !== "comercial") {
+      for (let j = blockIndex + 1; j < blocks.length; j++) {
+        if (blocks[j].category === "comercial") break;
+        for (const item of blocks[j].items) {
+          total += item.duration;
+        }
+      }
+    }
     
     return total;
   }, [current, currentBlockId, blocks, position]);
