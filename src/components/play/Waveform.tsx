@@ -279,7 +279,10 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       <div className="relative flex-1 overflow-hidden">
         <canvas 
           ref={canvasRef} 
-          onClick={handleCanvasClick}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           className="h-full w-full cursor-crosshair" 
         />
         
