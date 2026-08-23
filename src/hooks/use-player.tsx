@@ -554,7 +554,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             );
           }
           // Mixagem não destrutiva: a próxima voice é aberta no instante
-          // calculado pelo `nextEntry` da atual e pelo `mixIn` da próxima.
+          // calculado pelo `nextTriggerAtSec` da atual e pelo `mixIn` da próxima.
           if (
             mode === "AUTO" &&
             hasAudio &&
@@ -563,10 +563,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             pos >= plan.nextTriggerAtSec
           ) {
             transitioningRef.current = true;
+            
             // Para evitar buracos (silêncio), garantimos que o fadeOutMs e o tempo
-            // restante até o endPoint estejam em sincronia.
+            // restante até o endPoint estejam em sincronia. O trigger ocorre
+            // exatamente no momento em que a próxima faixa deve entrar.
             const remaining = Math.max(0, endPoint - pos);
-            const fadeOutMs = plan.fadeOutMs > 0 ? plan.fadeOutMs : remaining * 1000;
+            const fadeOutMs = plan.fadeOutMs > 0 ? plan.fadeOutMs : Math.round(remaining * 1000);
             
             next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, fadeOutMs);
             return;
