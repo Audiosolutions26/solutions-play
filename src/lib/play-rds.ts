@@ -45,10 +45,9 @@ export function updateRds(current: Track | null, upcoming: Track[]): void {
 
   const onAir = rdsLabel(current);
   const nextLines: string[] = [];
-  if (current) nextLines.push(`No ar: ${rdsLabel(current)}`);
-  upcoming.slice(0, 5).forEach((t, i) => nextLines.push(`Proxima ${i + 1}: ${rdsLabel(t)}`));
-  const nextContent = nextLines.join("\r\n") + (nextLines.length ? "\r\n" : "");
-  const onAirContent = onAir ? onAir + "\r\n" : "";
+  upcoming.slice(0, 3).forEach((t, i) => nextLines.push(`${i + 1}: ${rdsLabel(t)}`));
+  const nextContent = nextLines.join("\r\n");
+  const onAirContent = onAir;
   const metadataContent =
     JSON.stringify(
       {

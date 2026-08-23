@@ -28,20 +28,47 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = "#050505";
       ctx.fillRect(0, 0, w, h);
-      // Linha central discreta, como nos monitores profissionais.
+      
+      const engine = getEngine();
+      const pos = engine.position();
+      const duration = engine.mediaDuration();
+      
+      // Desenha grid de tempo (segundos)
+      if (duration > 0) {
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.font = "8px monospace";
+        const z = zoomRef.current;
+        const pixelsPerSecond = (w * z) / duration;
+        const startSec = Math.floor(pos);
+        const visibleRange = duration / z;
+        
+        for (let s = 0; s <= duration; s += 1) {
+          const x = (s - pos) * pixelsPerSecond + (w * 0.1); // 10% de margem esquerda
+          if (x >= 0 && x <= w) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+            if (s % 5 === 0) {
+              ctx.fillText(`${s}s`, x + 2, 8);
+            }
+          }
+        }
+      }
+
       ctx.strokeStyle = "rgba(255,255,255,0.07)";
       ctx.beginPath();
       ctx.moveTo(0, h / 2);
       ctx.lineTo(w, h / 2);
       ctx.stroke();
+
       if (isPlaying) {
         engine.getWaveform(buf);
         ctx.strokeStyle = "#f08a24";
-        ctx.lineWidth = 0.85;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
         const z = zoomRef.current;
-        // Zoom: amplia a amplitude (vertical) e "estica" o tempo (horizontal),
-        // mostrando menos amostras ao longo da largura conforme aumenta.
         const visible = Math.max(16, Math.floor(buf.length / z));
         const step = visible / w;
         for (let x = 0; x < w; x++) {
