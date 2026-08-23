@@ -27,6 +27,8 @@ import {
 } from "@/lib/play-cuepoints";
 import { updateRds } from "@/lib/play-rds";
 import { getMarkers, markerPositionSec } from "@/lib/play-markers";
+import { importMrkInfoForTrack } from "@/lib/play-mrk";
+import { addEvent } from "@/lib/play-events";
 import { resolveTransitionPlan, type TransitionPlan } from "@/lib/play-transition";
 import { applyTrackOutput, type OutputFn } from "@/lib/play-outputs";
 
@@ -156,8 +158,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (!cueDetectionEnabled()) return;
       const nx = findNext(blockId, trackId);
       if (!nx) return;
-      void trackUrl(nx.track).then((u) => {
-        if (u) void analyzeCuePoints(u);
+      
+      void trackUrl(nx.track).then(async (u) => {
+        if (!u) return;
+        
+        // Antes de analisar o cue, garante que os marcadores externos (.mrk) foram lidos
+        if (nx.track.filePath && getMarkers(nx.track.id).length === 0) {
+          await importMrkInfoForTrack(nx.track);
+        }
+        
+        void analyzeCuePoints(u);
       });
     },
     [findNext, trackUrl],
@@ -192,7 +202,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const detect = cueDetectionEnabled();
         const ep = equalPowerEnabled();
         const cached = detect ? getCachedCuePoints(u) : undefined;
-        const markers = getMarkers(track.id);
+        let markers = getMarkers(track.id);
+        
+        // Se não há marcadores, tenta importar o .mrk just-in-time
+        if (markers.length === 0 && track.filePath) {
+          const res = await importMrkInfoForTrack(track);
+          if (res.success) {
+            markers = getMarkers(track.id);
+            addEvent("audio", `Importado ${res.count} marcadores do editor externo para: ${track.title}`, "info");
+          }
+        }
+
         const markedStart =
           track.duration > 0 ? markers.find((marker) => marker.kind === "startPoint") : undefined;
         const markerStart = markedStart ? markerPositionSec(markedStart, track.duration) : 0;

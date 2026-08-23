@@ -36,6 +36,7 @@ import {
 import { usePlayer } from "@/hooks/use-player";
 import { parseProgramText } from "@/lib/play-program-import";
 import { parseProgramXml } from "@/lib/play-program-xml";
+import { importPkfInfoForTracks } from "@/lib/play-pkfinfo";
 import {
   Menubar,
   MenubarMenu,
@@ -179,6 +180,13 @@ export function AppMenu({
         return;
       }
       replaceBlocks(parsed);
+      
+      // Dispara a importação automática de marcadores (.mrk / .pkfinfo) para os arquivos resolvidos.
+      const tracksToImport = parsed.flatMap(b => b.items).filter(t => !!t.filePath);
+      if (tracksToImport.length > 0) {
+        void importPkfInfoForTracks(tracksToImport);
+      }
+      
       toast.success(
         `${isXml ? "Programação PXML importada" : "Programação TXT importada"}: ${stats.blocks} blocos, ${stats.inserts} inserções` +
           (stats.unresolved

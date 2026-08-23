@@ -60,37 +60,37 @@ export function mrkToMarkers(doc: MrkDocument, durationSec: number): Marker[] {
  * Tenta ler o sidecar .mrk (do editor Python) para uma faixa.
  * O Electron deve estar configurado para procurar na pasta 'mark/' relativa ao arquivo.
  */
-export async function importMrkInfoForTrack(track: Track): Promise<boolean> {
-  if (!track.filePath) return false;
+export async function importMrkInfoForTrack(track: Track): Promise<{ success: boolean; count: number }> {
+  if (!track.filePath) return { success: false, count: 0 };
 
   try {
     // O Electron agora tenta ler .mrk se .pkfinfo não existir no mesmo handler sp:read-pkfinfo.
     const raw = await readPkfInfoNative(track.filePath);
-    if (!raw) return false;
+    if (!raw) return { success: false, count: 0 };
 
     // Detecta se é o formato .mrk verificando a presença de audio.duration_ms
     const parsedRaw = JSON.parse(raw);
-    if (!parsedRaw.audio || typeof parsedRaw.audio.duration_ms !== 'number') return false;
+    if (!parsedRaw.audio || typeof parsedRaw.audio.duration_ms !== 'number') return { success: false, count: 0 };
 
     const doc = parsedRaw as MrkDocument;
-
-
     const durationSec = doc.audio.duration_ms / 1000;
-    const markers = mrkToMarkers(doc as MrkDocument, durationSec);
+    const markers = mrkToMarkers(doc, durationSec);
 
     // Salva os marcadores se forem válidos
     if (markers.length > 0) {
       const existing = getMarkers(track.id);
       const existingLocked = existing.filter((m) => m.locked);
+      
+      // Filtra marcadores entrantes, dando preferência aos já travados no sistema
       const incoming = markers.filter(
         (m) => !existingLocked.some((locked) => locked.kind === m.kind)
       );
       
       saveMarkers(track.id, sortMarkers([...existingLocked, ...incoming], durationSec));
-      return true;
+      return { success: true, count: markers.length };
     }
   } catch (e) {
     console.warn("Falha ao importar .mrk:", e);
   }
-  return false;
+  return { success: false, count: 0 };
 }

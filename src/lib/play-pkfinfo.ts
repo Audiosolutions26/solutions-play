@@ -489,8 +489,8 @@ export async function importPkfInfoForTracks(tracks: Track[]): Promise<number> {
   const candidates = tracks.filter((track) => Boolean(track.filePath));
   const results = await mapWithConcurrency(candidates, 8, async (track) => {
     // 1. Tenta importar .mrk primeiro (formato do editor externo)
-    const mrkImported = await importMrkInfoForTrack(track);
-    if (mrkImported) return true;
+    const res = await importMrkInfoForTrack(track);
+    if (res.success) return true;
 
     // 2. Fallback para .pkfinfo nativo
     const raw = await readPkfInfoNative(track.filePath as string);

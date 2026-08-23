@@ -283,12 +283,20 @@ ipcMain.handle("sp:read-pkfinfo", async (_evt, audioPath) => {
     // 2. Fallback: Tenta o sidecar .mrk (do editor Python) em mark/<filename>.mrk
     const audioDir = path.dirname(audio);
     const audioName = path.basename(audio);
-    const mrkSidecar = path.join(audioDir, "mark", `${audioName}.mrk`);
+    const markDir = path.join(audioDir, "mark");
     
-    if (fs.existsSync(mrkSidecar)) {
-      const stat = fs.statSync(mrkSidecar);
-      if (stat.isFile() && stat.size <= PKFINFO_MAX_BYTES) {
-        return fs.readFileSync(mrkSidecar, "utf8");
+    // Procura de forma robusta na pasta mark/ (caso o Windows tenha variações de case)
+    if (fs.existsSync(markDir)) {
+      const mrkFile = `${audioName}.mrk`;
+      const files = fs.readdirSync(markDir);
+      const found = files.find(f => f.toLowerCase() === mrkFile.toLowerCase());
+      
+      if (found) {
+        const full = path.join(markDir, found);
+        const stat = fs.statSync(full);
+        if (stat.isFile() && stat.size <= PKFINFO_MAX_BYTES) {
+          return fs.readFileSync(full, "utf8");
+        }
       }
     }
 
