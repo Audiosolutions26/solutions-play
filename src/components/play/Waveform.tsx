@@ -262,23 +262,36 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     setDraggedMarkerId(null);
   };
 
-  // Atalhos de teclado para navegação entre marcadores
+  // Atalhos de teclado para navegação e undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.altKey || e.shiftKey) return;
-      
-      switch (e.key.toLowerCase()) {
-        case "[": jumpToMarker("startPoint"); break;
-        case "]": jumpToMarker("endPoint"); break;
-        case "i": jumpToMarker("introEnd"); break;
-        case "o": jumpToMarker("fadeOutStart"); break;
-        case "r": jumpToMarker("refraoStart"); break;
+      // Atalhos de marcadores
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey) {
+        switch (e.key.toLowerCase()) {
+          case "[": jumpToMarker("startPoint"); break;
+          case "]": jumpToMarker("endPoint"); break;
+          case "i": jumpToMarker("introEnd"); break;
+          case "o": jumpToMarker("fadeOutStart"); break;
+          case "r": jumpToMarker("refraoStart"); break;
+        }
+      }
+
+      // Undo/Redo (Ctrl+Z, Ctrl+Y)
+      if (e.ctrlKey && !e.altKey && !e.shiftKey) {
+        if (e.key.toLowerCase() === "z") {
+          e.preventDefault();
+          undo();
+        }
+        if (e.key.toLowerCase() === "y") {
+          e.preventDefault();
+          redo();
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [jumpToMarker]);
+  }, [jumpToMarker, undo, redo]);
 
   return (
     <div className="flex h-full w-full">
