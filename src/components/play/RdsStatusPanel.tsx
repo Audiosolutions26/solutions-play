@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useConfig } from "@/hooks/use-config";
 import { usePlayer } from "@/hooks/use-player";
 import { rdsLabel } from "@/lib/play-rds";
-import { pfmt } from "@/lib/play-data";
+import { fmt, type Track } from "@/lib/play-data";
 
 function shortStationName(value: string): string {
   const clean = value.trim() || "Solutions Play";
