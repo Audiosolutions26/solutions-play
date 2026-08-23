@@ -618,9 +618,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
 export function usePlayer(): PlayerState {
   const c = useContext(Ctx);
   if (!c) throw new Error("usePlayer must be used within PlayerProvider");
