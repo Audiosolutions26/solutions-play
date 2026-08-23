@@ -270,10 +270,29 @@ ipcMain.handle("sp:read-pkfinfo", async (_evt, audioPath) => {
   try {
     const audio = validAudioFile(audioPath);
     if (!audio) return null;
+    
+    // 1. Tenta o sidecar padrão .pkfinfo (Solutions-Play)
     const sidecar = pkfInfoPath(audio);
-    const stat = fs.statSync(sidecar);
-    if (!stat.isFile() || stat.size > PKFINFO_MAX_BYTES) return null;
-    return fs.readFileSync(sidecar, "utf8");
+    if (fs.existsSync(sidecar)) {
+      const stat = fs.statSync(sidecar);
+      if (stat.isFile() && stat.size <= PKFINFO_MAX_BYTES) {
+        return fs.readFileSync(sidecar, "utf8");
+      }
+    }
+
+    // 2. Fallback: Tenta o sidecar .mrk (do editor Python) em mark/<filename>.mrk
+    const audioDir = path.dirname(audio);
+    const audioName = path.basename(audio);
+    const mrkSidecar = path.join(audioDir, "mark", `${audioName}.mrk`);
+    
+    if (fs.existsSync(mrkSidecar)) {
+      const stat = fs.statSync(mrkSidecar);
+      if (stat.isFile() && stat.size <= PKFINFO_MAX_BYTES) {
+        return fs.readFileSync(mrkSidecar, "utf8");
+      }
+    }
+
+    return null;
   } catch {
     return null;
   }
