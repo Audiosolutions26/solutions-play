@@ -32,6 +32,7 @@ import { importMrkInfoForTrack, exportMrkInfoForTrack } from "@/lib/play-mrk";
 import { logEvent } from "@/lib/play-events";
 import { resolveTransitionPlan, type TransitionPlan } from "@/lib/play-transition";
 import { applyTrackOutput, type OutputFn } from "@/lib/play-outputs";
+import { suggestCrossfadeCurve, getNormalizationGain } from "@/lib/audio-analysis";
 
 export type OperationMode = "AUTO" | "MANUAL" | "RE-BROADCAST" | "OFFLINE";
 
@@ -203,7 +204,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await applyTrackOutput(track, outputFn);
         if (currentRef.current.track?.id !== trackId) return;
         const detect = cueDetectionEnabled();
-        const ep = equalPowerEnabled();
         const cached = detect ? getCachedCuePoints(u) : undefined;
         let markers = getMarkers(track.id);
         
@@ -237,7 +237,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 ? cached.cueIn
                 : 0;
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
-        engine.playUrl(u, startAt, effectiveFadeMs, ep, fadeOutMs);
+        
+        // Determina a curva de crossfade e o ganho de normalização automaticamente
+        const nextTrack = findNext(blockId, trackId)?.track;
+        const curve = suggestCrossfadeCurve(
+          track.category || 'musical',
+          nextTrack?.category || 'musical',
+          cached?.bpm || 0,
+          0 // Ainda não sabemos o BPM da próxima aqui
+        );
+        
+        const normGain = cached?.loudness ? getNormalizationGain(cached.loudness) : 1.0;
+
+        engine.playUrl(u, startAt, effectiveFadeMs, curve, fadeOutMs, normGain);
         if (detect) {
           void analyzeCuePoints(u).then((cp) => {
             if (currentRef.current.track?.id === trackId) {
@@ -466,8 +478,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         getTrackAudioUrl(cur.id) || cur.audioUrl || "",
         pos,
         0,
-        equalPowerEnabled(),
-        0
+        'equal-power',
+        0,
+        1.0
       );
       setPosition(pos);
       logEvent("sistema", `Pulo para marcador ${kind}`, cur.title);

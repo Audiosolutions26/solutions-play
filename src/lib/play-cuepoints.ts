@@ -10,11 +10,15 @@
 // configurado por tipo. O resultado é uma passagem firme e contínua.
 
 import { loadConfig } from "./play-config";
+import { detectBPM, calculateLoudness } from "./audio-analysis";
 
 export interface CuePoints {
   cueIn: number; // segundos: onde começar a tocar
   cueOut: number; // segundos: onde iniciar a saída (0 = desconhecido)
   duration: number;
+  bpm?: number;
+  loudness?: number;
+  autoMixReason?: string;
 }
 
 // Cache limitado para não reter indefinidamente resultados de uma biblioteca grande.
@@ -96,7 +100,7 @@ function compute(buf: AudioBuffer, thr: number): CuePoints {
   const chs: Float32Array[] = [];
   for (let c = 0; c < Math.min(buf.numberOfChannels, 2); c++) chs.push(buf.getChannelData(c));
 
-  // cue-in: primeiro ponto acima do limiar (com 50 ms de respiro antes).
+  // cue-in: primeiro ponto acima do limiar
   let cueIn = 0;
   for (let i = 0; i < n; i++) {
     if (maxAt(chs, i) > thr) {
@@ -104,7 +108,7 @@ function compute(buf: AudioBuffer, thr: number): CuePoints {
       break;
     }
   }
-  // cue-out: último ponto acima do limiar (com 150 ms de cauda depois).
+  // cue-out: último ponto acima do limiar
   let cueOut = buf.duration;
   for (let i = n - 1; i >= 0; i--) {
     if (maxAt(chs, i) > thr) {
@@ -112,9 +116,16 @@ function compute(buf: AudioBuffer, thr: number): CuePoints {
       break;
     }
   }
-  // Sanidade: cue-out tem de vir depois do cue-in.
+
+  // Análise automática adicional
+  const bpm = detectBPM(buf);
+  const loudness = calculateLoudness(buf);
+  const autoMixReason = `Silêncio detectado em ${cueIn.toFixed(2)}s e ${cueOut.toFixed(2)}s. BPM: ${bpm}.`;
+
+  // Sanidade
   if (cueOut <= cueIn + 0.2) cueOut = buf.duration;
-  return { cueIn, cueOut, duration: buf.duration };
+  
+  return { cueIn, cueOut, duration: buf.duration, bpm, loudness, autoMixReason };
 }
 
 // Analisa (e cacheia) os pontos de mixagem de uma URL tocável (blob:/data:/http).
