@@ -36,6 +36,10 @@ import pandaEuTeSeguroAsset from "@/assets/tracks/panda-eu-te-seguro.mp3.asset.j
 import racionaisNegroDramaAsset from "@/assets/tracks/racionais-negro-drama.mp3.asset.json";
 import rafaAmaMaloqueiroAsset from "@/assets/tracks/rafa-ama-maloqueiro.mp3.asset.json";
 import simoneErroGostosoAsset from "@/assets/tracks/simone-erro-gostoso.mp3.asset.json";
+import turmaPagodeBebeAsset from "@/assets/tracks/turma-pagode-bebe.mp3.asset.json";
+import vitinhoApaixoneiAsset from "@/assets/tracks/vitinho-apaixonei.mp3.asset.json";
+import zeNetoBarulhoAsset from "@/assets/tracks/ze-neto-barulho.mp3.asset.json";
+import zeNetoCadeiraAsset from "@/assets/tracks/ze-neto-cadeira.mp3.asset.json";
 
 
 
@@ -334,7 +338,26 @@ export const initialBlocks: Block[] = [
         year: "2023",
         audioUrl: simoneErroGostosoAsset.url,
       }),
-
+      mk("Bebe e Vem Me Procurar / Quem Ama Sente Saudade", "Turma do Pagode", 215, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: turmaPagodeBebeAsset.url,
+      }),
+      mk("Eu Me Apaixonei", "Vitinho Imperador", 168, "musical", 210, {
+        album: "Single",
+        year: "2024",
+        audioUrl: vitinhoApaixoneiAsset.url,
+      }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, {
+        album: "Escolhas",
+        year: "2023",
+        audioUrl: zeNetoBarulhoAsset.url,
+      }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, {
+        album: "Escolhas",
+        year: "2023",
+        audioUrl: zeNetoCadeiraAsset.url,
+      }),
 
     ],
   },
@@ -368,6 +391,10 @@ export const initialBlocks: Block[] = [
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 185, {
         audioUrl: claytonRomarioAsset.url,
       }),
+      mk("Bebe e Vem Me Procurar / Quem Ama Sente Saudade", "Turma do Pagode", 215, "musical", 188, { audioUrl: turmaPagodeBebeAsset.url }),
+      mk("Eu Me Apaixonei", "Vitinho Imperador", 168, "musical", 210, { audioUrl: vitinhoApaixoneiAsset.url }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, { audioUrl: zeNetoBarulhoAsset.url }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, { audioUrl: zeNetoCadeiraAsset.url }),
     ],
   },
 ];
@@ -413,6 +440,8 @@ export const folders: Folder[] = [
       mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
       mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, { audioUrl: rafaAmaMaloqueiroAsset.url }),
       mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, { audioUrl: zeNetoBarulhoAsset.url }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, { audioUrl: zeNetoCadeiraAsset.url }),
     ],
   },
   {
@@ -438,6 +467,8 @@ export const folders: Folder[] = [
       mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
       mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
       mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, { audioUrl: rafaAmaMaloqueiroAsset.url }),
+      mk("Bebe e Vem Me Procurar / Quem Ama Sente Saudade", "Turma do Pagode", 215, "musical", 188, { audioUrl: turmaPagodeBebeAsset.url }),
+      mk("Eu Me Apaixonei", "Vitinho Imperador", 168, "musical", 210, { audioUrl: vitinhoApaixoneiAsset.url }),
     ],
   },
   {
@@ -488,6 +519,8 @@ export const folders: Folder[] = [
       mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, { audioUrl: pandaBaqueadoAsset.url }),
       mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
       mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, { audioUrl: zeNetoBarulhoAsset.url }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, { audioUrl: zeNetoCadeiraAsset.url }),
     ],
   },
   {
