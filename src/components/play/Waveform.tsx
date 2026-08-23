@@ -189,7 +189,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     };
   }, [getEngine, isPlaying, current, markers, visibleKinds]);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas || !current) return;
     const engine = getEngine();
@@ -207,18 +207,53 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     // Converte X do clique para tempo
     const clickTime = (x - offset) / pixelsPerSecond + pos;
 
-    // Procura o marcador mais próximo do clique (threshold de 5 pixels)
-    const thresholdSec = 5 / pixelsPerSecond;
+    // Procura o marcador mais próximo do clique (threshold aumentado para 15 pixels para facilitar drag)
+    const thresholdSec = 15 / pixelsPerSecond;
     const closest = markers.find(m => {
       const mPos = markerPositionSec(m, duration);
       return Math.abs(mPos - clickTime) < thresholdSec;
     });
 
     if (closest) {
+      setDraggedMarkerId(closest.id || null);
       setSelectedMarker(closest);
     } else {
       setSelectedMarker(null);
     }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!draggedMarkerId || !current) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const engine = getEngine();
+    const duration = engine.mediaDuration();
+    if (duration <= 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const w = rect.width;
+    const z = zoom;
+    const pos = engine.position();
+    const pixelsPerSecond = (w * z) / duration;
+    const offset = w * 0.1;
+
+    // Converte X do mouse para tempo
+    let newTime = (x - offset) / pixelsPerSecond + pos;
+    
+    // Snapping (0.1s)
+    newTime = Math.round(newTime * 10) / 10;
+    
+    // Limites (0 a duração + uma margem pequena para visualização de erro se desejado)
+    // Deixamos passar um pouco para o usuário ver a validação de erro
+    newTime = Math.max(-2, Math.min(duration + 2, newTime));
+
+    updateMarkerPosition(draggedMarkerId, newTime);
+  };
+
+  const handleMouseUp = () => {
+    setDraggedMarkerId(null);
   };
 
   // Atalhos de teclado para navegação entre marcadores
