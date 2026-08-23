@@ -519,6 +519,8 @@ export const folders: Folder[] = [
       mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, { audioUrl: pandaBaqueadoAsset.url }),
       mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
       mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
+      mk("Barulho Do Foguete (Ao Vivo)", "Zé Neto & Cristiano", 175, "musical", 172, { audioUrl: zeNetoBarulhoAsset.url }),
+      mk("Cadeira Cativa (Ao Vivo)", "Zé Neto & Cristiano", 182, "musical", 246, { audioUrl: zeNetoCadeiraAsset.url }),
     ],
   },
   {
