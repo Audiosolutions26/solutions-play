@@ -8,7 +8,9 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
   const { markers } = useTrackMarkers(current?.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
+  const [draggedMarkerId, setDraggedMarkerId] = useState<string | null>(null);
   const [visibleKinds, setVisibleKinds] = useState<Set<string>>(new Set(MARKER_DEFS.map(d => d.kind)));
+  const { updateMarkerPosition } = useTrackMarkers(current?.id);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
 
