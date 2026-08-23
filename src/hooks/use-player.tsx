@@ -219,6 +219,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const markedStart =
           track.duration > 0 ? markers.find((marker) => marker.kind === "startPoint") : undefined;
         const markerStart = markedStart ? markerPositionSec(markedStart, track.duration) : 0;
+        
+        // Determina Fade-In baseado no marcador fadeInEnd (se existir)
+        const markedFadeIn = markers.find(m => m.kind === "fadeInEnd");
+        let effectiveFadeMs = fadeMs;
+        if (markedFadeIn && track.duration > 0) {
+          const fadeInPos = markerPositionSec(markedFadeIn, track.duration);
+          effectiveFadeMs = Math.max(0, (fadeInPos - markerStart) * 1000);
+        }
+
         const startAt =
           typeof fromOffset === "number"
             ? Math.max(0, fromOffset)
@@ -228,7 +237,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 ? cached.cueIn
                 : 0;
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
-        engine.playUrl(u, startAt, fadeMs, ep, fadeOutMs);
+        engine.playUrl(u, startAt, effectiveFadeMs, ep, fadeOutMs);
         if (detect) {
           void analyzeCuePoints(u).then((cp) => {
             if (currentRef.current.track?.id === trackId) {
