@@ -27,7 +27,7 @@ function shortStationName(value: string): string {
     .toUpperCase();
 }
 
-export function RdsStatusPanel() {
+export function RdsStatusPanel({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const { get } = useConfig();
   const { current, position } = usePlayer();
   const [showDetails, setShowDetails] = useState(false);
@@ -85,7 +85,7 @@ export function RdsStatusPanel() {
             <span className="text-[13px] font-bold text-[#222]">R·D·S</span>
           </div>
           <button 
-            onClick={() => toast.info("Configurações de RDS disponíveis no menu Ferramentas > Opções")}
+            onClick={() => onOpenSettings?.()}
             className="flex items-center gap-1 rounded bg-[#333]/20 px-2 py-0.5 text-[10px] font-bold text-[#222] hover:bg-black/10"
           >
             Settings
