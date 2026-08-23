@@ -304,7 +304,36 @@ export const initialBlocks: Block[] = [
         year: "2024",
         audioUrl: muriloHuffSoComElaAsset.url,
       }),
-
+      mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: pandaBaqueadoAsset.url,
+      }),
+      mk("Calcinha de Renda (Ao Vivo)", "Panda", 175, "musical", 210, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: pandaCalcinhaAsset.url,
+      }),
+      mk("Eu Te Seguro (Ao Vivo)", "Panda", 168, "musical", 172, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: pandaEuTeSeguroAsset.url,
+      }),
+      mk("Negro Drama", "Racionais MC's", 412, "musical", 246, {
+        album: "Nada como um dia após o outro dia",
+        year: "2002",
+        audioUrl: racionaisNegroDramaAsset.url,
+      }),
+      mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, {
+        album: "Single",
+        year: "2024",
+        audioUrl: rafaAmaMaloqueiroAsset.url,
+      }),
+      mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, {
+        album: "Cintilante",
+        year: "2023",
+        audioUrl: simoneErroGostosoAsset.url,
+      }),
 
 
     ],
