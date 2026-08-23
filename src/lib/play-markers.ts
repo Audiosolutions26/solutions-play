@@ -247,7 +247,9 @@ export function validateMarkers(markers: Marker[], durationSec: number): MarkerV
   for (const marker of markers) {
     const sec = markerPositionSec(marker, duration);
     if (!Number.isFinite(sec) || sec < 0 || (duration > 0 && sec > duration)) {
-      errors.push(`Posição inválida para ${marker.kind}.`);
+      const label = MARKER_DEFS.find(d => d.kind === marker.kind)?.label || marker.kind;
+      const offset = sec > duration ? sec - duration : sec;
+      errors.push(`${label}: Fora de sincronia (${offset > 0 ? '+' : ''}${offset.toFixed(2)}s).`);
     }
   }
   const start = firstMarker(markers, "refraoStart", duration);

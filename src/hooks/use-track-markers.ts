@@ -49,5 +49,14 @@ export function useTrackMarkers(trackId: string | undefined) {
     }
   }, [trackId]);
 
-  return { markers, setMarkers, refresh };
+  const updateMarkerPosition = useCallback((markerId: string, newSec: number) => {
+    if (!trackId) return;
+    const currentMarkers = getMarkers(trackId);
+    const updated = currentMarkers.map(m => 
+      m.id === markerId ? { ...m, positionSec: newSec, pos: 0 /* Reset normalized pos if using absolute */ } : m
+    );
+    setMarkers(updated);
+  }, [trackId, setMarkers]);
+
+  return { markers, setMarkers, updateMarkerPosition, refresh };
 }
