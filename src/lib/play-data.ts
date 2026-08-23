@@ -13,6 +13,13 @@ import menosMaisCoracaoAsset from "@/assets/menos_mais_coracao_partido.asset.jso
 import menosMaisPPecadoAsset from "@/assets/menos_mais_p_pecado.asset.json";
 import menosMaisUltimaVezAsset from "@/assets/menos_mais_pela_ultima_vez.asset.json";
 import menosMaisSaudadeAsset from "@/assets/menos_mais_saudade_inconveniente.asset.json";
+import guilhermeBenutoAsset from "@/assets/audio/guilherme_benuto_eu_duvido.mp3.asset.json";
+import gusttavoLimaBalaAsset from "@/assets/audio/gusttavo_lima_bala_alojada.mp3.asset.json";
+import gusttavoLimaRetrovisorAsset from "@/assets/audio/gusttavo_lima_retrovisor.mp3.asset.json";
+import henriqueJulianoAmigoAsset from "@/assets/audio/henrique_juliano_amigo_da_minha_saudade.mp3.asset.json";
+import henriqueJulianoSejaExAsset from "@/assets/audio/henrique_juliano_seja_ex.mp3.asset.json";
+import henriqueJulianoUltimaAsset from "@/assets/audio/henrique_juliano_ultima_saudade.mp3.asset.json";
+
 
 // Demo data for Solutions-Play (local demo mode, no backend).
 
@@ -193,6 +200,37 @@ export const initialBlocks: Block[] = [
         year: "2023",
         audioUrl: diegoVictorAsset.url,
       }),
+      mk("Eu Duvido (Ao Vivo)", "Guilherme & Benuto", 168, "musical", 220, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: guilhermeBenutoAsset.url,
+      }),
+      mk("Bala Alojada", "Gusttavo Lima", 175, "musical", 196, {
+        album: "Paraíso Particular",
+        year: "2024",
+        audioUrl: gusttavoLimaBalaAsset.url,
+      }),
+      mk("Retrovisor", "Gusttavo Lima", 182, "musical", 188, {
+        album: "Paraíso Particular",
+        year: "2024",
+        audioUrl: gusttavoLimaRetrovisorAsset.url,
+      }),
+      mk("Amigo Da Minha Saudade (Ao Vivo)", "Henrique & Juliano", 190, "musical", 210, {
+        album: "Manifesto Musical",
+        year: "2024",
+        audioUrl: henriqueJulianoAmigoAsset.url,
+      }),
+      mk("Seja Ex (Ao Vivo)", "Henrique & Juliano", 155, "musical", 172, {
+        album: "Manifesto Musical",
+        year: "2024",
+        audioUrl: henriqueJulianoSejaExAsset.url,
+      }),
+      mk("Última Saudade (Ao Vivo)", "Henrique & Juliano", 188, "musical", 246, {
+        album: "Manifesto Musical",
+        year: "2024",
+        audioUrl: henriqueJulianoUltimaAsset.url,
+      }),
+
     ],
   },
   {
@@ -244,9 +282,16 @@ export const folders: Folder[] = [
       mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, { audioUrl: menosMaisChampanheAsset.url }),
       mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 174, { audioUrl: diegoVictorAsset.url }),
+      mk("Eu Duvido (Ao Vivo)", "Guilherme & Benuto", 168, "musical", 220, { audioUrl: guilhermeBenutoAsset.url }),
+      mk("Bala Alojada", "Gusttavo Lima", 175, "musical", 196, { audioUrl: gusttavoLimaBalaAsset.url }),
+      mk("Retrovisor", "Gusttavo Lima", 182, "musical", 188, { audioUrl: gusttavoLimaRetrovisorAsset.url }),
+      mk("Amigo Da Minha Saudade (Ao Vivo)", "Henrique & Juliano", 190, "musical", 210, { audioUrl: henriqueJulianoAmigoAsset.url }),
+      mk("Seja Ex (Ao Vivo)", "Henrique & Juliano", 155, "musical", 172, { audioUrl: henriqueJulianoSejaExAsset.url }),
+      mk("Última Saudade (Ao Vivo)", "Henrique & Juliano", 188, "musical", 246, { audioUrl: henriqueJulianoUltimaAsset.url }),
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
       mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
+
     ],
   },
   {
@@ -262,6 +307,9 @@ export const folders: Folder[] = [
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 165, { audioUrl: daniloDaviGavetasAsset.url }),
       mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, { audioUrl: menosMaisSaudadeAsset.url }),
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
+      mk("Amigo Da Minha Saudade (Ao Vivo)", "Henrique & Juliano", 190, "musical", 210, { audioUrl: henriqueJulianoAmigoAsset.url }),
+      mk("Retrovisor", "Gusttavo Lima", 182, "musical", 188, { audioUrl: gusttavoLimaRetrovisorAsset.url }),
+
     ],
   },
   {
@@ -276,6 +324,9 @@ export const folders: Folder[] = [
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 261, { audioUrl: claytonRomarioAsset.url }),
       mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, { audioUrl: menosMaisChampanheAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
+      mk("Eu Duvido (Ao Vivo)", "Guilherme & Benuto", 168, "musical", 220, { audioUrl: guilhermeBenutoAsset.url }),
+      mk("Seja Ex (Ao Vivo)", "Henrique & Juliano", 155, "musical", 172, { audioUrl: henriqueJulianoSejaExAsset.url }),
+
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
     ],
@@ -294,6 +345,9 @@ export const folders: Folder[] = [
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, { audioUrl: daniloDaviGavetasAsset.url }),
       mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, { audioUrl: menosMaisSaudadeAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
+      mk("Bala Alojada", "Gusttavo Lima", 175, "musical", 196, { audioUrl: gusttavoLimaBalaAsset.url }),
+      mk("Última Saudade (Ao Vivo)", "Henrique & Juliano", 188, "musical", 246, { audioUrl: henriqueJulianoUltimaAsset.url }),
+
     ],
   },
   {
