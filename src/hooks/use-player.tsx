@@ -461,7 +461,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           // Assim que o arquivo informa a duração real, grava de volta no track
           // para que o tempo apareça na Programação e o avanço funcione.
           if (cur.duration <= 0 && dur > 0) {
-            const rounded = Math.round(dur);
+            const rounded = Math.round(dur * 10) / 10;
             const fixed = { ...cur, duration: rounded };
             currentRef.current.track = fixed;
             setCurrent(fixed);
