@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { usePlayer } from "@/hooks/use-player";
-import { MARKER_DEFS, markerPositionSec, type Marker } from "@/lib/play-markers";
+import { MARKER_DEFS, markerPositionSec, type Marker, validateMarkers } from "@/lib/play-markers";
 import { useTrackMarkers } from "@/hooks/use-track-markers";
 
 export function Waveform({ zoom = 1 }: { zoom?: number }) {
