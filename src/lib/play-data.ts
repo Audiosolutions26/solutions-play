@@ -229,6 +229,7 @@ export const folders: Folder[] = [
     category: "musical",
     code: "FB",
     tracks: [
+      mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 261, { audioUrl: claytonRomarioAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
