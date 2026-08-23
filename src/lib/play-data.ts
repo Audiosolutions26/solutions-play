@@ -25,6 +25,12 @@ import jorgeMateusXoneiAsset from "@/assets/audio/jorge_mateus_xonei.mp3.asset.j
 import juniorCezarCheiroAsset from "@/assets/audio/junior_cezar_cheiro_de_culpado.mp3.asset.json";
 import lauanaPradoSaudadeAsset from "@/assets/audio/lauana_prado_saudade_burra.mp3.asset.json";
 import luanSantanaOlhoAsset from "@/assets/audio/luan_santana_olho_marrom.mp3.asset.json";
+import mariFernandezAsset from "@/assets/audio/mari_fernandez_saudade.mp3.asset.json";
+import matheusKauanAsset from "@/assets/audio/matheus_kauan_ilusao.mp3.asset.json";
+import mjRecordsAsset from "@/assets/audio/mj_records_inseguranca.mp3.asset.json";
+import muriloHuffEstranhaAsset from "@/assets/audio/murilo_huff_saudade_estranha.mp3.asset.json";
+import muriloHuffSoComElaAsset from "@/assets/audio/murilo_huff_so_com_ela.mp3.asset.json";
+
 
 
 
@@ -267,6 +273,32 @@ export const initialBlocks: Block[] = [
         year: "2024",
         audioUrl: luanSantanaOlhoAsset.url,
       }),
+      mk("Saudade do Carai", "Mari Fernandez", 178, "musical", 220, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: mariFernandezAsset.url,
+      }),
+      mk("Ilusão De Ótica (Ao Vivo)", "Matheus & Kauan", 165, "musical", 196, {
+        album: "Praiou",
+        year: "2024",
+        audioUrl: matheusKauanAsset.url,
+      }),
+      mk("Insegurança / Fim de Noite (Ao Vivo)", "Mj Records", 210, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: mjRecordsAsset.url,
+      }),
+      mk("Saudade Estranha (Ao Vivo)", "Murilo Huff", 192, "musical", 210, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: muriloHuffEstranhaAsset.url,
+      }),
+      mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: muriloHuffSoComElaAsset.url,
+      }),
+
 
 
     ],
@@ -332,9 +364,15 @@ export const folders: Folder[] = [
       mk("Cheiro De Culpado (Ao Vivo)", "Júnior e Cézar", 148, "musical", 210, { audioUrl: juniorCezarCheiroAsset.url }),
       mk("Saudade Burra (Ao Vivo)", "Lauana Prado", 172, "musical", 172, { audioUrl: lauanaPradoSaudadeAsset.url }),
       mk("OLHO MARROM (Ao Vivo)", "Luan Santana", 185, "musical", 246, { audioUrl: luanSantanaOlhoAsset.url }),
+      mk("Saudade do Carai", "Mari Fernandez", 178, "musical", 220, { audioUrl: mariFernandezAsset.url }),
+      mk("Ilusão De Ótica (Ao Vivo)", "Matheus & Kauan", 165, "musical", 196, { audioUrl: matheusKauanAsset.url }),
+      mk("Insegurança / Fim de Noite (Ao Vivo)", "Mj Records", 210, "musical", 188, { audioUrl: mjRecordsAsset.url }),
+      mk("Saudade Estranha (Ao Vivo)", "Murilo Huff", 192, "musical", 210, { audioUrl: muriloHuffEstranhaAsset.url }),
+      mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, { audioUrl: muriloHuffSoComElaAsset.url }),
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
       mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
+
 
 
     ],
@@ -354,8 +392,11 @@ export const folders: Folder[] = [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
       mk("Amigo Da Minha Saudade (Ao Vivo)", "Henrique & Juliano", 190, "musical", 210, { audioUrl: henriqueJulianoAmigoAsset.url }),
       mk("Retrovisor", "Gusttavo Lima", 182, "musical", 188, { audioUrl: gusttavoLimaRetrovisorAsset.url }),
+      mk("Ilusão De Ótica (Ao Vivo)", "Matheus & Kauan", 165, "musical", 196, { audioUrl: matheusKauanAsset.url }),
+      mk("Saudade Estranha (Ao Vivo)", "Murilo Huff", 192, "musical", 210, { audioUrl: muriloHuffEstranhaAsset.url }),
       mk("Cantada Boba (Ao Vivo)", "Jorge & Mateus", 162, "musical", 196, { audioUrl: jorgeMateusCantadaAsset.url }),
       mk("Saudade Burra (Ao Vivo)", "Lauana Prado", 172, "musical", 172, { audioUrl: lauanaPradoSaudadeAsset.url }),
+
 
 
     ],
@@ -374,8 +415,11 @@ export const folders: Folder[] = [
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
       mk("Eu Duvido (Ao Vivo)", "Guilherme & Benuto", 168, "musical", 220, { audioUrl: guilhermeBenutoAsset.url }),
       mk("Seja Ex (Ao Vivo)", "Henrique & Juliano", 155, "musical", 172, { audioUrl: henriqueJulianoSejaExAsset.url }),
+      mk("Saudade do Carai", "Mari Fernandez", 178, "musical", 220, { audioUrl: mariFernandezAsset.url }),
+      mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, { audioUrl: muriloHuffSoComElaAsset.url }),
       mk("Peão Todo Tatuado", "Jeninho", 145, "musical", 220, { audioUrl: jeninhoPeaoAsset.url }),
       mk("Xonei", "Jorge & Mateus", 155, "musical", 188, { audioUrl: jorgeMateusXoneiAsset.url }),
+
 
 
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
@@ -398,8 +442,10 @@ export const folders: Folder[] = [
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
       mk("Bala Alojada", "Gusttavo Lima", 175, "musical", 196, { audioUrl: gusttavoLimaBalaAsset.url }),
       mk("Última Saudade (Ao Vivo)", "Henrique & Juliano", 188, "musical", 246, { audioUrl: henriqueJulianoUltimaAsset.url }),
+      mk("Insegurança / Fim de Noite (Ao Vivo)", "Mj Records", 210, "musical", 188, { audioUrl: mjRecordsAsset.url }),
       mk("Cheiro De Culpado (Ao Vivo)", "Júnior e Cézar", 148, "musical", 210, { audioUrl: juniorCezarCheiroAsset.url }),
       mk("OLHO MARROM (Ao Vivo)", "Luan Santana", 185, "musical", 246, { audioUrl: luanSantanaOlhoAsset.url }),
+
 
 
     ],
