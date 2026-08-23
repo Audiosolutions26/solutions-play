@@ -122,6 +122,10 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
     if (beatAlignedAt > currentEnd.sec) {
       beatAlignedAt -= beatLen;
     }
+    // Evita silêncio: se a batida alinhada for antes do cue-in, ignora
+    if (beatAlignedAt < currentStart.sec) {
+      beatAlignedAt = 0;
+    }
   }
 
   const defaultTransition = beatAlignedAt > 0 

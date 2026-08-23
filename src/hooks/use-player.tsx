@@ -204,20 +204,35 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await applyTrackOutput(track, outputFn);
         if (currentRef.current.track?.id !== trackId) return;
         const detect = cueDetectionEnabled();
-        const cached = detect ? getCachedCuePoints(u) : undefined;
-        let markers = getMarkers(track.id);
         
-        // Se não há marcadores, tenta importar o .mrk just-in-time
-        if (markers.length === 0 && track.filePath) {
-          const res = await importMrkInfoForTrack(track);
-          if (res.success) {
-            markers = getMarkers(track.id);
-            logEvent("sistema", `Importado ${res.count} marcadores do editor externo`, track.title);
+        // Assegura que o cue da faixa atual e da próxima estejam carregados
+        const cached = detect ? await analyzeCuePoints(u) : undefined;
+        const nxResult = findNext(blockId, trackId);
+        const nextTrack = nxResult?.track;
+        let nextCached: CuePoints | undefined;
+        if (nextTrack && detect) {
+          const nextUrl = await trackUrl(nextTrack);
+          if (nextUrl) {
+            nextCached = await analyzeCuePoints(nextUrl);
           }
         }
 
-        const markedStart =
-          track.duration > 0 ? markers.find((marker) => marker.kind === "startPoint") : undefined;
+        let markers = getMarkers(track.id);
+        if (markers.length === 0 && track.filePath) {
+          const res = await importMrkInfoForTrack(track);
+          if (res.success) markers = getMarkers(track.id);
+        }
+
+        // Calcula o plano de transição exato para esta faixa
+        const plan = resolveTransitionPlan({
+          current: track,
+          next: nextTrack || track,
+          currentMarkers: markers,
+          currentCue: cached,
+          nextCue: nextCached,
+        });
+
+        const markedStart = markers.find((m) => m.kind === "startPoint");
         const markerStart = markedStart ? markerPositionSec(markedStart, track.duration) : 0;
         
         // Determina Fade-In baseado no marcador fadeInEnd (se existir)
@@ -228,29 +243,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           effectiveFadeMs = Math.max(0, (fadeInPos - markerStart) * 1000);
         }
 
-        const startAt =
-          typeof fromOffset === "number"
+        const startAt = typeof fromOffset === "number"
             ? Math.max(0, fromOffset)
-            : markerStart > 0
-              ? markerStart
-              : cached && cached.cueIn > 0
-                ? cached.cueIn
-                : 0;
+            : plan.currentStartSec;
+        
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
         
-        // Calcula o plano de transição para esta faixa para obter os tempos exatos
-        const nxResult = findNext(blockId, trackId);
-        const nextTrack = nxResult?.track;
-        const nextCached = nextTrack ? (cueDetectionEnabled() ? getCachedCuePoints(nextTrack.audioUrl || "") : undefined) : undefined;
-        
-        const plan = resolveTransitionPlan({
-          current: track,
-          next: nextTrack || track,
-          currentMarkers: markers,
-          currentCue: cached,
-          nextCue: nextCached,
-        });
-
         const curve = suggestCrossfadeCurve(
           track.category || 'musical',
           nextTrack?.category || 'musical',
@@ -263,13 +261,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // O motor de áudio recebe a curva, o ganho e o fadeOutMs calculado pelo plano
         engine.playUrl(u, startAt, effectiveFadeMs, curve, plan.fadeOutMs, normGain);
         
-        if (detect) {
-          void analyzeCuePoints(u).then((cp) => {
-            if (currentRef.current.track?.id === trackId) {
-              cueRef.current = cp.cueOut > 0 ? cp : null;
-            }
-          });
-        }
         prefetchCue(blockId, trackId);
       };
       const url = getTrackAudioUrl(trackId) || track.audioUrl;
