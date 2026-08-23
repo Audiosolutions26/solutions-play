@@ -261,6 +261,13 @@ function DeckCard({
         </div>
       </div>
       <DeckWaveform track={track} position={position} isActive={isActive} accent={accent} />
+      {track && markers.length > 0 && (
+        <div className="absolute top-10 right-3 flex gap-1 pointer-events-none">
+          {markers.slice(0, 3).map((m, i) => (
+            <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: MARKER_DEFS.find(d => d.kind === m.kind)?.color || '#fff' }} />
+          ))}
+        </div>
+      )}
       <div className="mt-1 flex min-h-[25px] items-center justify-between gap-2 border-t border-[#2a3d4a] pt-1 text-[10px] text-[#91a7b5]">
         <div className="min-w-0">
           <div className="truncate text-[11px] font-bold text-[#e7f0f5]">

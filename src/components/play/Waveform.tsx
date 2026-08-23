@@ -98,7 +98,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
 
         // 4. Desenha MARCAÇÕES (Markers) - CUE-IN, CUE-OUT, etc.
         if (current) {
-          markers.forEach(marker => {
+          [...markers].sort((a, b) => markerPositionSec(a, duration) - markerPositionSec(b, duration)).forEach(marker => {
             if (!visibleKinds.has(marker.kind)) return;
             const markerPos = markerPositionSec(marker, duration);
             const x = (markerPos - pos) * pixelsPerSecond + offset;
@@ -138,10 +138,15 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
               
               ctx.setLineDash([]);
 
-              // Rótulo do marcador
+              // Rótulo do marcador com fundo para visibilidade
+              const labelText = label.toUpperCase();
+              const labelWidth = ctx.measureText(labelText).width;
+              ctx.fillStyle = "rgba(0,0,0,0.6)";
+              ctx.fillRect(x + 2, h - 22, labelWidth + 4, 14);
+              
               ctx.fillStyle = color;
-              ctx.font = "bold 10px sans-serif";
-              ctx.fillText(label.toUpperCase(), x + 4, h - 10);
+              ctx.font = "bold 9px ui-mono, monospace";
+              ctx.fillText(labelText, x + 4, h - 12);
             }
           });
         }
