@@ -284,7 +284,7 @@ export function PlayApp() {
                             )}
                           </Fragment>
                         ))}
-                        <div className="h-[194px] min-h-[170px] flex-none border-t border-pl-toolbar-dark">
+                        <div className="flex-1 min-h-[250px] border-t border-pl-toolbar-dark">
                           <RdsStatusPanel />
                         </div>
                       </div>
