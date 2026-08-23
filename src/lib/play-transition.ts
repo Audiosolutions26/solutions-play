@@ -109,11 +109,26 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   const nextStart = effectiveStart(input.next, nextMarkers, input.nextCue, nextDurationSec);
   const nextEnd = effectiveEnd(input.next, nextMarkers, input.nextCue, nextDurationSec);
   const mixMs = Math.max(0, Math.round(input.mixMs ?? mixTimeForTrack(input.current)));
-  const defaultTransition = Math.max(currentStart.sec, currentEnd.sec - mixMs / 1000);
+  
+  // Ajuste de batida (Beat Alignment)
+  // Se o BPM for conhecido, tenta alinhar a transição ao tempo da batida (60/BPM)
+  const currentBpm = input.currentCue?.bpm || 0;
+  let beatAlignedAt = 0;
+  if (currentBpm > 60) {
+    const beatLen = 60 / currentBpm;
+    // Quantiza o ponto final para a batida mais próxima
+    beatAlignedAt = Math.round(currentEnd.sec / beatLen) * beatLen;
+  }
+
+  const defaultTransition = beatAlignedAt > 0 
+    ? Math.max(currentStart.sec, beatAlignedAt - mixMs / 1000)
+    : Math.max(currentStart.sec, currentEnd.sec - mixMs / 1000);
+
   const markedTransition =
     input.useMarkerMix === false
       ? null
       : markerSec(currentMarkers, "nextEntry", currentDurationSec);
+  
   const transitionAtSec = clampPoint(
     markedTransition ?? defaultTransition,
     currentStart.sec,
