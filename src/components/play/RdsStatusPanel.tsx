@@ -29,7 +29,7 @@ function shortStationName(value: string): string {
 
 export function RdsStatusPanel({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const { get } = useConfig();
-  const { current, position } = usePlayer();
+  const { current, position, blocks, currentBlockId } = usePlayer();
   const [showDetails, setShowDetails] = useState(false);
   const [events, setEvents] = useState<PlayEvent[]>([]);
 
@@ -45,7 +45,36 @@ export function RdsStatusPanel({ onOpenSettings }: { onOpenSettings?: () => void
     ? `${current.artist || station} - ${current.title}`.slice(0, 64)
     : "Aguardando programação";
 
-  const remaining = current?.duration ? Math.max(0, current.duration - position) : 0;
+  const nextBreakSeconds = useMemo(() => {
+    if (!current || !currentBlockId) return 0;
+    
+    const blockIndex = blocks.findIndex(b => b.id === currentBlockId);
+    if (blockIndex < 0) return 0;
+    
+    const currentBlock = blocks[blockIndex];
+    const trackIndex = currentBlock.items.findIndex(t => t.id === current.id);
+    if (trackIndex < 0) return 0;
+    
+    // 1. Tempo restante da música atual
+    let total = Math.max(0, current.duration - position);
+    
+    // 2. Soma durações das músicas seguintes no mesmo bloco
+    for (let i = trackIndex + 1; i < currentBlock.items.length; i++) {
+      total += currentBlock.items[i].duration;
+    }
+
+    // 3. Se o bloco atual não é comercial, soma blocos seguintes até achar um comercial
+    if (currentBlock.category !== "comercial") {
+      for (let j = blockIndex + 1; j < blocks.length; j++) {
+        if (blocks[j].category === "comercial") break;
+        for (const item of blocks[j].items) {
+          total += item.duration;
+        }
+      }
+    }
+    
+    return total;
+  }, [current, currentBlockId, blocks, position]);
 
   const systemErrors = useMemo(() => {
     return events.filter(e => 
@@ -72,7 +101,7 @@ export function RdsStatusPanel({ onOpenSettings }: { onOpenSettings?: () => void
         </div>
         <div className="flex flex-1 items-center justify-center bg-[#1a1a1a]">
           <span className="font-mono text-[72px] font-medium leading-none text-white">
-            {pfmtLocal(remaining)}
+            {pfmtLocal(nextBreakSeconds)}
           </span>
         </div>
       </div>
