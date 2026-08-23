@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { usePlayer } from "@/hooks/use-player";
 import { MARKER_DEFS, markerPositionSec, type Marker, validateMarkers } from "@/lib/play-markers";
 import { useTrackMarkers } from "@/hooks/use-track-markers";
+import { getCachedCuePoints } from "@/lib/play-cuepoints";
+import { getTrackAudioUrl } from "@/lib/play-audio-files";
+import { Activity, Zap } from "lucide-react";
 
 export function Waveform({ zoom = 1 }: { zoom?: number }) {
   const { getEngine, isPlaying, current, jumpToMarker } = usePlayer();
@@ -293,6 +296,12 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [jumpToMarker, undo, redo]);
 
+  const cuePoints = useMemo(() => {
+    if (!current) return undefined;
+    const url = getTrackAudioUrl(current.id) || current.audioUrl;
+    return url ? getCachedCuePoints(url) : undefined;
+  }, [current]);
+
   return (
     <div className="flex h-full w-full">
       <div className="relative flex-1 overflow-hidden">
@@ -304,6 +313,34 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
           onMouseLeave={handleMouseUp}
           className="h-full w-full cursor-crosshair" 
         />
+        
+        {/* Indicadores de Processamento Automático */}
+        {cuePoints && (
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-1 pointer-events-none">
+            <div className="flex items-center gap-2 bg-blue-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2">
+              <Zap className="w-3 h-3" />
+              <span>AUTO-MIX ATIVO</span>
+            </div>
+            {cuePoints.bpm && (
+              <div className="bg-black/60 text-white/90 text-[8px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
+                BPM: <span className="text-[#fffa65] font-mono">{cuePoints.bpm}</span>
+              </div>
+            )}
+            {cuePoints.loudness && (
+              <div className="bg-black/60 text-white/90 text-[8px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
+                LUFS: <span className="text-blue-300 font-mono">{cuePoints.loudness} dB</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Motivo da Mixagem (Bottom Right) */}
+        {cuePoints?.autoMixReason && (
+          <div className="absolute bottom-2 right-2 max-w-[200px] bg-black/40 backdrop-blur-md p-1.5 rounded border border-white/5 pointer-events-none">
+            <div className="text-[7px] text-white/40 uppercase mb-0.5 font-bold tracking-widest">Ajuste Inteligente</div>
+            <div className="text-[8px] text-white/70 italic leading-tight">{cuePoints.autoMixReason}</div>
+          </div>
+        )}
         
         {/* Filtros de marcadores */}
         <div className="absolute left-2 bottom-2 flex flex-wrap gap-1">
