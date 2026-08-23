@@ -10,6 +10,7 @@ import {
   Square,
   Volume2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Track } from "@/lib/play-data";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
@@ -222,6 +223,7 @@ function DeckCard({
   onPlay,
   onCue,
   onMarkers,
+  onExport,
 }: {
   label: string;
   track: Track | null;
@@ -232,6 +234,7 @@ function DeckCard({
   onPlay: () => void;
   onCue: () => void;
   onMarkers: () => void;
+  onExport: () => void;
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
