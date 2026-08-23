@@ -217,6 +217,7 @@ export const folders: Folder[] = [
     code: "NAC",
     tracks: [
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 165, { audioUrl: daniloDaviGavetasAsset.url }),
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
     ],
