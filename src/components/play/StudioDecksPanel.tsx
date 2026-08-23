@@ -184,12 +184,12 @@ function DeckWaveform({
       ctx.lineTo(x, 6);
       ctx.closePath();
       ctx.fill();
-      
+
       // Adiciona rótulo no deck também
       ctx.fillStyle = def.color;
       ctx.font = "bold 7px ui-mono, monospace";
       ctx.fillText(label.toUpperCase(), x + 2, 10);
-      
+
       ctx.restore();
     }
 
