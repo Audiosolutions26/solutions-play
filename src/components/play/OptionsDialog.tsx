@@ -48,7 +48,7 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
 
   if (field.type === "switch") {
     return (
-      <div className="flex items-center justify-between gap-3 rounded border border-pl-panel-dark/40 bg-white/60 px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[12px] font-medium text-pl-text">{field.label}</div>
           {field.help && (
