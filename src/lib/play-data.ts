@@ -435,8 +435,9 @@ export const folders: Folder[] = [
       mk("Cantada Boba (Ao Vivo)", "Jorge & Mateus", 162, "musical", 196, { audioUrl: jorgeMateusCantadaAsset.url }),
       mk("Saudade Burra (Ao Vivo)", "Lauana Prado", 172, "musical", 172, { audioUrl: lauanaPradoSaudadeAsset.url }),
 
-
-
+      mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
+      mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
+      mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, { audioUrl: rafaAmaMaloqueiroAsset.url }),
     ],
   },
   {
