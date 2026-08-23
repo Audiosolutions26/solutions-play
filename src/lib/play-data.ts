@@ -258,7 +258,9 @@ export const folders: Folder[] = [
     tracks: [
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
       mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
+      mk("Pela Última Vez (Ao Vivo)", "Grupo Menos É Mais", 170, "musical", 220, { audioUrl: menosMaisUltimaVezAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 165, { audioUrl: daniloDaviGavetasAsset.url }),
+      mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, { audioUrl: menosMaisSaudadeAsset.url }),
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
     ],
   },
