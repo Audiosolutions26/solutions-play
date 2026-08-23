@@ -415,8 +415,11 @@ export const folders: Folder[] = [
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
       mk("Eu Duvido (Ao Vivo)", "Guilherme & Benuto", 168, "musical", 220, { audioUrl: guilhermeBenutoAsset.url }),
       mk("Seja Ex (Ao Vivo)", "Henrique & Juliano", 155, "musical", 172, { audioUrl: henriqueJulianoSejaExAsset.url }),
+      mk("Saudade do Carai", "Mari Fernandez", 178, "musical", 220, { audioUrl: mariFernandezAsset.url }),
+      mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, { audioUrl: muriloHuffSoComElaAsset.url }),
       mk("Peão Todo Tatuado", "Jeninho", 145, "musical", 220, { audioUrl: jeninhoPeaoAsset.url }),
       mk("Xonei", "Jorge & Mateus", 155, "musical", 188, { audioUrl: jorgeMateusXoneiAsset.url }),
+
 
 
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
