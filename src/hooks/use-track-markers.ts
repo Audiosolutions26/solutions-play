@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getMarkers, saveMarkers, type Marker } from "./play-markers";
+import { getMarkers, saveMarkers, type Marker } from "@/lib/play-markers";
 
 /**
  * Hook reativo para acessar e modificar os marcadores de uma faixa.

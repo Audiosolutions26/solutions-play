@@ -5,10 +5,17 @@
  * relativa ao áudio original, com o nome '<audio_filename>.mrk'.
  */
 
-import { type Marker, type MarkerKind, normalizeMarker, sortMarkers } from "./play-markers";
+import { type Marker, type MarkerKind, normalizeMarker, sortMarkers, saveMarkers, getMarkers } from "./play-markers";
 import { readPkfInfoNative } from "./play-native";
 import type { Track } from "./play-data";
-import { saveMarkers, getMarkers } from "./play-markers";
+
+declare global {
+  interface Window {
+    electron?: {
+      invoke(channel: string, ...args: any[]): Promise<any>;
+    };
+  }
+}
 
 export interface MrkMarker {
   id: string;

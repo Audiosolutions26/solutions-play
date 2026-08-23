@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import { getAudioEngine } from "@/lib/audio-engine";
 import {
   initialBlocks,
