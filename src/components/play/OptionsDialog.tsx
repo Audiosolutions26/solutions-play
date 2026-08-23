@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Settings, Plus, Trash2, KeyRound, Upload, Download } from "lucide-react";
+import { Settings, Plus, Trash2, KeyRound, Upload, Download, Folder } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -81,23 +81,40 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
   }
 
   // text / number / password / textarea
+  const isPathField = field.key.toLowerCase().includes("pasta");
+
   return (
     <div className="space-y-1">
       <Label className="text-[12px]">
         {field.label}
         {field.unit ? ` (${field.unit})` : ""}
       </Label>
-      <Input
-        type={field.type === "number" ? "number" : field.type === "password" ? "password" : "text"}
-        className={cn("h-8 text-[12px]", error && "border-red-500 focus-visible:ring-red-500")}
-        aria-invalid={!!error}
-        min={field.min}
-        max={field.max}
-        value={String(value)}
-        onChange={(e) =>
-          setDraft(fullKey, field.type === "number" ? Number(e.target.value) : e.target.value)
-        }
-      />
+      <div className="flex gap-1">
+        <Input
+          type={field.type === "number" ? "number" : field.type === "password" ? "password" : "text"}
+          className={cn("h-8 text-[12px]", error && "border-red-500 focus-visible:ring-red-500")}
+          aria-invalid={!!error}
+          min={field.min}
+          max={field.max}
+          value={String(value)}
+          onChange={(e) =>
+            setDraft(fullKey, field.type === "number" ? Number(e.target.value) : e.target.value)
+          }
+        />
+        {isPathField && (
+          <button
+            onClick={async () => {
+              const { pickFolderNative } = await import("@/lib/play-native");
+              const res = await pickFolderNative(String(value));
+              if (res?.path) setDraft(fullKey, res.path);
+            }}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-pl-panel-dark/40 bg-white/60 hover:bg-muted"
+            title="Procurar pasta"
+          >
+            <Folder className="h-4 w-4 text-pl-toolbar" />
+          </button>
+        )}
+      </div>
       {error ? (
         <div className="text-[11px] leading-tight text-red-600">{error}</div>
       ) : (

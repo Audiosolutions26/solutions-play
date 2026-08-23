@@ -36,6 +36,11 @@ function rdsDir(): string | undefined {
   return typeof v === "string" && v.trim() ? v.trim() : undefined; // undefined -> padrão no main
 }
 
+function rdsTipo(): string {
+  const v = cfg()["configuracoes.rds.rdsTipo"];
+  return typeof v === "string" ? v : "txt";
+}
+
 let lastOnAir = "\u0000";
 let lastNext = "\u0000";
 
@@ -43,11 +48,28 @@ let lastNext = "\u0000";
 export function updateRds(current: Track | null, upcoming: Track[]): void {
   if (!enabled()) return;
 
+  const type = rdsTipo();
   const onAir = rdsLabel(current);
-  const nextLines: string[] = [];
-  upcoming.slice(0, 3).forEach((t, i) => nextLines.push(`${i + 1}: ${rdsLabel(t)}`));
-  const nextContent = nextLines.join("\r\n");
-  const onAirContent = onAir;
+  const nextTracks = upcoming.slice(0, 3);
+  
+  let onAirContent = "";
+  let nextContent = "";
+  let ext = "txt";
+
+  if (type === "xml") {
+    ext = "xml";
+    onAirContent = `<?xml version="1.0" encoding="UTF-8"?>\n<rds>\n  <item type="on_air">${onAir}</item>\n</rds>`;
+    nextContent = `<?xml version="1.0" encoding="UTF-8"?>\n<rds>\n${nextTracks.map((t, i) => `  <item type="next" index="${i + 1}">${rdsLabel(t)}</item>`).join("\n")}\n</rds>`;
+  } else if (type === "json") {
+    ext = "json";
+    onAirContent = JSON.stringify({ onAir }, null, 2);
+    nextContent = JSON.stringify({ next: nextTracks.map(rdsLabel) }, null, 2);
+  } else {
+    // txt padrão
+    onAirContent = onAir;
+    nextContent = nextTracks.map((t, i) => `${i + 1}: ${rdsLabel(t)}`).join("\r\n");
+  }
+
   const metadataContent =
     JSON.stringify(
       {
@@ -78,8 +100,8 @@ export function updateRds(current: Track | null, upcoming: Track[]): void {
   void writeRdsNative({
     dir: rdsDir(),
     files: [
-      { name: "no_ar.txt", content: onAirContent },
-      { name: "proximas.txt", content: nextContent },
+      { name: `no_ar.${ext}`, content: onAirContent },
+      { name: `proximas.${ext}`, content: nextContent },
       { name: "now_playing.json", content: metadataContent },
     ],
   });
