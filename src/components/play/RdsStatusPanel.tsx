@@ -27,7 +27,7 @@ function shortStationName(value: string): string {
     .toUpperCase();
 }
 
-export function RdsStatusPanel() {
+export function RdsStatusPanel({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const { get } = useConfig();
   const { current, position } = usePlayer();
   const [showDetails, setShowDetails] = useState(false);
