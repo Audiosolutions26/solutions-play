@@ -82,8 +82,8 @@ function DeckWaveform({
     () => (track ? pseudoWave(Math.round((track.freq + track.duration) * 7) + 1, 1800) : []),
     [track],
   );
+  const { markers } = useTrackMarkers(track?.id);
   const durationSec = waveform?.durationSec || track?.duration || 1;
-  const markers = useMemo(() => (track ? getMarkers(track.id) : []), [track]);
 
   useEffect(() => {
     let cancelled = false;
