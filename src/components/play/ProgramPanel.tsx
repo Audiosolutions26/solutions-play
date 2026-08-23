@@ -284,17 +284,17 @@ function Row({
             </span>
           )}
           <span
-            className={`relative z-10 flex-1 break-words ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}
+            className={`relative z-10 flex-1 break-words leading-tight ${isCurrent ? "text-[15px] font-extrabold" : isNext ? "text-[14px] font-bold" : ""}`}
           >
             {track.title}
             {track.artist ? (
               <span className={isCurrent ? "opacity-80" : "opacity-70"}> — {track.artist}</span>
             ) : null}
-            {refrao && <Repeat className="relative z-10 ml-1 inline h-3 w-3 text-pink-600" />}
-            {carimbo && <Clock className="relative z-10 ml-1 inline h-3 w-3 text-yellow-600" />}
-            {realAudio && (
-              <FileAudio className="relative z-10 ml-1 inline h-3 w-3 text-emerald-600" />
-            )}
+            <div className="flex items-center gap-1.5 opacity-80">
+              {refrao && <Repeat className="h-2.5 w-2.5 text-pink-600" />}
+              {carimbo && <Clock className="h-2.5 w-2.5 text-yellow-600" />}
+              {realAudio && <FileAudio className="h-2.5 w-2.5 text-emerald-600" />}
+            </div>
           </span>
           <span
             className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold text-white" : isNext ? "text-[12px] font-bold text-emerald-700" : "text-[11px] opacity-80"}`}
