@@ -119,7 +119,8 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
     // Quantiza o ponto final para a batida mais próxima (priorizando manter energia)
     beatAlignedAt = Math.round(currentEnd.sec / beatLen) * beatLen;
     // Evita silêncio: se a batida alinhada for depois do cue-out real, recua uma batida
-    if (beatAlignedAt > currentEnd.sec) {
+    // até que esteja suficientemente antes para permitir o crossfade.
+    while (beatAlignedAt > currentEnd.sec - 0.05) {
       beatAlignedAt -= beatLen;
     }
     // Evita silêncio: se a batida alinhada for antes do cue-in, ignora
@@ -129,7 +130,7 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   }
 
   const defaultTransition = beatAlignedAt > 0 
-    ? Math.max(currentStart.sec, beatAlignedAt)
+    ? beatAlignedAt
     : Math.max(currentStart.sec, currentEnd.sec);
 
   const markedTransition =
