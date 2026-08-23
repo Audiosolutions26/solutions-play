@@ -238,11 +238,15 @@ export const folders: Folder[] = [
     code: "ACV",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 220, { audioUrl: anaCastelaAsset.url }),
+      mk("Brinda Aê (Ao Vivo)", "Grupo Menos É Mais", 175, "musical", 188, { audioUrl: menosMaisBrindaAsset.url }),
       mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 246, { audioUrl: claytonRomarioAsset.url }),
+      mk("Champanhe (Ao Vivo)", "Grupo Menos É Mais", 158, "musical", 172, { audioUrl: menosMaisChampanheAsset.url }),
       mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 174, { audioUrl: diegoVictorAsset.url }),
+      mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
+      mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
     ],
   },
   {
