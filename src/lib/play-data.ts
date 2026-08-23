@@ -288,8 +288,11 @@ export const folders: Folder[] = [
     code: "INTER",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 277, { audioUrl: anaCastelaAsset.url }),
+      mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
       mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
+      mk("Pela Última Vez (Ao Vivo)", "Grupo Menos É Mais", 170, "musical", 220, { audioUrl: menosMaisUltimaVezAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, { audioUrl: daniloDaviGavetasAsset.url }),
+      mk("Saudade Inconveniente (Ao Vivo)", "Grupo Menos É Mais", 185, "musical", 174, { audioUrl: menosMaisSaudadeAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
     ],
   },
