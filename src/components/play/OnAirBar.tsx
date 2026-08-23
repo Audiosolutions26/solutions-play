@@ -3,6 +3,16 @@ import { Minus, Plus } from "lucide-react";
 import { usePlayer } from "@/hooks/use-player";
 import { Waveform } from "./Waveform";
 
+// Formato de tempo do rádio: M'SS.t com décimos.
+function pfmt(sec: number, tenths = false): string {
+  const s = Math.max(0, sec);
+  const m = Math.floor(s / 60);
+  const r = Math.floor(s % 60);
+  const base = `${m}'${r.toString().padStart(2, "0")}`;
+  if (!tenths) return base;
+  return `${base}.${Math.floor((s - Math.floor(s)) * 10)}`;
+}
+
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 6;
 const ZOOM_STEP = 0.5;
@@ -57,8 +67,8 @@ export function OnAirBar() {
           <span className="ml-2 truncate text-[10px] font-semibold uppercase text-[#ff6a2a]">
             {artist}
           </span>
-          <span className="ml-auto shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/75">
-            {onAir ? "PROGRAM" : "PAUSA"}
+          <span className="ml-auto shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] font-bold text-[#fffa65]">
+            {onAir ? pfmt(Math.max(0, (current?.duration || 0) - position), true) : "PAUSA"}
           </span>
         </div>
         <div className="absolute inset-x-0 bottom-0 top-6">

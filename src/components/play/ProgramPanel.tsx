@@ -297,7 +297,7 @@ function Row({
           <span
             className={`relative z-10 font-mono tabular-nums ${isCurrent ? "text-[15px] font-bold text-white" : isNext ? "text-[12px] font-bold text-emerald-700" : "text-[11px] opacity-80"}`}
           >
-            {isCurrent ? pfmt(Math.max(0, track.duration - position), true) : pfmt(track.duration)}
+            {isCurrent ? pfmt(Math.max(0, track.duration - position), true) : pfmt(track.duration, true)}
           </span>
           <input
             ref={fileRef}
