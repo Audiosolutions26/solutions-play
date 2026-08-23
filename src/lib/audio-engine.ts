@@ -354,12 +354,14 @@ export class AudioEngine {
 
     if (prev && this.playing && overlap > 0) {
       const gIn = voice.gain.gain;
-      gIn.cancelScheduledValues(now);
-      gIn.setValueAtTime(0, now);
-      
       const gOut = prev.gain.gain;
+      
+      // Sincronização exata: cancela agendamentos anteriores e fixa o valor atual
+      gIn.cancelScheduledValues(now);
       gOut.cancelScheduledValues(now);
-      gOut.setValueAtTime(gOut.value, now);
+      
+      gIn.setValueAtTime(0, now);
+      gOut.setValueAtTime(gOut.value || 1, now);
 
       let curveIn = curves.ep_in;
       let curveOut = curves.ep_out;
@@ -375,16 +377,24 @@ export class AudioEngine {
         curveOut = curves.s_out;
       }
 
-      if (fadeIn > 0) gIn.setValueCurveAtTime(curveIn, now, fadeIn);
-      else gIn.setValueAtTime(gain, now);
-      
-      // Aplicar o ganho alvo de normalização ao fim do fade-in
-      if (fadeIn > 0) gIn.linearRampToValueAtTime(gain, now + fadeIn);
+      // Aplica as curvas de crossfade simultaneamente
+      if (fadeIn > 0) {
+        gIn.setValueCurveAtTime(curveIn, now, fadeIn);
+        // Garante que o ganho final de normalização seja atingido sem degraus
+        gIn.setTargetAtTime(gain, now + fadeIn, 0.02);
+      } else {
+        gIn.setValueAtTime(gain, now);
+      }
 
-      if (fadeOut > 0) gOut.setValueCurveAtTime(curveOut, now, fadeOut);
-      else gOut.setValueAtTime(0, now);
+      if (fadeOut > 0) {
+        gOut.setValueCurveAtTime(curveOut, now, fadeOut);
+        // Garante silêncio absoluto no final para evitar "leak" de áudio
+        gOut.setTargetAtTime(0, now + fadeOut, 0.02);
+      } else {
+        gOut.setValueAtTime(0, now);
+      }
 
-      this.disposeVoiceAfter(prev, overlap);
+      this.disposeVoiceAfter(prev, overlap + 0.1);
     } else {
       this.disposeVoice(prev);
       voice.gain.gain.setValueAtTime(gain, now);
