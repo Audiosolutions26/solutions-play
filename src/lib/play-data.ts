@@ -4,6 +4,9 @@ import claytonRomarioAsset from "@/assets/clayton_romario.asset.json";
 import daniloDaviApagaAsset from "@/assets/danilo_davi_apaga.asset.json";
 import daniloDaviGavetasAsset from "@/assets/danilo_davi_gavetas.asset.json";
 import diegoVictorAsset from "@/assets/diego_victor.asset.json";
+import felipeRodrigoGostaAsset from "@/assets/felipe_rodrigo_gosta_de_rua.asset.json";
+import felipeRodrigoIgnoraAsset from "@/assets/felipe_rodrigo_ignora.asset.json";
+import ferrugemArrependidacoAsset from "@/assets/ferrugem_arrependidaco.asset.json";
 
 // Demo data for Solutions-Play (local demo mode, no backend).
 
