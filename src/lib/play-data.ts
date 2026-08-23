@@ -36,6 +36,10 @@ import pandaEuTeSeguroAsset from "@/assets/tracks/panda-eu-te-seguro.mp3.asset.j
 import racionaisNegroDramaAsset from "@/assets/tracks/racionais-negro-drama.mp3.asset.json";
 import rafaAmaMaloqueiroAsset from "@/assets/tracks/rafa-ama-maloqueiro.mp3.asset.json";
 import simoneErroGostosoAsset from "@/assets/tracks/simone-erro-gostoso.mp3.asset.json";
+import turmaPagodeBebeAsset from "@/assets/tracks/turma-pagode-bebe.mp3.asset.json";
+import vitinhoApaixoneiAsset from "@/assets/tracks/vitinho-apaixonei.mp3.asset.json";
+import zeNetoBarulhoAsset from "@/assets/tracks/ze-neto-barulho.mp3.asset.json";
+import zeNetoCadeiraAsset from "@/assets/tracks/ze-neto-cadeira.mp3.asset.json";
 
 
 
