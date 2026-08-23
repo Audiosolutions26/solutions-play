@@ -546,7 +546,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             pos >= plan.nextTriggerAtSec
           ) {
             transitioningRef.current = true;
-            next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, plan.fadeOutMs);
+            // Para evitar buracos (silêncio), garantimos que o fadeOutMs e o tempo
+            // restante até o endPoint estejam em sincronia.
+            const remaining = Math.max(0, endPoint - pos);
+            const fadeOutMs = plan.fadeOutMs > 0 ? plan.fadeOutMs : remaining * 1000;
+            
+            next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, fadeOutMs);
             return;
           }
           if (mode === "AUTO" && endPoint > 0 && pos >= endPoint) {
