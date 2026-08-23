@@ -105,6 +105,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   });
   // Evita disparar a mixagem (crossfade) mais de uma vez na mesma transição.
   const transitioningRef = useRef(false);
+  // Timestamp do próximo disparo para evitar jitter ou múltiplos gatilhos.
+  const nextTriggerRef = useRef<{ id: string; time: number } | null>(null);
   // Pontos de mixagem (cue-in/cue-out) detectados para a faixa atual.
   const cueRef = useRef<CuePoints | null>(null);
   // Plano calculado uma vez por passagem para impedir que o loop de progresso
