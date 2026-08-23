@@ -5,7 +5,7 @@ import { useTrackMarkers } from "@/hooks/use-track-markers";
 
 export function Waveform({ zoom = 1 }: { zoom?: number }) {
   const { getEngine, isPlaying, current, jumpToMarker } = usePlayer();
-  const { markers } = useTrackMarkers(current?.id);
+  const { markers, undo, redo, canUndo, canRedo } = useTrackMarkers(current?.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
   const [draggedMarkerId, setDraggedMarkerId] = useState<string | null>(null);
@@ -337,9 +337,25 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
                     <div className="text-white">{selectedMarker.note}</div>
                   </div>
                 )}
+                <div className="flex gap-1 mt-2">
+                  <button
+                    onClick={() => undo()}
+                    disabled={!canUndo}
+                    className="flex-1 rounded bg-white/10 py-1 hover:bg-white/20 text-white/80 disabled:opacity-30"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    onClick={() => redo()}
+                    disabled={!canRedo}
+                    className="flex-1 rounded bg-white/10 py-1 hover:bg-white/20 text-white/80 disabled:opacity-30"
+                  >
+                    Redo
+                  </button>
+                </div>
                 <button
                   onClick={() => setSelectedMarker(null)}
-                  className="mt-1 rounded bg-white/10 py-1 hover:bg-white/20 text-white/80"
+                  className="mt-1 w-full rounded bg-white/10 py-1 hover:bg-white/20 text-white/80"
                 >
                   Fechar Detalhes
                 </button>
