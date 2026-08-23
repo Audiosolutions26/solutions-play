@@ -123,33 +123,49 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
                 case "refraoEnd": color = "#db2777"; label = "REF-END"; break;
                 case "carimbo": color = "#eab308"; label = "STAMP"; break;
               }
+              
+              const isDragged = draggedMarkerId === marker.id;
+              const isInvalid = markerPos < 0 || markerPos > duration;
 
-              ctx.strokeStyle = color;
-              ctx.setLineDash([4, 2]);
+              ctx.strokeStyle = isInvalid ? "#ff0000" : color;
+              ctx.lineWidth = isDragged ? 3 : (isInvalid ? 2 : 1);
+              ctx.setLineDash(isDragged ? [] : [4, 2]);
+              
+              // Efeito de brilho se inválido ou arrastando
+              if (isInvalid || isDragged) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = isInvalid ? "#ff0000" : color;
+              }
+
               ctx.beginPath();
               ctx.moveTo(x, 0);
               ctx.lineTo(x, h);
               ctx.stroke();
               
-              // Se o marcador estiver fora dos limites do áudio, destaca em vermelho (validação)
-              if (markerPos < 0 || markerPos > duration) {
-                ctx.strokeStyle = "#ff0000";
-                ctx.lineWidth = 3;
-                ctx.setLineDash([]);
-                ctx.stroke();
-              }
-              
+              ctx.shadowBlur = 0;
               ctx.setLineDash([]);
+              ctx.lineWidth = 1;
 
-              // Rótulo do marcador com fundo para visibilidade
+              // Rótulo do marcador
               const labelText = label.toUpperCase();
               const labelWidth = ctx.measureText(labelText).width;
-              ctx.fillStyle = "rgba(0,0,0,0.6)";
-              ctx.fillRect(x + 2, h - 22, labelWidth + 4, 14);
               
-              ctx.fillStyle = color;
+              // Se inválido, mostra o offset
+              let infoText = labelText;
+              if (isInvalid && duration > 0) {
+                const offset = markerPos > duration ? markerPos - duration : markerPos;
+                infoText += ` (${offset > 0 ? '+' : ''}${offset.toFixed(2)}s)`;
+              } else if (isDragged) {
+                infoText += ` [${markerPos.toFixed(2)}s]`;
+              }
+              
+              const infoWidth = ctx.measureText(infoText).width;
+              ctx.fillStyle = isInvalid ? "rgba(220, 38, 38, 0.9)" : "rgba(0,0,0,0.6)";
+              ctx.fillRect(x + 2, h - 22, infoWidth + 6, 14);
+              
+              ctx.fillStyle = isInvalid ? "#ffffff" : color;
               ctx.font = "bold 9px ui-mono, monospace";
-              ctx.fillText(labelText, x + 4, h - 12);
+              ctx.fillText(infoText, x + 5, h - 12);
             }
           });
         }
