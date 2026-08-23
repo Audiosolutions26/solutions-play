@@ -102,13 +102,14 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
             if (x >= 0 && x <= w) {
               // Estilo por tipo de marcador
               let color = "#ffffff";
-              let label = marker.label || marker.kind;
+              let label = marker.kind as string;
               
-              switch(marker.kind) {
+              switch(marker.kind as string) {
                 case "startPoint": color = "#2ecc71"; label = "CUE-IN"; break;
                 case "endPoint": color = "#e74c3c"; label = "CUE-OUT"; break;
-                case "mixPoint": color = "#f1c40f"; label = "MIX-OUT"; break;
+                case "nextEntry": color = "#f1c40f"; label = "MIX-OUT"; break;
                 case "introEnd": color = "#3498db"; label = "INTRO"; break;
+                case "mixIn": color = "#0ea5e9"; label = "MIX-IN"; break;
               }
 
               ctx.strokeStyle = color;
