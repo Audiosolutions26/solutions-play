@@ -37,6 +37,7 @@ const GUIDES: { id: string; title: string }[] = [
   { id: "geral", title: "Geral" },
   { id: "operadores", title: "Operadores" },
   { id: "configuracoes", title: "Configurações" },
+  { id: "rds", title: "RDS" },
   { id: "insercoes", title: "Inserções" },
   { id: "licenca", title: "Licença" },
 ];
@@ -127,7 +128,7 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
 }
 
 function GuideView({ guide }: { guide: ConfigGuide }) {
-  const isRds = guide.id === "configuracoes";
+  const isRdsTab = guide.id === "rds";
 
   return (
     <div className="space-y-5">
@@ -135,48 +136,49 @@ function GuideView({ guide }: { guide: ConfigGuide }) {
         <p className="text-[12px] text-muted-foreground">{guide.description}</p>
       )}
       {guide.sections.map((section) => {
-        // Special layout for RDS section if requested via design image
-        if (section.id === "rds") {
-          return (
-            <fieldset key={section.id} className="rounded-md border border-pl-panel-dark/40 bg-white/30">
-              <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">
-                {section.title}
-              </legend>
-              <div className="grid grid-cols-1 gap-x-6 gap-y-4 p-4 sm:grid-cols-2">
-                <div className="space-y-4">
-                  <FieldRow field={section.fields.find(f => f.key === "rdsModelo")!} fullKey={`${guide.id}.${section.id}.rdsModelo`} />
-                  <FieldRow field={section.fields.find(f => f.key === "rdsTexto")!} fullKey={`${guide.id}.${section.id}.rdsTexto`} />
-                  <div className="rounded border border-pl-panel-dark/20 bg-white/50 p-2">
-                    <FieldRow field={section.fields.find(f => f.key === "rdsGerarArquivos")!} fullKey={`${guide.id}.${section.id}.rdsGerarArquivos`} />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <FieldRow field={section.fields.find(f => f.key === "rdsEndereco")!} fullKey={`${guide.id}.${section.id}.rdsEndereco`} />
-                  <div className="rounded border border-pl-panel-dark/20 bg-white/50 p-2 opacity-50">
-                    <FieldRow field={section.fields.find(f => f.key === "rdsComerciais")!} fullKey={`${guide.id}.${section.id}.rdsComerciais`} />
-                  </div>
-                  <FieldRow field={section.fields.find(f => f.key === "rdsTipo")!} fullKey={`${guide.id}.${section.id}.rdsTipo`} />
-                </div>
-                <div className="sm:col-span-2">
-                  <FieldRow field={section.fields.find(f => f.key === "rdsPasta")!} fullKey={`${guide.id}.${section.id}.rdsPasta`} />
-                </div>
-              </div>
-            </fieldset>
-          );
-        }
+        // Use grid for all RDS sections or specifically for the layout in the image
+        const isRdsSection = section.id === "rds";
 
         return (
-          <fieldset key={section.id} className="rounded-md border border-pl-panel-dark/40">
+          <fieldset key={section.id} className={cn("rounded-md border border-pl-panel-dark/40", isRdsTab && "bg-white/30")}>
             <legend className="ml-2 px-1 text-[12px] font-bold text-pl-toolbar">
               {section.title}
             </legend>
             {section.note && (
               <p className="px-3 pb-1 text-[11px] text-muted-foreground">{section.note}</p>
             )}
-            <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2">
-              {section.fields.map((f) => (
-                <FieldRow key={f.key} field={f} fullKey={`${guide.id}.${section.id}.${f.key}`} />
-              ))}
+            
+            <div className={cn(
+              "p-3",
+              isRdsSection 
+                ? "grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2" 
+                : "grid grid-cols-1 gap-2 sm:grid-cols-2"
+            )}>
+              {isRdsSection ? (
+                <>
+                  <div className="space-y-4">
+                    <FieldRow field={section.fields.find(f => f.key === "rdsModelo")!} fullKey={`${guide.id}.${section.id}.rdsModelo`} />
+                    <FieldRow field={section.fields.find(f => f.key === "rdsTexto")!} fullKey={`${guide.id}.${section.id}.rdsTexto`} />
+                    <div className="rounded border border-pl-panel-dark/20 bg-white/50 p-2">
+                      <FieldRow field={section.fields.find(f => f.key === "rdsGerarArquivos")!} fullKey={`${guide.id}.${section.id}.rdsGerarArquivos`} />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <FieldRow field={section.fields.find(f => f.key === "rdsEndereco")!} fullKey={`${guide.id}.${section.id}.rdsEndereco`} />
+                    <div className="rounded border border-pl-panel-dark/20 bg-white/50 p-2 opacity-50">
+                      <FieldRow field={section.fields.find(f => f.key === "rdsComerciais")!} fullKey={`${guide.id}.${section.id}.rdsComerciais`} />
+                    </div>
+                    <FieldRow field={section.fields.find(f => f.key === "rdsTipo")!} fullKey={`${guide.id}.${section.id}.rdsTipo`} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <FieldRow field={section.fields.find(f => f.key === "rdsPasta")!} fullKey={`${guide.id}.${section.id}.rdsPasta`} />
+                  </div>
+                </>
+              ) : (
+                section.fields.map((f) => (
+                  <FieldRow key={f.key} field={f} fullKey={`${guide.id}.${section.id}.${f.key}`} />
+                ))
+              )}
             </div>
           </fieldset>
         );

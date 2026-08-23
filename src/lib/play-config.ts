@@ -38,6 +38,8 @@ const sw = (key: string, label: string, def = false, help?: string): ConfigField
   help,
 });
 
+const GUIDES_ORDER = ["geral", "operadores", "configuracoes", "insercoes", "licenca"];
+
 // ---- Seções de permissão/comportamento (Guia Geral) ----
 const geralSection: ConfigSection = {
   id: "geral",
