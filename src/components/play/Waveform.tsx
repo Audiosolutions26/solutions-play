@@ -314,34 +314,49 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
         </div>
       </div>
 
-      {/* Painel lateral de detalhes do marcador */}
-      {selectedMarker && (
-        <div className="w-48 shrink-0 border-l border-white/10 bg-black/40 p-2 text-[10px]">
-          <div className="mb-2 font-bold uppercase text-white/60">Detalhes do Marcador</div>
-          <div className="flex flex-col gap-2">
+      {/* Painel lateral de detalhes e validação */}
+      {(selectedMarker || validation.errors.length > 0) && (
+        <div className="w-56 shrink-0 border-l border-white/10 bg-black/40 p-2 text-[10px] flex flex-col gap-3">
+          {selectedMarker && (
             <div>
-              <div className="text-white/40 uppercase">Tipo</div>
-              <div className="font-bold text-white">{MARKER_DEFS.find(d => d.kind === selectedMarker.kind)?.label || selectedMarker.kind}</div>
-            </div>
-            <div>
-              <div className="text-white/40 uppercase">Tempo</div>
-              <div className="font-mono text-[12px] font-bold text-[#fffa65]">
-                {markerPositionSec(selectedMarker, getEngine().mediaDuration() || current?.duration || 0).toFixed(2)}s
+              <div className="mb-2 font-bold uppercase text-white/60">Detalhes do Marcador</div>
+              <div className="flex flex-col gap-2">
+                <div>
+                  <div className="text-white/40 uppercase">Tipo</div>
+                  <div className="font-bold text-white">{MARKER_DEFS.find(d => d.kind === selectedMarker.kind)?.label || selectedMarker.kind}</div>
+                </div>
+                <div>
+                  <div className="text-white/40 uppercase">Tempo</div>
+                  <div className="font-mono text-[12px] font-bold text-[#fffa65]">
+                    {markerPositionSec(selectedMarker, getEngine().mediaDuration() || current?.duration || 0).toFixed(2)}s
+                  </div>
+                </div>
+                {selectedMarker.note && (
+                  <div>
+                    <div className="text-white/40 uppercase">Nota</div>
+                    <div className="text-white">{selectedMarker.note}</div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setSelectedMarker(null)}
+                  className="mt-1 rounded bg-white/10 py-1 hover:bg-white/20 text-white/80"
+                >
+                  Fechar Detalhes
+                </button>
               </div>
             </div>
-            {selectedMarker.note && (
-              <div>
-                <div className="text-white/40 uppercase">Nota</div>
-                <div className="text-white">{selectedMarker.note}</div>
-              </div>
-            )}
-            <button
-              onClick={() => setSelectedMarker(null)}
-              className="mt-2 rounded bg-white/10 py-1 hover:bg-white/20"
-            >
-              Fechar
-            </button>
-          </div>
+          )}
+
+          {validation.errors.length > 0 && (
+            <div className="border-t border-white/10 pt-2">
+              <div className="mb-2 font-bold uppercase text-red-400">Erros de Sincronia</div>
+              <ul className="flex flex-col gap-1 list-disc pl-3 text-red-300/80">
+                {validation.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
