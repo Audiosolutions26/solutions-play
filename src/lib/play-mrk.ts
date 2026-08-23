@@ -96,3 +96,51 @@ export async function importMrkInfoForTrack(track: Track): Promise<{ success: bo
   }
   return { success: false, count: 0 };
 }
+
+/**
+ * Exporta os marcadores atuais para um arquivo .mrk (formato sidecar Python).
+ */
+export async function exportMrkInfoForTrack(
+  track: Track,
+  markers: Marker[]
+): Promise<{ success: boolean; path?: string }> {
+  if (!track.filePath || !window.electron) return { success: false };
+
+  try {
+    const durationMs = track.duration * 1000;
+    const doc: MrkDocument = {
+      audio: {
+        filename: track.filePath.split(/[/\\]/).pop() || "",
+        relative_path: "",
+        duration_ms: durationMs,
+      },
+      markers: markers.map((m) => {
+        // Inverte o mapa MRK_TYPE_MAP
+        const type = Object.keys(MRK_TYPE_MAP).find(
+          (key) => MRK_TYPE_MAP[key] === m.kind
+        ) || "custom";
+        
+        return {
+          id: m.id || `m-${Date.now()}-${Math.random()}`,
+          type,
+          name: m.note || m.kind,
+          time_ms: Math.round((m.positionSec || m.pos * track.duration) * 1000),
+          locked: !!m.locked,
+        };
+      }),
+    };
+
+    const res = await window.electron.invoke("sp:export-mrk", {
+      audioPath: track.filePath,
+      content: JSON.stringify(doc, null, 2),
+    });
+
+    if (res) {
+      return { success: true, path: res };
+    }
+  } catch (e) {
+    console.warn("Falha ao exportar .mrk:", e);
+  }
+  return { success: false };
+}
+
