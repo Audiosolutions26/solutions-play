@@ -187,7 +187,13 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [getEngine, isPlaying, current, markers, visibleKinds]);
+  }, [getEngine, isPlaying, current, markers, visibleKinds, draggedMarkerId]);
+
+  const validation = useMemo(() => {
+    const duration = getEngine().mediaDuration();
+    if (duration <= 0) return { valid: true, errors: [] };
+    return validateMarkers(markers, duration);
+  }, [markers, getEngine]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
