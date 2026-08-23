@@ -30,6 +30,12 @@ import matheusKauanAsset from "@/assets/audio/matheus_kauan_ilusao.mp3.asset.jso
 import mjRecordsAsset from "@/assets/audio/mj_records_inseguranca.mp3.asset.json";
 import muriloHuffEstranhaAsset from "@/assets/audio/murilo_huff_saudade_estranha.mp3.asset.json";
 import muriloHuffSoComElaAsset from "@/assets/audio/murilo_huff_so_com_ela.mp3.asset.json";
+import pandaBaqueadoAsset from "@/assets/tracks/panda-baqueado.mp3.asset.json";
+import pandaCalcinhaAsset from "@/assets/tracks/panda-calcinha.mp3.asset.json";
+import pandaEuTeSeguroAsset from "@/assets/tracks/panda-eu-te-seguro.mp3.asset.json";
+import racionaisNegroDramaAsset from "@/assets/tracks/racionais-negro-drama.mp3.asset.json";
+import rafaAmaMaloqueiroAsset from "@/assets/tracks/rafa-ama-maloqueiro.mp3.asset.json";
+import simoneErroGostosoAsset from "@/assets/tracks/simone-erro-gostoso.mp3.asset.json";
 
 
 
