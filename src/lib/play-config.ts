@@ -368,52 +368,6 @@ const guiaConfiguracoes: ConfigGuide = {
         { key: "xmlUdp", label: "Enviar XML para UDP (IP:porta)", type: "text", default: "" },
       ],
     },
-    {
-      id: "rds",
-      title: "RDS",
-      fields: [
-        {
-          key: "rdsModelo",
-          label: "Modelo",
-          type: "select",
-          default: "arquivo",
-          options: [
-            { value: "arquivo", label: "Arquivo (TXT)" },
-            { value: "acadia", label: "Acádia (Biquad)" },
-            { value: "audemat", label: "Audemat" },
-            { value: "audemat_silver", label: "Audemat Enc. Silver" },
-            { value: "inovonics", label: "Inovonics" },
-          ],
-        },
-        {
-          key: "rdsEndereco",
-          label: "Endereço do encoder RDS / arquivo",
-          type: "text",
-          default: "rds.txt",
-        },
-        { key: "rdsTexto", label: "Texto padrão", type: "text", default: "Solutions-Play" },
-        sw("rdsComerciais", "Enviar comerciais", false),
-        sw("rdsGerarArquivos", "Gerar arquivos na pasta RDS", true),
-        {
-          key: "rdsTipo",
-          label: "Formato dos arquivos",
-          type: "select",
-          default: "txt",
-          options: [
-            { value: "txt", label: "Texto (.txt)" },
-            { value: "xml", label: "XML (.xml)" },
-            { value: "json", label: "JSON (.json)" },
-          ],
-        },
-        {
-          key: "rdsPasta",
-          label: "Pasta RDS",
-          type: "text",
-          default: "",
-          help: "Em branco usa Documentos\\Solutions-Play\\rds. Clique no ícone de pasta ao lado para selecionar.",
-        },
-      ],
-    },
 
     {
       id: "cameraController",
