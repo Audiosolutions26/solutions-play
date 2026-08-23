@@ -235,6 +235,7 @@ function DeckCard({
   onCue: () => void;
   onMarkers: () => void;
   onExport: () => void;
+  markers: any[];
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
@@ -261,9 +262,9 @@ function DeckCard({
         </div>
       </div>
       <DeckWaveform track={track} position={position} isActive={isActive} accent={accent} />
-      {track && markers.length > 0 && (
+      {track && markers && markers.length > 0 && (
         <div className="absolute top-10 right-3 flex gap-1 pointer-events-none">
-          {markers.slice(0, 3).map((m, i) => (
+          {markers.slice(0, 3).map((m: any, i: number) => (
             <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: MARKER_DEFS.find(d => d.kind === m.kind)?.color || '#fff' }} />
           ))}
         </div>
