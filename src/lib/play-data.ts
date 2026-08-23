@@ -442,8 +442,10 @@ export const folders: Folder[] = [
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
       mk("Bala Alojada", "Gusttavo Lima", 175, "musical", 196, { audioUrl: gusttavoLimaBalaAsset.url }),
       mk("Última Saudade (Ao Vivo)", "Henrique & Juliano", 188, "musical", 246, { audioUrl: henriqueJulianoUltimaAsset.url }),
+      mk("Insegurança / Fim de Noite (Ao Vivo)", "Mj Records", 210, "musical", 188, { audioUrl: mjRecordsAsset.url }),
       mk("Cheiro De Culpado (Ao Vivo)", "Júnior e Cézar", 148, "musical", 210, { audioUrl: juniorCezarCheiroAsset.url }),
       mk("OLHO MARROM (Ao Vivo)", "Luan Santana", 185, "musical", 246, { audioUrl: luanSantanaOlhoAsset.url }),
+
 
 
     ],
