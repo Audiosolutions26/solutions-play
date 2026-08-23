@@ -414,6 +414,7 @@ const guiaConfiguracoes: ConfigGuide = {
         },
       ],
     },
+
     {
       id: "cameraController",
       title: "Camera Controller",
@@ -713,9 +714,18 @@ function outOpts() {
   ];
 }
 
+const guiaRds: ConfigGuide = {
+  id: "rds",
+  title: "RDS",
+  sections: [
+    (guiaConfiguracoes.sections.find((s) => s.id === "rds") as ConfigSection),
+  ],
+};
+
 export const configGuides: ConfigGuide[] = [
   guiaGeral,
   guiaConfiguracoes,
+  guiaRds,
   guiaInsercoes,
   guiaLicenca,
 ];
