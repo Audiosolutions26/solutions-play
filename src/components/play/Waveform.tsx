@@ -340,8 +340,18 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
                 </div>
                 <div>
                   <div className="text-white/40 uppercase">Tempo</div>
-                  <div className="font-mono text-[12px] font-bold text-[#fffa65]">
-                    {markerPositionSec(selectedMarker, getEngine().mediaDuration() || current?.duration || 0).toFixed(2)}s
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-20 rounded bg-white/10 px-2 py-1 font-mono text-[12px] font-bold text-[#fffa65] outline-none focus:ring-1 focus:ring-[#fffa65]/50"
+                      value={markerPositionSec(selectedMarker, getEngine().mediaDuration() || current?.duration || 0).toFixed(2)}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) updateMarkerPosition(selectedMarker.id!, val);
+                      }}
+                    />
+                    <span className="text-white/40">s</span>
                   </div>
                 </div>
                 {selectedMarker.note && (
