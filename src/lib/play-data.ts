@@ -364,9 +364,15 @@ export const folders: Folder[] = [
       mk("Cheiro De Culpado (Ao Vivo)", "Júnior e Cézar", 148, "musical", 210, { audioUrl: juniorCezarCheiroAsset.url }),
       mk("Saudade Burra (Ao Vivo)", "Lauana Prado", 172, "musical", 172, { audioUrl: lauanaPradoSaudadeAsset.url }),
       mk("OLHO MARROM (Ao Vivo)", "Luan Santana", 185, "musical", 246, { audioUrl: luanSantanaOlhoAsset.url }),
+      mk("Saudade do Carai", "Mari Fernandez", 178, "musical", 220, { audioUrl: mariFernandezAsset.url }),
+      mk("Ilusão De Ótica (Ao Vivo)", "Matheus & Kauan", 165, "musical", 196, { audioUrl: matheusKauanAsset.url }),
+      mk("Insegurança / Fim de Noite (Ao Vivo)", "Mj Records", 210, "musical", 188, { audioUrl: mjRecordsAsset.url }),
+      mk("Saudade Estranha (Ao Vivo)", "Murilo Huff", 192, "musical", 210, { audioUrl: muriloHuffEstranhaAsset.url }),
+      mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, { audioUrl: muriloHuffSoComElaAsset.url }),
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
       mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
+
 
 
     ],
