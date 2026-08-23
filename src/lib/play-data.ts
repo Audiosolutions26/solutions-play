@@ -25,6 +25,12 @@ import jorgeMateusXoneiAsset from "@/assets/audio/jorge_mateus_xonei.mp3.asset.j
 import juniorCezarCheiroAsset from "@/assets/audio/junior_cezar_cheiro_de_culpado.mp3.asset.json";
 import lauanaPradoSaudadeAsset from "@/assets/audio/lauana_prado_saudade_burra.mp3.asset.json";
 import luanSantanaOlhoAsset from "@/assets/audio/luan_santana_olho_marrom.mp3.asset.json";
+import mariFernandezAsset from "@/assets/audio/mari_fernandez_saudade.mp3.asset.json";
+import matheusKauanAsset from "@/assets/audio/matheus_kauan_ilusao.mp3.asset.json";
+import mjRecordsAsset from "@/assets/audio/mj_records_inseguranca.mp3.asset.json";
+import muriloHuffEstranhaAsset from "@/assets/audio/murilo_huff_saudade_estranha.mp3.asset.json";
+import muriloHuffSoComElaAsset from "@/assets/audio/murilo_huff_so_com_ela.mp3.asset.json";
+
 
 
 
