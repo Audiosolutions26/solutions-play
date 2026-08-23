@@ -15,18 +15,41 @@ const semis = (n: number) => Math.pow(2, n / 12);
 
 type Mode = "synth" | "url" | null;
 
-// Curvas de crossfade de POTÊNCIA CONSTANTE (equal-power). Diferente do fade
-// linear (que provoca uma "barriga" de volume no meio da mixagem), as curvas
-// seno/cosseno mantêm a energia percebida constante durante toda a passagem —
-// é o que os softwares profissionais de rádio/DJ usam para mixar músicas.
-const EP_STEPS = 64;
-const EP_IN = new Float32Array(EP_STEPS);
-const EP_OUT = new Float32Array(EP_STEPS);
-for (let i = 0; i < EP_STEPS; i++) {
-  const x = i / (EP_STEPS - 1);
-  EP_IN[i] = Math.sin((x * Math.PI) / 2); // 0 → 1 (entra)
-  EP_OUT[i] = Math.cos((x * Math.PI) / 2); // 1 → 0 (sai)
+// Curvas de crossfade profissionais:
+// 1) EQUAL-POWER (seno/cosseno): Mantém energia constante (padrão DJ/Rádio).
+// 2) LINEAR: Queda constante (bom para fades rápidos).
+// 3) LOGARITHMIC: Percepção natural de volume (bom para voz/background).
+// 4) S-CURVE: Suave no início e no fim (transições cinematográficas).
+const STEPS = 64;
+const curves = {
+  ep_in: new Float32Array(STEPS),
+  ep_out: new Float32Array(STEPS),
+  lin_in: new Float32Array(STEPS),
+  lin_out: new Float32Array(STEPS),
+  log_in: new Float32Array(STEPS),
+  log_out: new Float32Array(STEPS),
+  s_in: new Float32Array(STEPS),
+  s_out: new Float32Array(STEPS),
+};
+
+for (let i = 0; i < STEPS; i++) {
+  const x = i / (STEPS - 1);
+  // Equal Power
+  curves.ep_in[i] = Math.sin((x * Math.PI) / 2);
+  curves.ep_out[i] = Math.cos((x * Math.PI) / 2);
+  // Linear
+  curves.lin_in[i] = x;
+  curves.lin_out[i] = 1 - x;
+  // Logarithmic (approx)
+  curves.log_in[i] = x * x;
+  curves.log_out[i] = (1 - x) * (1 - x);
+  // S-Curve
+  const sx = x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  curves.s_in[i] = sx;
+  curves.s_out[i] = 1 - sx;
 }
+
+export type CrossfadeCurve = 'equal-power' | 'linear' | 'logarithmic' | 's-curve';
 
 // Só usar crossOrigin="anonymous" para URLs http(s) remotas. Em data:/blob:/file:
 // (áudios locais e de pasta) definir crossOrigin "tainta" o MediaElementSource,
@@ -305,7 +328,7 @@ export class AudioEngine {
 
   // Toca uma URL. Com fadeMs > 0 e uma voz já tocando, faz a MIXAGEM
   // (crossfade) entre a inserção que sai e a que entra — manual p.106.
-  playUrl(url: string, fromOffset = 0, fadeMs = 0, equalPower = true, fadeOutMs = fadeMs) {
+  playUrl(url: string, fromOffset = 0, fadeMs = 0, curve: CrossfadeCurve = "equal-power", fadeOutMs = fadeMs, gain = 1.0) {
     this.ensure();
     if (!this.ctx || !this.master) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
@@ -330,30 +353,41 @@ export class AudioEngine {
     const overlap = Math.max(fadeIn, fadeOut);
 
     if (prev && this.playing && overlap > 0) {
-      // Crossfade: nova voz sobe de 0→1; voz anterior desce 1→0 e é descartada.
-      // Equal-power (padrão) mantém o volume percebido constante na mixagem.
       const gIn = voice.gain.gain;
       gIn.cancelScheduledValues(now);
       gIn.setValueAtTime(0, now);
+      
       const gOut = prev.gain.gain;
       gOut.cancelScheduledValues(now);
       gOut.setValueAtTime(gOut.value, now);
-      if (equalPower) {
-        if (fadeIn > 0) gIn.setValueCurveAtTime(EP_IN, now, fadeIn);
-        else gIn.setValueAtTime(1, now);
-        if (fadeOut > 0) gOut.setValueCurveAtTime(EP_OUT, now, fadeOut);
-        else gOut.setValueAtTime(0, now);
-      } else {
-        if (fadeIn > 0) gIn.linearRampToValueAtTime(1, now + fadeIn);
-        else gIn.setValueAtTime(1, now);
-        if (fadeOut > 0) gOut.linearRampToValueAtTime(0, now + fadeOut);
-        else gOut.setValueAtTime(0, now);
+
+      let curveIn = curves.ep_in;
+      let curveOut = curves.ep_out;
+
+      if (curve === 'linear') {
+        curveIn = curves.lin_in;
+        curveOut = curves.lin_out;
+      } else if (curve === 'logarithmic') {
+        curveIn = curves.log_in;
+        curveOut = curves.log_out;
+      } else if (curve === 's-curve') {
+        curveIn = curves.s_in;
+        curveOut = curves.s_out;
       }
+
+      if (fadeIn > 0) gIn.setValueCurveAtTime(curveIn, now, fadeIn);
+      else gIn.setValueAtTime(gain, now);
+      
+      // Aplicar o ganho alvo de normalização ao fim do fade-in
+      if (fadeIn > 0) gIn.linearRampToValueAtTime(gain, now + fadeIn);
+
+      if (fadeOut > 0) gOut.setValueCurveAtTime(curveOut, now, fadeOut);
+      else gOut.setValueAtTime(0, now);
+
       this.disposeVoiceAfter(prev, overlap);
     } else {
-      // Sem mixagem: corta a anterior e entra direto.
       this.disposeVoice(prev);
-      voice.gain.gain.setValueAtTime(1, now);
+      voice.gain.gain.setValueAtTime(gain, now);
     }
 
     void voice.el.play();
