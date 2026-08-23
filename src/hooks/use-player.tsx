@@ -238,18 +238,31 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 : 0;
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
         
-        // Determina a curva de crossfade e o ganho de normalização automaticamente
-        const nextTrack = findNext(blockId, trackId)?.track;
+        // Calcula o plano de transição para esta faixa para obter os tempos exatos
+        const nxResult = findNext(blockId, trackId);
+        const nextTrack = nxResult?.track;
+        const nextCached = nextTrack ? (cueDetectionEnabled() ? getCachedCuePoints(nextTrack.audioUrl || "") : undefined) : undefined;
+        
+        const plan = resolveTransitionPlan({
+          current: track,
+          next: nextTrack || track,
+          currentMarkers: markers,
+          currentCue: cached,
+          nextCue: nextCached,
+        });
+
         const curve = suggestCrossfadeCurve(
           track.category || 'musical',
           nextTrack?.category || 'musical',
           cached?.bpm || 0,
-          0 // Ainda não sabemos o BPM da próxima aqui
+          nextCached?.bpm || 0
         );
         
         const normGain = cached?.loudness ? getNormalizationGain(cached.loudness) : 1.0;
 
-        engine.playUrl(u, startAt, effectiveFadeMs, curve, fadeOutMs, normGain);
+        // O motor de áudio recebe a curva, o ganho e o fadeOutMs calculado pelo plano
+        engine.playUrl(u, startAt, effectiveFadeMs, curve, plan.fadeOutMs, normGain);
+        
         if (detect) {
           void analyzeCuePoints(u).then((cp) => {
             if (currentRef.current.track?.id === trackId) {
