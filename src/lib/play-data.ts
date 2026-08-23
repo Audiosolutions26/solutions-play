@@ -30,6 +30,12 @@ import matheusKauanAsset from "@/assets/audio/matheus_kauan_ilusao.mp3.asset.jso
 import mjRecordsAsset from "@/assets/audio/mj_records_inseguranca.mp3.asset.json";
 import muriloHuffEstranhaAsset from "@/assets/audio/murilo_huff_saudade_estranha.mp3.asset.json";
 import muriloHuffSoComElaAsset from "@/assets/audio/murilo_huff_so_com_ela.mp3.asset.json";
+import pandaBaqueadoAsset from "@/assets/tracks/panda-baqueado.mp3.asset.json";
+import pandaCalcinhaAsset from "@/assets/tracks/panda-calcinha.mp3.asset.json";
+import pandaEuTeSeguroAsset from "@/assets/tracks/panda-eu-te-seguro.mp3.asset.json";
+import racionaisNegroDramaAsset from "@/assets/tracks/racionais-negro-drama.mp3.asset.json";
+import rafaAmaMaloqueiroAsset from "@/assets/tracks/rafa-ama-maloqueiro.mp3.asset.json";
+import simoneErroGostosoAsset from "@/assets/tracks/simone-erro-gostoso.mp3.asset.json";
 
 
 
@@ -298,7 +304,36 @@ export const initialBlocks: Block[] = [
         year: "2024",
         audioUrl: muriloHuffSoComElaAsset.url,
       }),
-
+      mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: pandaBaqueadoAsset.url,
+      }),
+      mk("Calcinha de Renda (Ao Vivo)", "Panda", 175, "musical", 210, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: pandaCalcinhaAsset.url,
+      }),
+      mk("Eu Te Seguro (Ao Vivo)", "Panda", 168, "musical", 172, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: pandaEuTeSeguroAsset.url,
+      }),
+      mk("Negro Drama", "Racionais MC's", 412, "musical", 246, {
+        album: "Nada como um dia após o outro dia",
+        year: "2002",
+        audioUrl: racionaisNegroDramaAsset.url,
+      }),
+      mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, {
+        album: "Single",
+        year: "2024",
+        audioUrl: rafaAmaMaloqueiroAsset.url,
+      }),
+      mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, {
+        album: "Cintilante",
+        year: "2023",
+        audioUrl: simoneErroGostosoAsset.url,
+      }),
 
 
     ],
@@ -372,9 +407,12 @@ export const folders: Folder[] = [
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
       mk("P do Pecado (Ao Vivo)", "Grupo Menos É Mais", 164, "musical", 246, { audioUrl: menosMaisPPecadoAsset.url }),
-
-
-
+      mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, { audioUrl: pandaBaqueadoAsset.url }),
+      mk("Calcinha de Renda (Ao Vivo)", "Panda", 175, "musical", 210, { audioUrl: pandaCalcinhaAsset.url }),
+      mk("Eu Te Seguro (Ao Vivo)", "Panda", 168, "musical", 172, { audioUrl: pandaEuTeSeguroAsset.url }),
+      mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
+      mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, { audioUrl: rafaAmaMaloqueiroAsset.url }),
+      mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
     ],
   },
   {
@@ -397,8 +435,9 @@ export const folders: Folder[] = [
       mk("Cantada Boba (Ao Vivo)", "Jorge & Mateus", 162, "musical", 196, { audioUrl: jorgeMateusCantadaAsset.url }),
       mk("Saudade Burra (Ao Vivo)", "Lauana Prado", 172, "musical", 172, { audioUrl: lauanaPradoSaudadeAsset.url }),
 
-
-
+      mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
+      mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
+      mk("Ama Um Maloqueiro", "Rafa e Junior", 180, "musical", 220, { audioUrl: rafaAmaMaloqueiroAsset.url }),
     ],
   },
   {
@@ -419,9 +458,9 @@ export const folders: Folder[] = [
       mk("Só Com Ela (Ao Vivo)", "Murilo Huff", 180, "musical", 172, { audioUrl: muriloHuffSoComElaAsset.url }),
       mk("Peão Todo Tatuado", "Jeninho", 145, "musical", 220, { audioUrl: jeninhoPeaoAsset.url }),
       mk("Xonei", "Jorge & Mateus", 155, "musical", 188, { audioUrl: jorgeMateusXoneiAsset.url }),
-
-
-
+      mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, { audioUrl: pandaBaqueadoAsset.url }),
+      mk("Calcinha de Renda (Ao Vivo)", "Panda", 175, "musical", 210, { audioUrl: pandaCalcinhaAsset.url }),
+      mk("Eu Te Seguro (Ao Vivo)", "Panda", 168, "musical", 172, { audioUrl: pandaEuTeSeguroAsset.url }),
       mk("Coração Partido (Ao Vivo)", "Grupo Menos É Mais", 192, "musical", 220, { audioUrl: menosMaisCoracaoAsset.url }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
     ],
@@ -446,8 +485,9 @@ export const folders: Folder[] = [
       mk("Cheiro De Culpado (Ao Vivo)", "Júnior e Cézar", 148, "musical", 210, { audioUrl: juniorCezarCheiroAsset.url }),
       mk("OLHO MARROM (Ao Vivo)", "Luan Santana", 185, "musical", 246, { audioUrl: luanSantanaOlhoAsset.url }),
 
-
-
+      mk("Baqueado (Ao Vivo)", "Panda", 192, "musical", 188, { audioUrl: pandaBaqueadoAsset.url }),
+      mk("Negro Drama", "Racionais MC's", 412, "musical", 246, { audioUrl: racionaisNegroDramaAsset.url }),
+      mk("Erro Gostoso (Ao Vivo)", "Simone Mendes", 195, "musical", 196, { audioUrl: simoneErroGostosoAsset.url }),
     ],
   },
   {
