@@ -1,3 +1,10 @@
+// Mídias reais importadas via ponteiros de ativos (Assets).
+import anaCastelaAsset from "@/assets/ana_castela.asset.json";
+import claytonRomarioAsset from "@/assets/clayton_romario.asset.json";
+import daniloDaviApagaAsset from "@/assets/danilo_davi_apaga.asset.json";
+import daniloDaviGavetasAsset from "@/assets/danilo_davi_gavetas.asset.json";
+import diegoVictorAsset from "@/assets/diego_victor.asset.json";
+
 // Demo data for Solutions-Play (local demo mode, no backend).
 
 export type Category = "musical" | "comercial" | "vinheta" | "texto";
@@ -107,30 +114,30 @@ export const initialBlocks: Block[] = [
     time: "13:00",
     category: "musical",
     items: [
-      mk("Black Widow", "Iggy Azalea ft. Rita Ora", 209, "musical", 220, {
-        album: "Reclassified",
-        year: "2014",
-        label: "Def Jam",
+      mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 220, {
+        album: "Solteiro Forçado",
+        year: "2023",
+        audioUrl: anaCastelaAsset.url,
       }),
-      mk("The Heat Is On", "Glenn Frey", 211, "musical", 196, {
-        album: "Beverly Hills Cop",
-        year: "1984",
-        label: "MCA",
+      mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 196, {
+        album: "No Churrasco",
+        year: "2023",
+        audioUrl: claytonRomarioAsset.url,
       }),
-      mk("Unconditionally", "Katy Perry", 228, "musical", 174, {
-        album: "Prism",
-        year: "2013",
-        label: "Capitol",
+      mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 174, {
+        album: "Pra Beber e Chorar",
+        year: "2023",
+        audioUrl: daniloDaviApagaAsset.url,
       }),
-      mk("Gloria", "Donna Summer", 195, "musical", 246, {
-        album: "Crayons",
-        year: "2008",
-        label: "Burgundy",
+      mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, {
+        album: "Pra Beber e Chorar",
+        year: "2023",
+        audioUrl: daniloDaviGavetasAsset.url,
       }),
-      mk("Candyman", "Christina Aguilera", 194, "musical", 261, {
-        album: "Back to Basics",
-        year: "2006",
-        label: "RCA",
+      mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 261, {
+        album: "Beco do Flashback",
+        year: "2023",
+        audioUrl: diegoVictorAsset.url,
       }),
     ],
   },
@@ -155,20 +162,14 @@ export const initialBlocks: Block[] = [
     time: "13:30",
     category: "musical",
     items: [
-      mk("Bohemian Rhapsody (Live)", "Queen", 367, "musical", 233, {
-        album: "Live Aid",
-        year: "1985",
-        label: "EMI",
+      mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 233, {
+        audioUrl: anaCastelaAsset.url,
       }),
-      mk("Take On Me", "a-ha", 225, "musical", 277, {
-        album: "Hunting High and Low",
-        year: "1985",
-        label: "Warner",
+      mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 277, {
+        audioUrl: diegoVictorAsset.url,
       }),
-      mk("Smooth", "Santana ft. Rob Thomas", 294, "musical", 185, {
-        album: "Supernatural",
-        year: "1999",
-        label: "Arista",
+      mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 185, {
+        audioUrl: claytonRomarioAsset.url,
       }),
     ],
   },
@@ -182,9 +183,9 @@ export const folders: Folder[] = [
     category: "musical",
     code: "ACV",
     tracks: [
-      mk("Africa", "Toto", 295, "musical", 220),
-      mk("Billie Jean", "Michael Jackson", 294, "musical", 246),
-      mk("Sweet Dreams", "Eurythmics", 216, "musical", 174),
+      mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 220, { audioUrl: anaCastelaAsset.url }),
+      mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 246, { audioUrl: claytonRomarioAsset.url }),
+      mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 174, { audioUrl: diegoVictorAsset.url }),
     ],
   },
   {
@@ -194,9 +195,9 @@ export const folders: Folder[] = [
     category: "musical",
     code: "NAC",
     tracks: [
-      mk("Águas de Março", "Elis & Tom", 210, "musical", 196),
-      mk("Construção", "Chico Buarque", 380, "musical", 165),
-      mk("O Quereres", "Caetano Veloso", 250, "musical", 207),
+      mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
+      mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 165, { audioUrl: daniloDaviGavetasAsset.url }),
+      mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
     ],
   },
   {
@@ -206,9 +207,9 @@ export const folders: Folder[] = [
     category: "musical",
     code: "FB",
     tracks: [
-      mk("September", "Earth, Wind & Fire", 215, "musical", 261),
-      mk("Stayin' Alive", "Bee Gees", 285, "musical", 233),
-      mk("Y.M.C.A.", "Village People", 287, "musical", 196),
+      mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 261, { audioUrl: claytonRomarioAsset.url }),
+      mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
+      mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
     ],
   },
   {
@@ -218,9 +219,9 @@ export const folders: Folder[] = [
     category: "musical",
     code: "INTER",
     tracks: [
-      mk("Blinding Lights", "The Weeknd", 200, "musical", 277),
-      mk("Levitating", "Dua Lipa", 203, "musical", 246),
-      mk("As It Was", "Harry Styles", 167, "musical", 220),
+      mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 277, { audioUrl: anaCastelaAsset.url }),
+      mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, { audioUrl: daniloDaviGavetasAsset.url }),
+      mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
     ],
   },
   {
