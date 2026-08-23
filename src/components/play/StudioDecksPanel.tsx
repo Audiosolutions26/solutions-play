@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Bookmark,
+  Download,
   Headphones,
   Mic2,
   Play,
@@ -9,14 +10,16 @@ import {
   Square,
   Volume2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Track } from "@/lib/play-data";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
-import { MARKER_DEFS, getMarkers, markerPositionSec, pseudoWave } from "@/lib/play-markers";
+import { MARKER_DEFS, markerPositionSec, pseudoWave } from "@/lib/play-markers";
 import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
 import { MarkersDialog } from "./MarkersDialog";
 import { StitcherDialog } from "./StitcherDialog";
 import { VoiceTrackingDialog } from "./VoiceTrackingDialog";
+import { useTrackMarkers } from "@/hooks/use-track-markers";
 
 function formatTime(value: number): string {
   return Number.isFinite(value) && value > 0 ? fmt(Math.round(value)) : "00:00";
@@ -79,8 +82,8 @@ function DeckWaveform({
     () => (track ? pseudoWave(Math.round((track.freq + track.duration) * 7) + 1, 1800) : []),
     [track],
   );
+  const { markers } = useTrackMarkers(track?.id);
   const durationSec = waveform?.durationSec || track?.duration || 1;
-  const markers = useMemo(() => (track ? getMarkers(track.id) : []), [track]);
 
   useEffect(() => {
     let cancelled = false;
@@ -220,6 +223,7 @@ function DeckCard({
   onPlay,
   onCue,
   onMarkers,
+  onExport,
 }: {
   label: string;
   track: Track | null;
@@ -230,6 +234,7 @@ function DeckCard({
   onPlay: () => void;
   onCue: () => void;
   onMarkers: () => void;
+  onExport: () => void;
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
@@ -287,6 +292,15 @@ function DeckCard({
           </button>
           <button
             type="button"
+            onClick={onExport}
+            disabled={!track}
+            title="Exportar marcadores (.mrk)"
+            className={buttonClass}
+          >
+            <Download className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
             onClick={onPlay}
             disabled={!track}
             title="Carregar/tocar deck"
@@ -312,16 +326,43 @@ export function StudioDecksPanel() {
     setCue,
     nextManual,
     stop,
+    exportCurrentMarkers,
   } = usePlayer();
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [stitcherOpen, setStitcherOpen] = useState(false);
   const [voiceTrackingOpen, setVoiceTrackingOpen] = useState(false);
-  const firstBlock = blocks[0];
-  const firstTrack = firstBlock?.items[0] ?? null;
-  const nextTrack = firstBlock?.items[1] ?? blocks[1]?.items[0] ?? null;
-  const nextBlockId = firstBlock?.items[1] ? firstBlock.id : (blocks[1]?.id ?? null);
-  const deckA = current ?? firstTrack;
-  const deckABlock = current ? currentBlockId : (firstBlock?.id ?? null);
+  
+  // Resolve a lógica de Deck A (No Ar) e Deck B (Próxima) dinamicamente
+  const { deckA, deckB, deckABlock, deckBBlock } = useMemo(() => {
+    let dA = current;
+    let dAB = currentBlockId;
+    let dB: Track | null = null;
+    let dBB: string | null = null;
+
+    if (!dA) {
+      const firstBlock = blocks.find(b => b.items.length > 0);
+      dA = firstBlock?.items[0] ?? null;
+      dAB = firstBlock?.id ?? null;
+      dB = firstBlock?.items[1] ?? blocks.find(b => b.id !== firstBlock?.id && b.items.length > 0)?.items[0] ?? null;
+      dBB = firstBlock?.items[1] ? firstBlock.id : (blocks.find(b => b.id !== firstBlock?.id && b.items.length > 0)?.id ?? null);
+    } else {
+      // Procura a próxima faixa após current
+      const bIndex = blocks.findIndex(b => b.id === dAB);
+      if (bIndex >= 0) {
+        const tIndex = blocks[bIndex].items.findIndex(t => t.id === dA?.id);
+        if (tIndex >= 0 && tIndex < blocks[bIndex].items.length - 1) {
+          dB = blocks[bIndex].items[tIndex + 1];
+          dBB = blocks[bIndex].id;
+        } else {
+          const nextB = blocks.slice(bIndex + 1).find(b => b.items.length > 0);
+          dB = nextB?.items[0] ?? null;
+          dBB = nextB?.id ?? null;
+        }
+      }
+    }
+
+    return { deckA: dA, deckB: dB, deckABlock: dAB, deckBBlock: dBB };
+  }, [blocks, current, currentBlockId]);
 
   return (
     <aside className="flex h-[164px] max-h-[164px] w-full shrink-0 items-stretch gap-2 overflow-hidden border-b border-[#304858] bg-[#0f1820] p-2 text-[#dce6ed]">
@@ -337,7 +378,7 @@ export function StudioDecksPanel() {
           <button
             type="button"
             onClick={() => setStitcherOpen(true)}
-            disabled={!deckA || !nextTrack}
+            disabled={!deckA || !deckB}
             className="inline-flex flex-1 items-center justify-center rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1 py-1 text-[8px] font-bold uppercase tracking-wider text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20 disabled:opacity-30"
             title="Montar teaser pelos Hooks"
           >
@@ -364,19 +405,28 @@ export function StudioDecksPanel() {
           isActive={Boolean(isPlaying && current?.id === deckA?.id)}
           onCue={() => setCue(true)}
           onMarkers={() => setMarkerTrack(deckA)}
+          onExport={exportCurrentMarkers}
           onPlay={() => {
             if (deckABlock && deckA) playAt(deckABlock, deckA.id);
           }}
         />
         <DeckCard
           label="Deck B · PRÓXIMA"
-          track={nextTrack}
-          blockId={nextBlockId}
+          track={deckB}
+          blockId={deckBBlock}
           accent="orange"
           position={0}
           isActive={false}
           onCue={() => setCue(true)}
-          onMarkers={() => setMarkerTrack(nextTrack)}
+          onMarkers={() => setMarkerTrack(deckB)}
+          onExport={() => {
+            if (deckB) {
+              // Função local para exportar deck B se necessário, 
+              // ou apenas usar a exportCurrentMarkers se o player suportasse múltiplas instâncias.
+              // Por enquanto, o player é centralizado no 'current'.
+              toast.info("Exportação disponível apenas para o Deck A (No Ar)");
+            }
+          }}
           onPlay={nextManual}
         />
       </div>
@@ -427,7 +477,7 @@ export function StudioDecksPanel() {
       />
       <StitcherDialog
         current={deckA}
-        next={nextTrack}
+        next={deckB}
         open={stitcherOpen}
         onOpenChange={setStitcherOpen}
       />

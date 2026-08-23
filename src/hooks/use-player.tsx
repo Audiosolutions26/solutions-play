@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import { getAudioEngine } from "@/lib/audio-engine";
 import {
   initialBlocks,
@@ -26,8 +27,8 @@ import {
   type CuePoints,
 } from "@/lib/play-cuepoints";
 import { updateRds } from "@/lib/play-rds";
-import { getMarkers, markerPositionSec } from "@/lib/play-markers";
-import { importMrkInfoForTrack } from "@/lib/play-mrk";
+import { getMarkers, saveMarkers, markerPositionSec } from "@/lib/play-markers";
+import { importMrkInfoForTrack, exportMrkInfoForTrack } from "@/lib/play-mrk";
 import { logEvent } from "@/lib/play-events";
 import { resolveTransitionPlan, type TransitionPlan } from "@/lib/play-transition";
 import { applyTrackOutput, type OutputFn } from "@/lib/play-outputs";
@@ -67,6 +68,8 @@ interface PlayerState {
   setTrackAudio: (blockId: string, trackId: string, url: string, duration: number) => void;
   setBlockClock: (blockId: string, clock: BlockClock) => void;
   getEngine: typeof getAudioEngine;
+  jumpToMarker: (kind: string) => void;
+  exportCurrentMarkers: () => Promise<boolean>;
 }
 
 const Ctx = createContext<PlayerState | null>(null);
@@ -442,6 +445,38 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const jumpToMarker = useCallback((kind: string) => {
+    const cur = currentRef.current.track;
+    if (!cur) return;
+    const markers = getMarkers(cur.id);
+    const marker = markers.find((m) => m.kind === kind);
+    if (marker) {
+      const duration = engine.mediaDuration() || cur.duration;
+      const pos = markerPositionSec(marker, duration);
+      engine.playUrl(
+        getTrackAudioUrl(cur.id) || cur.audioUrl || "",
+        pos,
+        0,
+        equalPowerEnabled(),
+        0
+      );
+      setPosition(pos);
+      logEvent("sistema", `Pulo para marcador ${kind}`, cur.title);
+    }
+  }, [engine]);
+
+  const exportCurrentMarkers = useCallback(async () => {
+    const cur = currentRef.current.track;
+    if (!cur) return false;
+    const markers = getMarkers(cur.id);
+    const res = await exportMrkInfoForTrack(cur, markers);
+    if (res.success) {
+      toast.success(`Marcadores exportados para ${res.path}`);
+      return true;
+    }
+    return false;
+  }, []);
+
   // progress + auto-advance loop
   useEffect(() => {
     if (!isPlaying) return;
@@ -547,6 +582,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setTrackAudio,
       setBlockClock,
       getEngine: getAudioEngine,
+      jumpToMarker,
+      exportCurrentMarkers,
     }),
     [
       blocks,
@@ -554,15 +591,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       currentBlockId,
       isPlaying,
       position,
-      mode,
-      setMode,
       cue,
       selectedId,
+      mode,
+      setMode,
       playAt,
       togglePlay,
       stop,
       next,
       nextManual,
+      setCue,
       select,
       addTrack,
       addTrackAt,
@@ -572,6 +610,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       replaceBlocks,
       setTrackAudio,
       setBlockClock,
+      jumpToMarker,
+      exportCurrentMarkers,
     ],
   );
 

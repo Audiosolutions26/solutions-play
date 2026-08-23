@@ -322,6 +322,27 @@ ipcMain.handle("sp:write-pkfinfo", async (_evt, payload) => {
   }
 });
 
+ipcMain.handle("sp:export-mrk", async (_evt, payload) => {
+  try {
+    const audio = validAudioFile(payload && payload.audioPath);
+    const content = payload && typeof payload.content === "string" ? payload.content : "";
+    if (!audio || !content.trim()) return null;
+    
+    const audioDir = path.dirname(audio);
+    const audioName = path.basename(audio);
+    const markDir = path.join(audioDir, "mark");
+    
+    fs.mkdirSync(markDir, { recursive: true });
+    const mrkFile = path.join(markDir, `${audioName}.mrk`);
+    
+    fs.writeFileSync(mrkFile, content, "utf8");
+    return mrkFile;
+  } catch {
+    return null;
+  }
+});
+
+
 // Abre a pasta Grades/Mapas (ou a raiz) no Explorer do Windows.
 ipcMain.handle("sp:open-program-folder", async (_evt, kind) => {
   try {
