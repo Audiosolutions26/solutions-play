@@ -46,6 +46,7 @@ export function useTrackMarkers(trackId: string | undefined) {
       setMarkersState(newMarkers);
       // Dispara evento para outras partes da mesma aba
       window.dispatchEvent(new CustomEvent("sp:markers-updated"));
+    }
   }, [trackId]);
 
   const updateMarkerPosition = useCallback((markerId: string, newSec: number) => {
