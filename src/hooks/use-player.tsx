@@ -564,6 +564,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             !transitioningRef.current &&
             pos >= plan.nextTriggerAtSec
           ) {
+            // Verificação dupla para evitar disparos múltiplos no mesmo ponto (debounce).
+            const triggerKey = `${cur.id}-${plan.nextId}`;
+            const now = Date.now();
+            if (nextTriggerRef.current?.id === triggerKey && now - nextTriggerRef.current.time < 1000) {
+              return;
+            }
+            
+            nextTriggerRef.current = { id: triggerKey, time: now };
             transitioningRef.current = true;
             
             // Para evitar buracos (silêncio), garantimos que o fadeOutMs e o tempo
@@ -572,10 +580,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             const remaining = Math.max(0, endPoint - pos);
             const fadeOutMs = plan.fadeOutMs > 0 ? plan.fadeOutMs : Math.round(remaining * 1000);
             
+            // Próximo disparo imediato sem atraso artificial.
             next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, fadeOutMs);
             return;
           }
+          
           if (mode === "AUTO" && endPoint > 0 && pos >= endPoint) {
+            const triggerKey = `${cur.id}-end`;
+            const now = Date.now();
+            if (nextTriggerRef.current?.id === triggerKey && now - nextTriggerRef.current.time < 1000) {
+              return;
+            }
+            nextTriggerRef.current = { id: triggerKey, time: now };
             next();
             return;
           }
