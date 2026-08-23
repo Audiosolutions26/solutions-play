@@ -614,31 +614,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       exportCurrentMarkers,
     ],
   );
-      blocks,
-      current,
-      currentBlockId,
-      isPlaying,
-      position,
-      mode,
-      setMode,
-      cue,
-      selectedId,
-      playAt,
-      togglePlay,
-      stop,
-      next,
-      nextManual,
-      select,
-      addTrack,
-      addTrackAt,
-      moveTrack,
-      reorderTrack,
-      removeTrack,
-      replaceBlocks,
-      setTrackAudio,
-      setBlockClock,
-    ],
-  );
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
