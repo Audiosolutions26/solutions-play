@@ -18,7 +18,7 @@ const ZOOM_MAX = 6;
 const ZOOM_STEP = 0.5;
 
 export function OnAirBar() {
-  const { onAir, current, blocks, currentBlockId } = usePlayer();
+  const { onAir, current, blocks, currentBlockId, position } = usePlayer();
   const [zoom, setZoom] = useState<number>(() => {
     if (typeof window === "undefined") return 1;
     const v = Number(window.localStorage.getItem("sp:waveZoom"));
