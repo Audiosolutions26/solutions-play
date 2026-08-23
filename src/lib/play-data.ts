@@ -4,6 +4,9 @@ import claytonRomarioAsset from "@/assets/clayton_romario.asset.json";
 import daniloDaviApagaAsset from "@/assets/danilo_davi_apaga.asset.json";
 import daniloDaviGavetasAsset from "@/assets/danilo_davi_gavetas.asset.json";
 import diegoVictorAsset from "@/assets/diego_victor.asset.json";
+import felipeRodrigoGostaAsset from "@/assets/felipe_rodrigo_gosta_de_rua.asset.json";
+import felipeRodrigoIgnoraAsset from "@/assets/felipe_rodrigo_ignora.asset.json";
+import ferrugemArrependidacoAsset from "@/assets/ferrugem_arrependidaco.asset.json";
 
 // Demo data for Solutions-Play (local demo mode, no backend).
 
@@ -124,6 +127,21 @@ export const initialBlocks: Block[] = [
         year: "2023",
         audioUrl: claytonRomarioAsset.url,
       }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: felipeRodrigoGostaAsset.url,
+      }),
+      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, {
+        album: "Ao Vivo",
+        year: "2024",
+        audioUrl: felipeRodrigoIgnoraAsset.url,
+      }),
+      mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, {
+        album: "Pagode do Ferrugem",
+        year: "2024",
+        audioUrl: ferrugemArrependidacoAsset.url,
+      }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 174, {
         album: "Pra Beber e Chorar",
         year: "2023",
@@ -184,8 +202,11 @@ export const folders: Folder[] = [
     code: "ACV",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 220, { audioUrl: anaCastelaAsset.url }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 246, { audioUrl: claytonRomarioAsset.url }),
+      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 174, { audioUrl: diegoVictorAsset.url }),
+      mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
     ],
   },
   {
@@ -196,6 +217,7 @@ export const folders: Folder[] = [
     code: "NAC",
     tracks: [
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
+      mk("Gosta De Rua (Ao Vivo)", "Felipe e Rodrigo", 160, "musical", 188, { audioUrl: felipeRodrigoGostaAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 165, { audioUrl: daniloDaviGavetasAsset.url }),
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 207, { audioUrl: anaCastelaAsset.url }),
     ],
@@ -207,6 +229,7 @@ export const folders: Folder[] = [
     category: "musical",
     code: "FB",
     tracks: [
+      mk("Arrependidaço (Onde Você Anda)", "Ferrugem", 180, "musical", 210, { audioUrl: ferrugemArrependidacoAsset.url }),
       mk("Não Namora (Ao Vivo)", "Clayton & Romário", 147, "musical", 261, { audioUrl: claytonRomarioAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 233, { audioUrl: diegoVictorAsset.url }),
       mk("Apaga Apaga Apaga (Ao Vivo)", "Danilo e Davi", 190, "musical", 196, { audioUrl: daniloDaviApagaAsset.url }),
@@ -220,6 +243,7 @@ export const folders: Folder[] = [
     code: "INTER",
     tracks: [
       mk("Olha Onde Eu Tô", "Ana Castela", 186, "musical", 277, { audioUrl: anaCastelaAsset.url }),
+      mk("Ignora (Ao Vivo)", "Felipe e Rodrigo", 150, "musical", 172, { audioUrl: felipeRodrigoIgnoraAsset.url }),
       mk("Não Mexe nas Minhas Gavetas (Ao Vivo)", "Danilo e Davi", 136, "musical", 246, { audioUrl: daniloDaviGavetasAsset.url }),
       mk("Tubarões (Ao Vivo)", "Diego & Victor Hugo", 172, "musical", 220, { audioUrl: diegoVictorAsset.url }),
     ],
