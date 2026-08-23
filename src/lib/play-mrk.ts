@@ -34,6 +34,8 @@ const MRK_TYPE_MAP: Record<string, MarkerKind> = {
   voice: "locStart",
   stamp: "carimbo",
   chorus: "refraoStart",
+  next: "nextEntry",
+  fade_out: "fadeOutStart",
   custom: "annotation",
 };
 

@@ -110,6 +110,11 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
                 case "nextEntry": color = "#f1c40f"; label = "MIX-OUT"; break;
                 case "introEnd": color = "#3498db"; label = "INTRO"; break;
                 case "mixIn": color = "#0ea5e9"; label = "MIX-IN"; break;
+                case "fadeOutStart": color = "#f59e0b"; label = "FADE-OUT"; break;
+                case "locStart": color = "#a855f7"; label = "LOC-START"; break;
+                case "refraoStart": color = "#ec4899"; label = "REF-START"; break;
+                case "refraoEnd": color = "#db2777"; label = "REF-END"; break;
+                case "carimbo": color = "#eab308"; label = "STAMP"; break;
               }
 
               ctx.strokeStyle = color;
