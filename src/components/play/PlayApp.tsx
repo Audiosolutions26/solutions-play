@@ -285,7 +285,7 @@ export function PlayApp() {
                           </Fragment>
                         ))}
                         <div className="flex-1 min-h-[250px] border-t border-pl-toolbar-dark">
-                          <RdsStatusPanel />
+                          <RdsStatusPanel onOpenSettings={() => ui.openOptions("rds")} />
                         </div>
                       </div>
                     </>
