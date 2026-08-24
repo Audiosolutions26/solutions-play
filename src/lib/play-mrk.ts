@@ -85,21 +85,27 @@ export async function importMrkInfoForTrack(track: Track): Promise<{ success: bo
     const parsedRaw = JSON.parse(raw);
     
     // Suporte ao formato .pk (Playlist Digital)
+    // O Playlist Digital gera arquivos .pk com estrutura simples: version, markers[{type, time_ms}]
     if (parsedRaw.version && parsedRaw.markers && !parsedRaw.audio) {
       const markers = (parsedRaw.markers as any[]).map(m => {
         const kind = MRK_TYPE_MAP[m.type] || "annotation";
         const positionSec = m.time_ms / 1000;
+        
+        // Criamos o marcador com positionSec real para garantir precisão
         return normalizeMarker({
           kind,
           pos: 0, 
           positionSec,
-          id: `pk-${m.type}-${Date.now()}`,
-          locked: true
+          id: `pk-${m.type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          locked: true,
+          note: `Importado de .pk (${m.type})`
         }, 0);
       });
       
       if (markers.length > 0) {
+        // Para garantir que não haja "buracos", limpamos marcadores automáticos se houver .pk
         saveMarkers(track.id, markers);
+        window.dispatchEvent(new CustomEvent("sp:markers-updated"));
         return { success: true, count: markers.length };
       }
     }
