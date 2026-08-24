@@ -574,14 +574,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             nextTriggerRef.current = { id: triggerKey, time: now };
             transitioningRef.current = true;
             
-            // Para evitar buracos (silêncio), garantimos que o fadeOutMs e o tempo
-            // restante até o endPoint estejam em sincronia. O trigger ocorre
-            // exatamente no momento em que a próxima faixa deve entrar.
-            const remaining = Math.max(0, endPoint - pos);
-            const fadeOutMs = plan.fadeOutMs > 0 ? plan.fadeOutMs : Math.round(remaining * 1000);
-            
-            // Próximo disparo imediato sem atraso artificial.
-            next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, fadeOutMs);
+            // Fades vêm prontos do plano: o fade-out da atual e o fade-in da
+            // entrante cobrem a mesma janela de sobreposição (sem buraco).
+            next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, plan.fadeOutMs);
+
             return;
           }
           
