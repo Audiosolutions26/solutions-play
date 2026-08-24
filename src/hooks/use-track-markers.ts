@@ -39,7 +39,10 @@ export function useTrackMarkers(trackId: string | undefined) {
     };
 
     window.addEventListener("storage", handleStorage);
-    const handleUpdate = () => refresh();
+    const handleUpdate = () => {
+      console.log("Global markers update detected, refreshing UI...");
+      refresh();
+    };
     window.addEventListener("sp:markers-updated", handleUpdate);
 
     return () => {

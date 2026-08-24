@@ -152,13 +152,43 @@ function DeckWaveform({
       ctx.restore();
     }
 
+    const drawRamp = (from: number, to: number, rising: boolean, rgb: string) => {
+      if (!(to > from)) return;
+      const x1 = (from / durationSec) * w;
+      const x2 = (to / durationSec) * w;
+      if (x2 < 0 || x1 > w) return;
+      const yTop = 2;
+      const yBottom = h - 2;
+      ctx.beginPath();
+      ctx.moveTo(x1, rising ? yBottom : yTop);
+      ctx.lineTo(x2, rising ? yTop : yBottom);
+      ctx.lineTo(x2, yBottom);
+      ctx.lineTo(x1, yBottom);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${rgb},0.2)`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x1, rising ? yBottom : yTop);
+      ctx.lineTo(x2, rising ? yTop : yBottom);
+      ctx.strokeStyle = `rgb(${rgb})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    };
+
+    const cueIn = markers.find(m => m.kind === "startPoint")?.positionSec ?? 0;
+    const cueOut = markers.find(m => m.kind === "endPoint")?.positionSec ?? durationSec;
+    const fadeInEnd = markers.find(m => m.kind === "fadeInEnd")?.positionSec ?? (cueIn + 0.8);
+    const fadeOutStart = markers.find(m => m.kind === "fadeOutStart")?.positionSec ?? (cueOut - 0.8);
+
+    drawRamp(cueIn, fadeInEnd, true, "34,197,94");
+    drawRamp(fadeOutStart, cueOut, false, "239,68,68");
+
     for (const marker of markers) {
       const sec = markerPositionSec(marker, durationSec);
       const x = (sec / durationSec) * w;
       const def = MARKER_DEFS.find((item) => item.kind === marker.kind);
       if (!def) continue;
 
-      // Mapeia rótulos específicos para o deck compacto se necessário
       let label = def.label;
       switch(marker.kind) {
         case "startPoint": label = "CUE-IN"; break;
@@ -170,44 +200,28 @@ function DeckWaveform({
 
       ctx.save();
       ctx.strokeStyle = def.color;
-      ctx.lineWidth = marker.locked ? 2 : 1;
-      ctx.setLineDash(marker.locked ? [3, 2] : [2, 2]);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2, 2]);
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, h);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = def.color;
-      ctx.beginPath();
-      ctx.moveTo(x - 4, 0);
-      ctx.lineTo(x + 4, 0);
-      ctx.lineTo(x, 6);
-      ctx.closePath();
-      ctx.fill();
-
-      // Adiciona rótulo no deck também
+      
       ctx.fillStyle = def.color;
       ctx.font = "bold 7px ui-mono, monospace";
-      ctx.fillText(label.toUpperCase(), x + 2, 10);
-
+      ctx.fillText(label.toUpperCase(), x + 2, 8);
       ctx.restore();
     }
 
     if (isActive) {
       const cursorX = w * progress;
-      ctx.strokeStyle = "#f6f8fa";
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(cursorX, 0);
       ctx.lineTo(cursorX, h);
       ctx.stroke();
-      ctx.fillStyle = "#f6f8fa";
-      ctx.beginPath();
-      ctx.moveTo(cursorX - 4, h - 6);
-      ctx.lineTo(cursorX + 4, h - 6);
-      ctx.lineTo(cursorX, h);
-      ctx.closePath();
-      ctx.fill();
     }
 
     ctx.fillStyle = "rgba(218, 231, 238, 0.55)";
