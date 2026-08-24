@@ -45,6 +45,10 @@ const MRK_TYPE_MAP: Record<string, MarkerKind> = {
   fade_in: "fadeInEnd",
   fade_out: "fadeOutStart",
   custom: "annotation",
+  // Mapeamento para suporte a .pk (Playlist Digital)
+  cue_in: "startPoint",
+  cue_out: "endPoint",
+  mix: "nextEntry",
 };
 
 /** Converte o documento .mrk para o formato interno de Markers. */
@@ -78,8 +82,29 @@ export async function importMrkInfoForTrack(track: Track): Promise<{ success: bo
     const raw = await readPkfInfoNative(track.filePath);
     if (!raw) return { success: false, count: 0 };
 
-    // Detecta se é o formato .mrk verificando a presença de audio.duration_ms
     const parsedRaw = JSON.parse(raw);
+    
+    // Suporte ao formato .pk (Playlist Digital)
+    if (parsedRaw.version && parsedRaw.markers && !parsedRaw.audio) {
+      const markers = (parsedRaw.markers as any[]).map(m => {
+        const kind = MRK_TYPE_MAP[m.type] || "annotation";
+        const positionSec = m.time_ms / 1000;
+        return normalizeMarker({
+          kind,
+          pos: 0, 
+          positionSec,
+          id: `pk-${m.type}-${Date.now()}`,
+          locked: true
+        }, 0);
+      });
+      
+      if (markers.length > 0) {
+        saveMarkers(track.id, markers);
+        return { success: true, count: markers.length };
+      }
+    }
+
+    // Formato .mrk padrão
     if (!parsedRaw.audio || typeof parsedRaw.audio.duration_ms !== 'number') return { success: false, count: 0 };
 
     const doc = parsedRaw as MrkDocument;
