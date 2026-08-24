@@ -94,6 +94,52 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
           ctx.stroke();
         }
 
+        // 2b. Rampas de FADE — verde na entrada, vermelha na saída.
+        {
+          const url = current ? getTrackAudioUrl(current.id) || current.audioUrl : null;
+          const cue = url ? getCachedCuePoints(url) : null;
+          const mk = (kind: string) => {
+            const m = markers.find((x) => x.kind === kind);
+            return m ? markerPositionSec(m, duration) : null;
+          };
+          const cueIn = mk("startPoint") ?? (cue && cue.cueIn > 0 ? cue.cueIn : 0);
+          const cueOut = mk("endPoint") ?? (cue && cue.cueOut > 0 ? cue.cueOut : duration);
+          const defFade = 0.8;
+          const fadeInEnd = Math.min(mk("fadeInEnd") ?? cueIn + defFade, cueOut);
+          const fadeOutStart = Math.max(mk("fadeOutStart") ?? cueOut - defFade, cueIn);
+          const xOf = (s: number) => (s - pos) * pixelsPerSecond + offset;
+
+          const ramp = (from: number, to: number, rising: boolean, rgb: string) => {
+            if (!(to > from)) return;
+            const x1 = xOf(from);
+            const x2 = xOf(to);
+            if (x2 < 0 || x1 > w) return;
+            const yTop = 4;
+            const yBottom = h - 4;
+            ctx.beginPath();
+            ctx.moveTo(x1, rising ? yBottom : yTop);
+            ctx.lineTo(x2, rising ? yTop : yBottom);
+            ctx.lineTo(x2, yBottom);
+            ctx.lineTo(x1, yBottom);
+            ctx.closePath();
+            ctx.fillStyle = `rgba(${rgb},0.14)`;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x1, rising ? yBottom : yTop);
+            ctx.lineTo(x2, rising ? yTop : yBottom);
+            ctx.strokeStyle = `rgb(${rgb})`;
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.stroke();
+            ctx.lineWidth = 1;
+          };
+
+          ramp(cueIn, fadeInEnd, true, "34,197,94");
+          ramp(fadeOutStart, cueOut, false, "239,68,68");
+        }
+
+
+
         // 3. Desenha Linha Central
         ctx.strokeStyle = "rgba(255,255,255,0.1)";
         ctx.beginPath();

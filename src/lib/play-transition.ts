@@ -108,30 +108,31 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   );
   const nextStart = effectiveStart(input.next, nextMarkers, input.nextCue, nextDurationSec);
   const nextEnd = effectiveEnd(input.next, nextMarkers, input.nextCue, nextDurationSec);
-  const mixMs = Math.max(0, Math.round(input.mixMs ?? mixTimeForTrack(input.current)));
-  
-  // Ajuste de batida (Beat Alignment)
-  // Se o BPM for conhecido, tenta alinhar a transição ao tempo da batida (60/BPM)
+  const rawMixMs = Math.max(0, Math.round(input.mixMs ?? mixTimeForTrack(input.current)));
+  // Nunca aceita mixagem zero em áudio "tocável": sem sobreposição o ar fica
+  // com buraco entre as faixas.
+  const mixMs = rawMixMs > 0 ? Math.max(300, rawMixMs) : 0;
+  const mixSec = mixMs / 1000;
+
+  const hardEnd = currentEnd.sec || currentDurationSec;
+  // Limite de segurança: a transição não pode começar antes do cue-in nem
+  // antes de ~15% do áudio já tocado.
+  const earliest = Math.max(
+    currentStart.sec,
+    currentStart.sec + (hardEnd - currentStart.sec) * 0.15,
+  );
+  // Ponto padrão de passagem: recua o tempo de mixagem a partir do cue-out,
+  // garantindo sobreposição real entre a atual e a próxima.
+  let defaultTransition = clampPoint(hardEnd - mixSec, Math.min(earliest, hardEnd), hardEnd);
+
+  // Ajuste de batida (Beat Alignment): quantiza o ponto já recuado.
   const currentBpm = input.currentCue?.bpm || 0;
-  let beatAlignedAt = 0;
   if (currentBpm > 60) {
     const beatLen = 60 / currentBpm;
-    // Quantiza o ponto final para a batida mais próxima (priorizando manter energia)
-    beatAlignedAt = Math.round(currentEnd.sec / beatLen) * beatLen;
-    // Evita silêncio: se a batida alinhada for depois do cue-out real, recua uma batida
-    // até que esteja suficientemente antes para permitir o crossfade.
-    while (beatAlignedAt > currentEnd.sec - 0.05) {
-      beatAlignedAt -= beatLen;
-    }
-    // Evita silêncio: se a batida alinhada for antes do cue-in, ignora
-    if (beatAlignedAt < currentStart.sec) {
-      beatAlignedAt = 0;
-    }
+    let aligned = Math.round(defaultTransition / beatLen) * beatLen;
+    while (aligned > hardEnd - 0.05) aligned -= beatLen;
+    if (aligned > earliest && aligned > currentStart.sec) defaultTransition = aligned;
   }
-
-  const defaultTransition = beatAlignedAt > 0 
-    ? beatAlignedAt
-    : Math.max(currentStart.sec, currentEnd.sec);
 
   const markedTransition =
     input.useMarkerMix === false
@@ -141,7 +142,7 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   const transitionAtSec = clampPoint(
     markedTransition ?? defaultTransition,
     currentStart.sec,
-    currentEnd.sec || currentDurationSec,
+    hardEnd,
   );
   const nextMixInSec =
     input.useStartMix === false
@@ -150,18 +151,17 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   const nextTriggerAtSec = clampPoint(
     transitionAtSec - nextMixInSec,
     currentStart.sec,
-    currentEnd.sec || currentDurationSec,
+    hardEnd,
   );
   const fadeOutMarked = markerSec(currentMarkers, "fadeOutStart", currentDurationSec);
   const fadeOutStartSec = clampPoint(
-    fadeOutMarked ?? Math.max(currentStart.sec, transitionAtSec),
+    fadeOutMarked ?? transitionAtSec,
     currentStart.sec,
-    currentEnd.sec || currentDurationSec,
+    hardEnd,
   );
-  const fadeOutMs =
-    fadeOutMarked !== null
-      ? Math.max(0, Math.round((currentEnd.sec - fadeOutStartSec) * 1000))
-      : mixMs;
+  // O fade-out sempre termina no cue-out: a rampa cobre exatamente a janela
+  // de sobreposição com a próxima faixa.
+  const fadeOutMs = Math.max(0, Math.round((hardEnd - fadeOutStartSec) * 1000)) || mixMs;
   const fadeInMarked = markerSec(nextMarkers, "fadeInEnd", nextDurationSec);
   const fallbackFadeInMs = Math.max(0, Math.round(mixMs));
   const fadeInEndSec =
@@ -173,6 +173,7 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
           nextEnd.sec || nextDurationSec,
         );
   const fadeInMs = Math.max(0, Math.round((fadeInEndSec - nextStart.sec) * 1000));
+
   const reason =
     markedTransition !== null
       ? "marker"
