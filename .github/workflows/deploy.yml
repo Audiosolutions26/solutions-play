@@ -128,4 +128,4 @@ jobs:
           name: solutions-play-windows-${{ github.sha }}
           path: electron-release/Solutions-Play-win32-x64
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
