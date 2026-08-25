@@ -1,7 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  type ConfigState, type ConfigValue, defaultConfig, loadConfig, saveConfig,
+  type ConfigState,
+  type ConfigValue,
+  defaultConfig,
+  loadConfig,
+  saveConfig,
 } from "@/lib/play-config";
+import { clearCuePointCache } from "@/lib/play-cuepoints";
 
 interface ConfigCtx {
   config: ConfigState;
@@ -25,16 +30,29 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
   // keep draft in sync when committed config changes externally
   useEffect(() => setDraftState(config), [config]);
 
-  const value = useMemo<ConfigCtx>(() => ({
-    config,
-    draft,
-    setDraft: (key, v) => setDraftState((d) => ({ ...d, [key]: v })),
-    setDraftAll: (state) => setDraftState(state),
-    commit: () => { setConfig(draft); saveConfig(draft); },
-    reset: () => { const d = defaultConfig(); setDraftState(d); },
-    cancel: () => setDraftState(config),
-    get: (key) => config[key],
-  }), [config, draft]);
+  const value = useMemo<ConfigCtx>(
+    () => ({
+      config,
+      draft,
+      setDraft: (key, v) => setDraftState((d) => ({ ...d, [key]: v })),
+      setDraftAll: (state) => setDraftState(state),
+      commit: () => {
+        setConfig(draft);
+        saveConfig(draft);
+        clearCuePointCache();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("sp:config-updated"));
+        }
+      },
+      reset: () => {
+        const d = defaultConfig();
+        setDraftState(d);
+      },
+      cancel: () => setDraftState(config),
+      get: (key) => config[key],
+    }),
+    [config, draft],
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

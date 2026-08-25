@@ -3,6 +3,8 @@ import { Headphones } from "lucide-react";
 import { toast } from "sonner";
 import { cuePlayAt } from "@/lib/play-cue";
 import { getMarkers } from "@/lib/play-markers";
+import { getEffectiveMarkers } from "@/lib/play-effective-markers";
+import { useConfig } from "@/hooks/use-config";
 import { mixTimeForTrack } from "@/lib/play-mixagem";
 import { passagePreviewStartSec, resolveTransitionPlan } from "@/lib/play-transition";
 import { usePlayer } from "@/hooks/use-player";
@@ -40,6 +42,7 @@ function TButton({
 }
 
 export function TransportBar() {
+  const { config } = useConfig();
   const {
     isPlaying,
     togglePlay,
@@ -92,9 +95,11 @@ export function TransportBar() {
     const plan = resolveTransitionPlan({
       current,
       next,
-      currentMarkers: getMarkers(current.id),
-      nextMarkers: getMarkers(next.id),
-      mixMs: mixTimeForTrack(current),
+      currentMarkers: getEffectiveMarkers(current, getMarkers(current.id), current.duration, {
+        config,
+      }),
+      nextMarkers: getEffectiveMarkers(next, getMarkers(next.id), next.duration, { config }),
+      mixMs: mixTimeForTrack(current, config),
       useMarkerMix: true,
       useStartMix: true,
     });

@@ -2,7 +2,7 @@
 // mixagem padrão"). Resolve, a partir das configurações salvas, o tempo de
 // mixagem (crossfade) e os fades por tipo de inserção. Estes valores são
 // aplicados de verdade no motor de áudio durante as transições.
-import { loadConfig } from "./play-config";
+import { loadConfig, type ConfigState } from "./play-config";
 import type { Track } from "./play-data";
 
 export interface MixSettings {
@@ -32,9 +32,13 @@ const DEFAULTS: MixSettings = {
 };
 
 // Lê os tempos de mixagem padrão (em ms) das configurações persistidas.
-export function getMixSettings(): MixSettings {
+export function getMixSettings(source?: ConfigState): MixSettings {
   let c: Record<string, unknown> = {};
-  try { c = loadConfig() as Record<string, unknown>; } catch { /* SSR / sem storage */ }
+  try {
+    c = (source ?? loadConfig()) as Record<string, unknown>;
+  } catch {
+    /* SSR / sem storage */
+  }
   const n = (key: string, def: number) => {
     const v = c[`insercoes.tempoMixagem.${key}`];
     return typeof v === "number" && v >= 0 ? v : def;
@@ -54,17 +58,21 @@ export function getMixSettings(): MixSettings {
 }
 
 // Tempo de mixagem (ms) para uma inserção, conforme seu tipo/categoria.
-export function mixTimeForTrack(t: Track | null | undefined): number {
+export function mixTimeForTrack(t: Track | null | undefined, source?: ConfigState): number {
   if (!t) return 0;
-  const m = getMixSettings();
-  if (t.kind === "pausa") return 0;            // pausa não mixa
+  const m = getMixSettings(source);
+  if (t.kind === "pausa") return 0; // pausa não mixa
   if (t.kind === "locucao") return m.locucoes;
   if (t.kind === "horacerta") return m.horaCerta;
   switch (t.category) {
-    case "musical": return m.musicas;
-    case "comercial": return m.comerciais;
-    case "vinheta": return m.vinhetas;
-    default: return m.demais;                   // texto/demais
+    case "musical":
+      return m.musicas;
+    case "comercial":
+      return m.comerciais;
+    case "vinheta":
+      return m.vinhetas;
+    default:
+      return m.demais; // texto/demais
   }
 }
 
@@ -84,10 +92,14 @@ export function markerMixEnabled(t: Track | null | undefined): boolean {
   if (t.kind === "locucao") return configBoolean("marcLocucoes.locMarcMix");
   if (t.kind === "horacerta") return configBoolean("marcHoraCerta.hcMarcMix");
   switch (t.category) {
-    case "musical": return configBoolean("marcMusicas.musMarcMix");
-    case "comercial": return configBoolean("marcComerciais.comMarcMix");
-    case "vinheta": return configBoolean("marcVinhetas.vinMarcMix");
-    default: return true;
+    case "musical":
+      return configBoolean("marcMusicas.musMarcMix");
+    case "comercial":
+      return configBoolean("marcComerciais.comMarcMix");
+    case "vinheta":
+      return configBoolean("marcVinhetas.vinMarcMix");
+    default:
+      return true;
   }
 }
 
@@ -97,10 +109,14 @@ export function markerStartEnabled(t: Track | null | undefined): boolean {
   if (t.kind === "locucao") return configBoolean("marcLocucoes.locMarcInicio");
   if (t.kind === "horacerta") return configBoolean("marcHoraCerta.hcMarcInicio");
   switch (t.category) {
-    case "musical": return configBoolean("marcMusicas.musMarcInicio");
-    case "comercial": return configBoolean("marcComerciais.comMarcInicio");
-    case "vinheta": return configBoolean("marcVinhetas.vinMarcInicio");
-    default: return true;
+    case "musical":
+      return configBoolean("marcMusicas.musMarcInicio");
+    case "comercial":
+      return configBoolean("marcComerciais.comMarcInicio");
+    case "vinheta":
+      return configBoolean("marcVinhetas.vinMarcInicio");
+    default:
+      return true;
   }
 }
 

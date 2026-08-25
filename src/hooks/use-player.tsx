@@ -38,6 +38,7 @@ import { logEvent } from "@/lib/play-events";
 import { resolveTransitionPlan, type TransitionPlan } from "@/lib/play-transition";
 import { applyTrackOutput, type OutputFn } from "@/lib/play-outputs";
 import { suggestCrossfadeCurve, getNormalizationGain } from "@/lib/audio-analysis";
+import { getEffectiveMarkers } from "@/lib/play-effective-markers";
 
 export type OperationMode = "AUTO" | "MANUAL" | "RE-BROADCAST" | "OFFLINE";
 
@@ -169,15 +170,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (!cueDetectionEnabled()) return;
       const nx = findNext(blockId, trackId);
       if (!nx) return;
-      
+
       void trackUrl(nx.track).then(async (u) => {
         if (!u) return;
-        
+
         // Antes de analisar o cue, garante que os marcadores externos (.mrk) foram lidos
         if (nx.track.filePath && getMarkers(nx.track.id).length === 0) {
           await importMrkInfoForTrack(nx.track);
         }
-        
+
         void analyzeCuePoints(u);
       });
     },
@@ -211,7 +212,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await applyTrackOutput(track, outputFn);
         if (currentRef.current.track?.id !== trackId) return;
         const detect = cueDetectionEnabled();
-        
+
         // Assegura que o cue da faixa atual e da próxima estejam carregados
         const cached = detect ? await analyzeCuePoints(u) : undefined;
         const nxResult = findNext(blockId, trackId);
@@ -230,39 +231,60 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           if (res.success) markers = getMarkers(track.id);
         }
 
+        // Calcula a mesma visão efetiva que os decks exibem: marcadores
+        // manuais/importados vencem; na ausência deles, as opções de mixagem
+        // e a detecção automática completam os pontos em memória.
+        const currentMarkers = getEffectiveMarkers(
+          track,
+          markers,
+          cached?.duration || track.duration,
+          { cue: cached },
+        );
+        const nextMarkers = nextTrack
+          ? getEffectiveMarkers(
+              nextTrack,
+              getMarkers(nextTrack.id),
+              nextCached?.duration || nextTrack.duration,
+              { cue: nextCached },
+            )
+          : currentMarkers;
+
         // Calcula o plano de transição exato para esta faixa
         const plan = resolveTransitionPlan({
           current: track,
           next: nextTrack || track,
-          currentMarkers: markers,
+          currentMarkers,
+          nextMarkers,
           currentCue: cached,
           nextCue: nextCached,
+          mixMs: mixTimeForTrack(track),
+          useMarkerMix: markerMixEnabled(track),
+          useStartMix: markerStartEnabled(nextTrack || track),
         });
 
-        const markedStart = markers.find((m) => m.kind === "startPoint");
+        const markedStart = currentMarkers.find((m) => m.kind === "startPoint");
         const markerStart = markedStart ? markerPositionSec(markedStart, track.duration) : 0;
-        
+
         // Determina Fade-In baseado no marcador fadeInEnd (se existir)
-        const markedFadeIn = markers.find(m => m.kind === "fadeInEnd");
+        const markedFadeIn = currentMarkers.find((m) => m.kind === "fadeInEnd");
         let effectiveFadeMs = fadeMs;
         if (markedFadeIn && track.duration > 0) {
           const fadeInPos = markerPositionSec(markedFadeIn, track.duration);
           effectiveFadeMs = Math.max(0, (fadeInPos - markerStart) * 1000);
         }
 
-        const startAt = typeof fromOffset === "number"
-            ? Math.max(0, fromOffset)
-            : plan.currentStartSec;
-        
+        const startAt =
+          typeof fromOffset === "number" ? Math.max(0, fromOffset) : plan.currentStartSec;
+
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
-        
+
         const curve = suggestCrossfadeCurve(
-          track.category || 'musical',
-          nextTrack?.category || 'musical',
+          track.category || "musical",
+          nextTrack?.category || "musical",
           cached?.bpm || 0,
-          nextCached?.bpm || 0
+          nextCached?.bpm || 0,
         );
-        
+
         const normGain = cached?.loudness ? getNormalizationGain(cached.loudness) : 1.0;
 
         // O motor de áudio recebe a curva, o ganho e o fadeOutMs calculado pelo plano
@@ -271,7 +293,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // recebido por playAt prevalece; na inicialização, usa-se o padrão.
         const effectiveFadeOutMs = Math.max(0, fadeOutMs ?? plan.fadeOutMs);
         engine.playUrl(u, startAt, effectiveFadeMs, curve, effectiveFadeOutMs, normGain);
-        
+
         prefetchCue(blockId, trackId);
       };
       const url = getTrackAudioUrl(trackId) || track.audioUrl;
@@ -481,26 +503,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const jumpToMarker = useCallback((kind: string) => {
-    const cur = currentRef.current.track;
-    if (!cur) return;
-    const markers = getMarkers(cur.id);
-    const marker = markers.find((m) => m.kind === kind);
-    if (marker) {
-      const duration = engine.mediaDuration() || cur.duration;
-      const pos = markerPositionSec(marker, duration);
-      engine.playUrl(
-        getTrackAudioUrl(cur.id) || cur.audioUrl || "",
-        pos,
-        0,
-        'equal-power',
-        0,
-        1.0
-      );
-      setPosition(pos);
-      logEvent("sistema", `Pulo para marcador ${kind}`, cur.title);
-    }
-  }, [engine]);
+  const jumpToMarker = useCallback(
+    (kind: string) => {
+      const cur = currentRef.current.track;
+      if (!cur) return;
+      const markers = getMarkers(cur.id);
+      const marker = markers.find((m) => m.kind === kind);
+      if (marker) {
+        const duration = engine.mediaDuration() || cur.duration;
+        const pos = markerPositionSec(marker, duration);
+        engine.playUrl(
+          getTrackAudioUrl(cur.id) || cur.audioUrl || "",
+          pos,
+          0,
+          "equal-power",
+          0,
+          1.0,
+        );
+        setPosition(pos);
+        logEvent("sistema", `Pulo para marcador ${kind}`, cur.title);
+      }
+    },
+    [engine],
+  );
 
   const exportCurrentMarkers = useCallback(async () => {
     const cur = currentRef.current.track;
@@ -540,8 +565,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             ? resolveTransitionPlan({
                 current: cur,
                 next: nx.track,
-                currentMarkers: getMarkers(cur.id),
-                nextMarkers: getMarkers(nx.track.id),
+                currentMarkers: getEffectiveMarkers(cur, getMarkers(cur.id), dur, { cue: cp }),
+                nextMarkers: getEffectiveMarkers(
+                  nx.track,
+                  getMarkers(nx.track.id),
+                  nx.track.duration,
+                ),
                 currentCue: cp,
                 mixMs: mixTimeForTrack(cur),
                 useMarkerMix: markerMixEnabled(cur),
@@ -576,24 +605,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             // Verificação dupla para evitar disparos múltiplos no mesmo ponto (debounce).
             const triggerKey = `${cur.id}-${plan.nextId}`;
             const now = Date.now();
-            if (nextTriggerRef.current?.id === triggerKey && now - nextTriggerRef.current.time < 1000) {
+            if (
+              nextTriggerRef.current?.id === triggerKey &&
+              now - nextTriggerRef.current.time < 1000
+            ) {
               return;
             }
-            
+
             nextTriggerRef.current = { id: triggerKey, time: now };
             transitioningRef.current = true;
-            
+
             // Fades vêm prontos do plano: o fade-out da atual e o fade-in da
             // entrante cobrem a mesma janela de sobreposição (sem buraco).
             next(plan.fadeInMs, plan.nextStartOffsetSec, undefined, plan.fadeOutMs);
 
             return;
           }
-          
+
           if (mode === "AUTO" && endPoint > 0 && pos >= endPoint) {
             const triggerKey = `${cur.id}-end`;
             const now = Date.now();
-            if (nextTriggerRef.current?.id === triggerKey && now - nextTriggerRef.current.time < 1000) {
+            if (
+              nextTriggerRef.current?.id === triggerKey &&
+              now - nextTriggerRef.current.time < 1000
+            ) {
               return;
             }
             nextTriggerRef.current = { id: triggerKey, time: now };

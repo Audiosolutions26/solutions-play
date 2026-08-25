@@ -35,6 +35,8 @@ import {
   validateMarkers,
 } from "@/lib/play-markers";
 import { usePlayer } from "@/hooks/use-player";
+import { useConfig } from "@/hooks/use-config";
+import { configuredWaveformThreshold, getEffectiveMarkers } from "@/lib/play-effective-markers";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { cuePlayAt } from "@/lib/play-cue";
 import { analyzeWaveform, detectMixPoints, type WaveformPeaks } from "@/lib/play-waveform";
@@ -54,6 +56,7 @@ export function MarkersDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const { blocks } = usePlayer();
+  const { config } = useConfig();
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [tool, setTool] = useState<MarkerKind>("startPoint");
   const [zoom, setZoom] = useState(1);
@@ -70,6 +73,10 @@ export function MarkersDialog({
       setZoom(1);
     }
   }, [track, open]);
+
+  useEffect(() => {
+    if (open) setThreshold(configuredWaveformThreshold(config));
+  }, [config, open]);
 
   const fallbackWave = useMemo(
     () => (track ? pseudoWave(Math.round((track.freq + track.duration) * 7) + 1) : []),
@@ -97,6 +104,31 @@ export function MarkersDialog({
       cancelled = true;
     };
   }, [track, open]);
+
+  // Marcadores com id auto-* são uma projeção das opções e podem ser
+  // recalculados; marcadores manuais/importados permanecem intocados.
+  const isConfigDerived = (marker: Marker) => marker.id?.startsWith("auto-") === true;
+
+  // O editor usa a waveform real quando disponível e a mesma fallback do
+  // preview quando não há arquivo local. Em ambos os casos, os marcadores
+  // derivados das opções precisam aparecer na lista e sobre a onda.
+  useEffect(() => {
+    if (!track || !open) return;
+    const baseMarkers = markers.filter((marker) => !isConfigDerived(marker));
+    const displayDuration = waveform?.durationSec || track.duration;
+    const displayPeaks = waveform?.left ?? Float32Array.from(fallbackWave);
+    const nextMarkers = getEffectiveMarkers(track, baseMarkers, displayDuration, {
+      peaks: displayPeaks,
+      config,
+    });
+    const changed =
+      nextMarkers.length !== markers.length ||
+      nextMarkers.some((next, index) => {
+        const current = markers[index];
+        return !current || current.kind !== next.kind || current.positionSec !== next.positionSec;
+      });
+    if (changed) setMarkers(nextMarkers);
+  }, [config, fallbackWave, track, open, waveform, markers]);
 
   const block = track ? blocks.find((b) => b.items.some((t) => t.id === track.id)) : undefined;
 
@@ -257,7 +289,12 @@ export function MarkersDialog({
       toast.error("Waveform não carregada.");
       return;
     }
-    const detected = detectMixPoints(peaks, durationSec, threshold, windowMs);
+    const detected = detectMixPoints(
+      peaks,
+      durationSec,
+      configuredWaveformThreshold(config),
+      windowMs,
+    );
     setMarkers((prev) => [
       ...prev.filter((m) => m.kind !== "mixIn" && m.kind !== "nextEntry"),
       {
@@ -411,13 +448,25 @@ export function MarkersDialog({
                 className="w-14 rounded border bg-transparent px-1 py-0.5 text-[10px]"
               />
             </label>
-            <button onClick={autoDetect} className="rounded bg-pl-panel-dark/40 px-2 py-1 text-[10px] font-medium hover:bg-pl-panel-dark/60">
+            <button
+              onClick={autoDetect}
+              className="rounded bg-pl-panel-dark/40 px-2 py-1 text-[10px] font-medium hover:bg-pl-panel-dark/60"
+            >
               Calcular Mix
             </button>
-            <button onClick={() => pkInputRef.current?.click()} className="rounded bg-pl-panel-dark/40 px-2 py-1 text-[10px] font-medium hover:bg-pl-panel-dark/60">
+            <button
+              onClick={() => pkInputRef.current?.click()}
+              className="rounded bg-pl-panel-dark/40 px-2 py-1 text-[10px] font-medium hover:bg-pl-panel-dark/60"
+            >
               Importar .pk
             </button>
-            <input ref={pkInputRef} type="file" accept=".pk" className="hidden" onChange={importPk} />
+            <input
+              ref={pkInputRef}
+              type="file"
+              accept=".pk"
+              className="hidden"
+              onChange={importPk}
+            />
           </div>
           <div className="flex items-center gap-1">
             <button

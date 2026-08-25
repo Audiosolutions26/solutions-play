@@ -14,12 +14,20 @@ import { toast } from "sonner";
 import { usePlayer } from "@/hooks/use-player";
 import { fmt, type Track } from "@/lib/play-data";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
-import { MARKER_DEFS, markerPositionSec, pseudoWave, getMarkers } from "@/lib/play-markers";
+import {
+  MARKER_DEFS,
+  markerPositionSec,
+  pseudoWave,
+  getMarkers,
+  type Marker,
+} from "@/lib/play-markers";
 import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
 import { MarkersDialog } from "./MarkersDialog";
 import { StitcherDialog } from "./StitcherDialog";
 import { VoiceTrackingDialog } from "./VoiceTrackingDialog";
 import { useTrackMarkers } from "@/hooks/use-track-markers";
+import { useConfig } from "@/hooks/use-config";
+import { getEffectiveMarkers } from "@/lib/play-effective-markers";
 
 function formatTime(value: number): string {
   return Number.isFinite(value) && value > 0 ? fmt(Math.round(value)) : "00:00";
@@ -83,7 +91,16 @@ function DeckWaveform({
     [track],
   );
   const { markers } = useTrackMarkers(track?.id);
+  const { config } = useConfig();
   const durationSec = waveform?.durationSec || track?.duration || 1;
+  const visualPeaks = useMemo(
+    () => waveform?.left ?? Float32Array.from(fallbackWave),
+    [fallbackWave, waveform?.left],
+  );
+  const effectiveMarkers = useMemo(
+    () => getEffectiveMarkers(track, markers, durationSec, { peaks: visualPeaks, config }),
+    [config, durationSec, markers, track, visualPeaks],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -175,27 +192,39 @@ function DeckWaveform({
       ctx.stroke();
     };
 
-    const cueIn = markers.find(m => m.kind === "startPoint")?.positionSec ?? 0;
-    const cueOut = markers.find(m => m.kind === "endPoint")?.positionSec ?? durationSec;
-    const fadeInEnd = markers.find(m => m.kind === "fadeInEnd")?.positionSec ?? (cueIn + 0.8);
-    const fadeOutStart = markers.find(m => m.kind === "fadeOutStart")?.positionSec ?? (cueOut - 0.8);
+    const cueIn = effectiveMarkers.find((m) => m.kind === "startPoint")?.positionSec ?? 0;
+    const cueOut = effectiveMarkers.find((m) => m.kind === "endPoint")?.positionSec ?? durationSec;
+    const fadeInEnd =
+      effectiveMarkers.find((m) => m.kind === "fadeInEnd")?.positionSec ?? cueIn + 0.8;
+    const fadeOutStart =
+      effectiveMarkers.find((m) => m.kind === "fadeOutStart")?.positionSec ?? cueOut - 0.8;
 
     drawRamp(cueIn, fadeInEnd, true, "34,197,94");
     drawRamp(fadeOutStart, cueOut, false, "239,68,68");
 
-    for (const marker of markers) {
+    for (const marker of effectiveMarkers) {
       const sec = markerPositionSec(marker, durationSec);
       const x = (sec / durationSec) * w;
       const def = MARKER_DEFS.find((item) => item.kind === marker.kind);
       if (!def) continue;
 
       let label = def.label;
-      switch(marker.kind) {
-        case "startPoint": label = "CUE-IN"; break;
-        case "endPoint": label = "CUE-OUT"; break;
-        case "nextEntry": label = "MIX-OUT"; break;
-        case "fadeInEnd": label = "FADE-IN"; break;
-        case "fadeOutStart": label = "FADE-OUT"; break;
+      switch (marker.kind) {
+        case "startPoint":
+          label = "CUE-IN";
+          break;
+        case "endPoint":
+          label = "CUE-OUT";
+          break;
+        case "nextEntry":
+          label = "MIX-OUT";
+          break;
+        case "fadeInEnd":
+          label = "FADE-IN";
+          break;
+        case "fadeOutStart":
+          label = "FADE-OUT";
+          break;
       }
 
       ctx.save();
@@ -207,7 +236,7 @@ function DeckWaveform({
       ctx.lineTo(x, h);
       ctx.stroke();
       ctx.setLineDash([]);
-      
+
       ctx.fillStyle = def.color;
       ctx.font = "bold 7px ui-mono, monospace";
       ctx.fillText(label.toUpperCase(), x + 2, 8);
@@ -230,7 +259,7 @@ function DeckWaveform({
     ctx.fillText("00:00", 4, h - 3);
     ctx.textAlign = "right";
     ctx.fillText(formatTime(durationSec), w - 4, h - 3);
-  }, [accent, durationSec, fallbackWave, isActive, markers, position, waveform]);
+  }, [accent, durationSec, effectiveMarkers, fallbackWave, isActive, position, waveform]);
 
   return (
     <div className="relative h-[66px] overflow-hidden rounded border border-white/10 bg-[#070b0f]">
@@ -267,7 +296,7 @@ function DeckCard({
   onCue: () => void;
   onMarkers: () => void;
   onExport: () => void;
-  markers: any[];
+  markers: Marker[];
 }) {
   const accentClass =
     accent === "blue" ? "border-[#3d6e8f] bg-[#121b23]" : "border-[#9b5c1e] bg-[#1e1711]";
@@ -296,8 +325,14 @@ function DeckCard({
       <DeckWaveform track={track} position={position} isActive={isActive} accent={accent} />
       {track && markers && markers.length > 0 && (
         <div className="absolute top-10 right-3 flex gap-1 pointer-events-none z-10">
-          {markers.slice(0, 5).map((m: any, i: number) => (
-            <span key={i} className="h-1.5 w-1.5 rounded-full border border-black/20" style={{ backgroundColor: MARKER_DEFS.find(d => d.kind === m.kind)?.color || '#fff' }} />
+          {markers.slice(0, 5).map((m, i) => (
+            <span
+              key={i}
+              className="h-1.5 w-1.5 rounded-full border border-black/20"
+              style={{
+                backgroundColor: MARKER_DEFS.find((d) => d.kind === m.kind)?.color || "#fff",
+              }}
+            />
           ))}
         </div>
       )}
@@ -371,7 +406,7 @@ export function StudioDecksPanel() {
   const [markerTrack, setMarkerTrack] = useState<Track | null>(null);
   const [stitcherOpen, setStitcherOpen] = useState(false);
   const [voiceTrackingOpen, setVoiceTrackingOpen] = useState(false);
-  
+  const { config } = useConfig();
   // Resolve a lógica de Deck A (No Ar) e Deck B (Próxima) dinamicamente
   const { deckA, deckB, deckABlock, deckBBlock } = useMemo(() => {
     let dA = current;
@@ -380,21 +415,26 @@ export function StudioDecksPanel() {
     let dBB: string | null = null;
 
     if (!dA) {
-      const firstBlock = blocks.find(b => b.items.length > 0);
+      const firstBlock = blocks.find((b) => b.items.length > 0);
       dA = firstBlock?.items[0] ?? null;
       dAB = firstBlock?.id ?? null;
-      dB = firstBlock?.items[1] ?? blocks.find(b => b.id !== firstBlock?.id && b.items.length > 0)?.items[0] ?? null;
-      dBB = firstBlock?.items[1] ? firstBlock.id : (blocks.find(b => b.id !== firstBlock?.id && b.items.length > 0)?.id ?? null);
+      dB =
+        firstBlock?.items[1] ??
+        blocks.find((b) => b.id !== firstBlock?.id && b.items.length > 0)?.items[0] ??
+        null;
+      dBB = firstBlock?.items[1]
+        ? firstBlock.id
+        : (blocks.find((b) => b.id !== firstBlock?.id && b.items.length > 0)?.id ?? null);
     } else {
       // Procura a próxima faixa após current
-      const bIndex = blocks.findIndex(b => b.id === dAB);
+      const bIndex = blocks.findIndex((b) => b.id === dAB);
       if (bIndex >= 0) {
-        const tIndex = blocks[bIndex].items.findIndex(t => t.id === dA?.id);
+        const tIndex = blocks[bIndex].items.findIndex((t) => t.id === dA?.id);
         if (tIndex >= 0 && tIndex < blocks[bIndex].items.length - 1) {
           dB = blocks[bIndex].items[tIndex + 1];
           dBB = blocks[bIndex].id;
         } else {
-          const nextB = blocks.slice(bIndex + 1).find(b => b.items.length > 0);
+          const nextB = blocks.slice(bIndex + 1).find((b) => b.items.length > 0);
           dB = nextB?.items[0] ?? null;
           dBB = nextB?.id ?? null;
         }
@@ -403,6 +443,17 @@ export function StudioDecksPanel() {
 
     return { deckA: dA, deckB: dB, deckABlock: dAB, deckBBlock: dBB };
   }, [blocks, current, currentBlockId]);
+
+  const deckAMarkers = useMemo(
+    () =>
+      deckA ? getEffectiveMarkers(deckA, getMarkers(deckA.id), deckA.duration, { config }) : [],
+    [config, deckA],
+  );
+  const deckBMarkers = useMemo(
+    () =>
+      deckB ? getEffectiveMarkers(deckB, getMarkers(deckB.id), deckB.duration, { config }) : [],
+    [config, deckB],
+  );
 
   return (
     <aside className="flex h-[164px] max-h-[164px] w-full shrink-0 items-stretch gap-2 overflow-hidden border-b border-[#304858] bg-[#0f1820] p-2 text-[#dce6ed]">
@@ -449,7 +500,7 @@ export function StudioDecksPanel() {
           onPlay={() => {
             if (deckABlock && deckA) playAt(deckABlock, deckA.id);
           }}
-          markers={getMarkers(deckA?.id || '')}
+          markers={deckAMarkers}
         />
         <DeckCard
           label="Deck B · PRÓXIMA"
@@ -466,7 +517,7 @@ export function StudioDecksPanel() {
             }
           }}
           onPlay={nextManual}
-          markers={getMarkers(deckB?.id || '')}
+          markers={deckBMarkers}
         />
       </div>
       <div className="flex w-[150px] shrink-0 flex-col justify-center gap-1 border-l border-[#2a4051] pl-2">

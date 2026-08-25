@@ -1,21 +1,50 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { usePlayer } from "@/hooks/use-player";
-import { MARKER_DEFS, markerPositionSec, type Marker, validateMarkers } from "@/lib/play-markers";
+import {
+  MARKER_DEFS,
+  markerPositionSec,
+  pseudoWave,
+  type Marker,
+  validateMarkers,
+} from "@/lib/play-markers";
 import { useTrackMarkers } from "@/hooks/use-track-markers";
 import { getCachedCuePoints } from "@/lib/play-cuepoints";
 import { getTrackAudioUrl } from "@/lib/play-audio-files";
+import { getEffectiveMarkers } from "@/lib/play-effective-markers";
+import { useConfig } from "@/hooks/use-config";
 import { Activity, Zap } from "lucide-react";
 
 export function Waveform({ zoom = 1 }: { zoom?: number }) {
   const { getEngine, isPlaying, current, jumpToMarker } = usePlayer();
   const { markers, undo, redo, canUndo, canRedo } = useTrackMarkers(current?.id);
+  const { config } = useConfig();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
   const [draggedMarkerId, setDraggedMarkerId] = useState<string | null>(null);
-  const [visibleKinds, setVisibleKinds] = useState<Set<string>>(new Set(MARKER_DEFS.map(d => d.kind)));
+  const [visibleKinds, setVisibleKinds] = useState<Set<string>>(
+    new Set(MARKER_DEFS.map((d) => d.kind)),
+  );
   const { updateMarkerPosition } = useTrackMarkers(current?.id);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  const cuePoints = useMemo(() => {
+    if (!current) return undefined;
+    const url = getTrackAudioUrl(current.id) || current.audioUrl;
+    return url ? getCachedCuePoints(url) : undefined;
+  }, [current]);
+  const fallbackPeaks = useMemo(
+    () => (current ? Float32Array.from(pseudoWave(current.duration * 7 + 1)) : undefined),
+    [current],
+  );
+  const effectiveMarkers = useMemo(() => {
+    if (!current) return [];
+    const duration = getEngine().mediaDuration() || cuePoints?.duration || current.duration || 0;
+    return getEffectiveMarkers(current, markers, duration, {
+      cue: cuePoints,
+      peaks: fallbackPeaks,
+      config,
+    });
+  }, [config, current, cuePoints, fallbackPeaks, getEngine, markers]);
 
   useEffect(() => {
     const engine = getEngine();
@@ -24,7 +53,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let raf = 0;
-    
+
     const resize = () => {
       const r = canvas.getBoundingClientRect();
       canvas.width = r.width;
@@ -37,15 +66,15 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
-      
+
       // Fundo escuro
       ctx.fillStyle = "#050505";
       ctx.fillRect(0, 0, w, h);
-      
+
       const pos = engine.position();
       const duration = engine.mediaDuration();
       const z = zoomRef.current;
-      
+
       if (duration > 0) {
         const pixelsPerSecond = (w * z) / duration;
         const offset = w * 0.1; // Margem de 10% para o cursor
@@ -54,7 +83,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
         ctx.strokeStyle = "rgba(255,255,255,0.15)";
         ctx.fillStyle = "rgba(255,255,255,0.4)";
         ctx.font = "9px monospace";
-        
+
         for (let s = 0; s <= duration; s += 1) {
           const x = (s - pos) * pixelsPerSecond + offset;
           if (x >= 0 && x <= w) {
@@ -80,10 +109,10 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
           ctx.strokeStyle = "#f08a24";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          
+
           const visibleSamples = Math.floor(buf.length / z);
           const step = visibleSamples / w;
-          
+
           for (let x = 0; x < w; x++) {
             const sampleIdx = Math.floor(x * step);
             const v = (buf[sampleIdx] - 128) / 128;
@@ -99,7 +128,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
           const url = current ? getTrackAudioUrl(current.id) || current.audioUrl : null;
           const cue = url ? getCachedCuePoints(url) : null;
           const mk = (kind: string) => {
-            const m = markers.find((x) => x.kind === kind);
+            const m = effectiveMarkers.find((x) => x.kind === kind);
             return m ? markerPositionSec(m, duration) : null;
           };
           const cueIn = mk("startPoint") ?? (cue && cue.cueIn > 0 ? cue.cueIn : 0);
@@ -138,8 +167,6 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
           ramp(fadeOutStart, cueOut, false, "239,68,68");
         }
 
-
-
         // 3. Desenha Linha Central
         ctx.strokeStyle = "rgba(255,255,255,0.1)";
         ctx.beginPath();
@@ -149,74 +176,109 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
 
         // 4. Desenha MARCAÇÕES (Markers) - CUE-IN, CUE-OUT, etc.
         if (current) {
-          [...markers].sort((a, b) => markerPositionSec(a, duration) - markerPositionSec(b, duration)).forEach(marker => {
-            if (!visibleKinds.has(marker.kind)) return;
-            const markerPos = markerPositionSec(marker, duration);
-            const x = (markerPos - pos) * pixelsPerSecond + offset;
-            
-            if (x >= 0 && x <= w) {
-              // Estilo por tipo de marcador
-              let color = "#ffffff";
-              let label = marker.kind as string;
-              
-              switch(marker.kind as string) {
-                case "startPoint": color = "#2ecc71"; label = "CUE-IN"; break;
-                case "endPoint": color = "#e74c3c"; label = "CUE-OUT"; break;
-                case "nextEntry": color = "#f1c40f"; label = "MIX-OUT"; break;
-                case "introEnd": color = "#3498db"; label = "INTRO"; break;
-                case "mixIn": color = "#0ea5e9"; label = "MIX-IN"; break;
-                case "fadeInEnd": color = "#84cc16"; label = "FADE-IN"; break;
-                case "fadeOutStart": color = "#f59e0b"; label = "FADE-OUT"; break;
-                case "locStart": color = "#a855f7"; label = "LOC-START"; break;
-                case "refraoStart": color = "#ec4899"; label = "REF-START"; break;
-                case "refraoEnd": color = "#db2777"; label = "REF-END"; break;
-                case "carimbo": color = "#eab308"; label = "STAMP"; break;
-              }
-              
-              const isDragged = draggedMarkerId === marker.id;
-              const isInvalid = markerPos < 0 || markerPos > duration;
+          [...effectiveMarkers]
+            .sort((a, b) => markerPositionSec(a, duration) - markerPositionSec(b, duration))
+            .forEach((marker) => {
+              if (!visibleKinds.has(marker.kind)) return;
+              const markerPos = markerPositionSec(marker, duration);
+              const x = (markerPos - pos) * pixelsPerSecond + offset;
 
-              ctx.strokeStyle = isInvalid ? "#ff0000" : color;
-              ctx.lineWidth = isDragged ? 3 : (isInvalid ? 2 : 1);
-              ctx.setLineDash(isDragged ? [] : [4, 2]);
-              
-              // Efeito de brilho se inválido ou arrastando
-              if (isInvalid || isDragged) {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = isInvalid ? "#ff0000" : color;
-              }
+              if (x >= 0 && x <= w) {
+                // Estilo por tipo de marcador
+                let color = "#ffffff";
+                let label = marker.kind as string;
 
-              ctx.beginPath();
-              ctx.moveTo(x, 0);
-              ctx.lineTo(x, h);
-              ctx.stroke();
-              
-              ctx.shadowBlur = 0;
-              ctx.setLineDash([]);
-              ctx.lineWidth = 1;
+                switch (marker.kind as string) {
+                  case "startPoint":
+                    color = "#2ecc71";
+                    label = "CUE-IN";
+                    break;
+                  case "endPoint":
+                    color = "#e74c3c";
+                    label = "CUE-OUT";
+                    break;
+                  case "nextEntry":
+                    color = "#f1c40f";
+                    label = "MIX-OUT";
+                    break;
+                  case "introEnd":
+                    color = "#3498db";
+                    label = "INTRO";
+                    break;
+                  case "mixIn":
+                    color = "#0ea5e9";
+                    label = "MIX-IN";
+                    break;
+                  case "fadeInEnd":
+                    color = "#84cc16";
+                    label = "FADE-IN";
+                    break;
+                  case "fadeOutStart":
+                    color = "#f59e0b";
+                    label = "FADE-OUT";
+                    break;
+                  case "locStart":
+                    color = "#a855f7";
+                    label = "LOC-START";
+                    break;
+                  case "refraoStart":
+                    color = "#ec4899";
+                    label = "REF-START";
+                    break;
+                  case "refraoEnd":
+                    color = "#db2777";
+                    label = "REF-END";
+                    break;
+                  case "carimbo":
+                    color = "#eab308";
+                    label = "STAMP";
+                    break;
+                }
 
-              // Rótulo do marcador
-              const labelText = label.toUpperCase();
-              const labelWidth = ctx.measureText(labelText).width;
-              
-              // Se inválido, mostra o offset
-              let infoText = labelText;
-              if (isInvalid && duration > 0) {
-                const offset = markerPos > duration ? markerPos - duration : markerPos;
-                infoText += ` (${offset > 0 ? '+' : ''}${offset.toFixed(2)}s)`;
-              } else if (isDragged) {
-                infoText += ` [${markerPos.toFixed(2)}s]`;
+                const isDragged = draggedMarkerId === marker.id;
+                const isInvalid = markerPos < 0 || markerPos > duration;
+
+                ctx.strokeStyle = isInvalid ? "#ff0000" : color;
+                ctx.lineWidth = isDragged ? 3 : isInvalid ? 2 : 1;
+                ctx.setLineDash(isDragged ? [] : [4, 2]);
+
+                // Efeito de brilho se inválido ou arrastando
+                if (isInvalid || isDragged) {
+                  ctx.shadowBlur = 10;
+                  ctx.shadowColor = isInvalid ? "#ff0000" : color;
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+                ctx.setLineDash([]);
+                ctx.lineWidth = 1;
+
+                // Rótulo do marcador
+                const labelText = label.toUpperCase();
+                const labelWidth = ctx.measureText(labelText).width;
+
+                // Se inválido, mostra o offset
+                let infoText = labelText;
+                if (isInvalid && duration > 0) {
+                  const offset = markerPos > duration ? markerPos - duration : markerPos;
+                  infoText += ` (${offset > 0 ? "+" : ""}${offset.toFixed(2)}s)`;
+                } else if (isDragged) {
+                  infoText += ` [${markerPos.toFixed(2)}s]`;
+                }
+
+                const infoWidth = ctx.measureText(infoText).width;
+                ctx.fillStyle = isInvalid ? "rgba(220, 38, 38, 0.9)" : "rgba(0,0,0,0.6)";
+                ctx.fillRect(x + 2, h - 22, infoWidth + 6, 14);
+
+                ctx.fillStyle = isInvalid ? "#ffffff" : color;
+                ctx.font = "bold 9px ui-mono, monospace";
+                ctx.fillText(infoText, x + 5, h - 12);
               }
-              
-              const infoWidth = ctx.measureText(infoText).width;
-              ctx.fillStyle = isInvalid ? "rgba(220, 38, 38, 0.9)" : "rgba(0,0,0,0.6)";
-              ctx.fillRect(x + 2, h - 22, infoWidth + 6, 14);
-              
-              ctx.fillStyle = isInvalid ? "#ffffff" : color;
-              ctx.font = "bold 9px ui-mono, monospace";
-              ctx.fillText(infoText, x + 5, h - 12);
-            }
-          });
+            });
         }
 
         // 5. Cursor (Posição atual)
@@ -236,7 +298,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [getEngine, isPlaying, current, markers, visibleKinds, draggedMarkerId]);
+  }, [config, effectiveMarkers, getEngine, isPlaying, current, visibleKinds, draggedMarkerId]);
 
   const validation = useMemo(() => {
     const duration = getEngine().mediaDuration();
@@ -264,7 +326,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
 
     // Procura o marcador mais próximo do clique (threshold aumentado para 15 pixels para facilitar drag)
     const thresholdSec = 15 / pixelsPerSecond;
-    const closest = markers.find(m => {
+    const closest = markers.find((m) => {
       const mPos = markerPositionSec(m, duration);
       return Math.abs(mPos - clickTime) < thresholdSec;
     });
@@ -279,7 +341,7 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!draggedMarkerId || !current) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const engine = getEngine();
@@ -296,10 +358,10 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
 
     // Converte X do mouse para tempo
     let newTime = (x - offset) / pixelsPerSecond + pos;
-    
+
     // Snapping (0.1s)
     newTime = Math.round(newTime * 10) / 10;
-    
+
     // Limites (0 a duração + uma margem pequena para visualização de erro se desejado)
     // Deixamos passar um pouco para o usuário ver a validação de erro
     newTime = Math.max(-2, Math.min(duration + 2, newTime));
@@ -317,11 +379,21 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
       // Atalhos de marcadores
       if (!e.ctrlKey && !e.altKey && !e.shiftKey) {
         switch (e.key.toLowerCase()) {
-          case "[": jumpToMarker("startPoint"); break;
-          case "]": jumpToMarker("endPoint"); break;
-          case "i": jumpToMarker("introEnd"); break;
-          case "o": jumpToMarker("fadeOutStart"); break;
-          case "r": jumpToMarker("refraoStart"); break;
+          case "[":
+            jumpToMarker("startPoint");
+            break;
+          case "]":
+            jumpToMarker("endPoint");
+            break;
+          case "i":
+            jumpToMarker("introEnd");
+            break;
+          case "o":
+            jumpToMarker("fadeOutStart");
+            break;
+          case "r":
+            jumpToMarker("refraoStart");
+            break;
         }
       }
 
@@ -342,24 +414,18 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [jumpToMarker, undo, redo]);
 
-  const cuePoints = useMemo(() => {
-    if (!current) return undefined;
-    const url = getTrackAudioUrl(current.id) || current.audioUrl;
-    return url ? getCachedCuePoints(url) : undefined;
-  }, [current]);
-
   return (
     <div className="flex h-full w-full">
       <div className="relative flex-1 overflow-hidden">
-        <canvas 
-          ref={canvasRef} 
+        <canvas
+          ref={canvasRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          className="h-full w-full cursor-crosshair" 
+          className="h-full w-full cursor-crosshair"
         />
-        
+
         {/* Indicadores de Processamento Automático */}
         {cuePoints && (
           <div className="absolute top-2 right-2 flex flex-col items-end gap-1 pointer-events-none">
@@ -383,14 +449,18 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
         {/* Motivo da Mixagem (Bottom Right) */}
         {cuePoints?.autoMixReason && (
           <div className="absolute bottom-2 right-2 max-w-[200px] bg-black/40 backdrop-blur-md p-1.5 rounded border border-white/5 pointer-events-none">
-            <div className="text-[7px] text-white/40 uppercase mb-0.5 font-bold tracking-widest">Ajuste Inteligente</div>
-            <div className="text-[8px] text-white/70 italic leading-tight">{cuePoints.autoMixReason}</div>
+            <div className="text-[7px] text-white/40 uppercase mb-0.5 font-bold tracking-widest">
+              Ajuste Inteligente
+            </div>
+            <div className="text-[8px] text-white/70 italic leading-tight">
+              {cuePoints.autoMixReason}
+            </div>
           </div>
         )}
-        
+
         {/* Filtros de marcadores */}
         <div className="absolute left-2 bottom-2 flex flex-wrap gap-1">
-          {MARKER_DEFS.filter(d => markers.some(m => m.kind === d.kind)).map(def => (
+          {MARKER_DEFS.filter((d) => markers.some((m) => m.kind === d.kind)).map((def) => (
             <button
               key={def.kind}
               onClick={() => {
@@ -402,7 +472,9 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
               className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase transition-colors ${
                 visibleKinds.has(def.kind) ? "bg-white/20 text-white" : "bg-black/40 text-white/40"
               }`}
-              style={{ borderBottom: `2px solid ${visibleKinds.has(def.kind) ? def.color : 'transparent'}` }}
+              style={{
+                borderBottom: `2px solid ${visibleKinds.has(def.kind) ? def.color : "transparent"}`,
+              }}
             >
               {def.label}
             </button>
@@ -419,7 +491,10 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
               <div className="flex flex-col gap-2">
                 <div>
                   <div className="text-white/40 uppercase">Tipo</div>
-                  <div className="font-bold text-white">{MARKER_DEFS.find(d => d.kind === selectedMarker.kind)?.label || selectedMarker.kind}</div>
+                  <div className="font-bold text-white">
+                    {MARKER_DEFS.find((d) => d.kind === selectedMarker.kind)?.label ||
+                      selectedMarker.kind}
+                  </div>
                 </div>
                 <div>
                   <div className="text-white/40 uppercase">Tempo</div>
@@ -428,7 +503,10 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
                       type="number"
                       step="0.01"
                       className="w-20 rounded bg-white/10 px-2 py-1 font-mono text-[12px] font-bold text-[#fffa65] outline-none focus:ring-1 focus:ring-[#fffa65]/50"
-                      value={markerPositionSec(selectedMarker, getEngine().mediaDuration() || current?.duration || 0).toFixed(2)}
+                      value={markerPositionSec(
+                        selectedMarker,
+                        getEngine().mediaDuration() || current?.duration || 0,
+                      ).toFixed(2)}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (!isNaN(val)) updateMarkerPosition(selectedMarker.id!, val);
@@ -484,4 +562,3 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
     </div>
   );
 }
-
