@@ -29,16 +29,16 @@ contextBridge.exposeInMainWorld("solutionsPlay", {
   // payload: { dir?, files: [{ name, content }] } -> devolve a pasta gravada.
   writeRds: (payload) => ipcRenderer.invoke("sp:write-rds", payload),
 
-  // --- Pastas de programação (Grades = musical / Mapas = comercial) ---
-  // Devolve { base, grades, mapas } (cria as pastas se não existirem).
+  // --- Pastas de programação (GRADE-MUSICAL / MAPA-COMERCIAL) ---
+  // Devolve { base, grades, mapas } com os caminhos físicos (cria se não existirem).
   programDirs: () => ipcRenderer.invoke("sp:program-dirs"),
-  // Lista os .txt de "grades" ou "mapas" -> [{ name, path, mtime }].
+  // Lista os .txt de GRADE-MUSICAL ou MAPA-COMERCIAL -> [{ name, path, mtime }].
   listProgramFiles: (kind) => ipcRenderer.invoke("sp:list-program-files", kind),
   // Lê o conteúdo de um arquivo de programação por caminho absoluto.
   readTextFile: (file) => ipcRenderer.invoke("sp:read-text-file", file),
-  // Grava um .txt em Grades/Mapas: { kind, name, content } -> caminho gravado.
+  // Grava um .txt em GRADE-MUSICAL/MAPA-COMERCIAL: { kind, name, content } -> caminho gravado.
   writeProgramFile: (payload) => ipcRenderer.invoke("sp:write-program-file", payload),
-  // Abre a pasta Grades/Mapas (ou a raiz) no Explorer.
+  // Abre a pasta GRADE-MUSICAL/MAPA-COMERCIAL (ou a raiz) no Explorer.
   openProgramFolder: (kind) => ipcRenderer.invoke("sp:open-program-folder", kind),
 
   // --- Sidecar de marcadores `.pkfinfo` ---

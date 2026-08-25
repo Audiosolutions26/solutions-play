@@ -131,6 +131,9 @@ function main() {
     if (fs.existsSync(s)) copy(s, path.join(appDir, "electron", f));
   }
   copy(path.join(root, "dist"), path.join(appDir, "dist"));
+  if (fs.existsSync(path.join(root, "program-defaults"))) {
+    copy(path.join(root, "program-defaults"), path.join(appDir, "program-defaults"));
+  }
 
   // package.json mínimo só com o que o Electron precisa em runtime.
   fs.writeFileSync(

@@ -31,8 +31,8 @@ import {
 } from "@/lib/play-native";
 
 const KINDS: { kind: ProgramKind; label: string; sub: string; icon: typeof ListMusic }[] = [
-  { kind: "grades", label: "Grades", sub: "Programação musical", icon: ListMusic },
-  { kind: "mapas", label: "Mapas", sub: "Programação comercial", icon: Radio },
+  { kind: "grades", label: "GRADE-MUSICAL", sub: "Programação por dia", icon: ListMusic },
+  { kind: "mapas", label: "MAPA-COMERCIAL", sub: "Inserções comerciais", icon: Radio },
 ];
 
 export function ProgramFoldersDialog({
@@ -93,18 +93,18 @@ export function ProgramFoldersDialog({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" /> Pastas de programação (Grades / Mapas)
+            <FolderOpen className="h-5 w-5" /> Pastas de programação
           </DialogTitle>
           <DialogDescription>
-            A raiz do programa contém as pastas <strong>Grades</strong> (programação musical) e{" "}
-            <strong>Mapas</strong> (programação comercial). Os arquivos <code>.txt</code> ficam
+            A raiz do programa contém as pastas <strong>GRADE-MUSICAL</strong> (programação por dia) e{" "}
+            <strong>MAPA-COMERCIAL</strong> (programação comercial). Os arquivos <code>.txt</code> ficam
             nessas pastas.
           </DialogDescription>
         </DialogHeader>
 
         {!desktop ? (
           <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-            As pastas Grades e Mapas ficam no sistema de arquivos e só estão disponíveis no
+            As pastas GRADE-MUSICAL e MAPA-COMERCIAL ficam no sistema de arquivos e só estão disponíveis no
             aplicativo desktop (Solutions Play.exe). No navegador, use “Abrir programação…” para
             selecionar um arquivo <code>.txt</code> manualmente.
           </div>

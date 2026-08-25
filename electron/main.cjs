@@ -160,10 +160,10 @@ ipcMain.handle("sp:write-rds", async (_evt, payload) => {
   }
 });
 
-// ---- Pastas de programação (Mapas/Grades) na raiz do programa ------------
-// A raiz do programa é Documentos\Solutions-Play. Dentro dela ficam as
-// subpastas Grades (programação musical) e Mapas (programação comercial),
-// onde os arquivos .txt de programação são lidos e gerados.
+// ---- Pastas de programação na raiz do programa ---------------------------
+// A raiz do programa é Documentos\\Solutions-Play. Dentro dela ficam as
+// pastas GRADE-MUSICAL e MAPA-COMERCIAL, onde os arquivos .txt de programação
+// são lidos e gerados.
 function appRootDir() {
   return path.join(app.getPath("documents"), "Solutions-Play");
 }
@@ -172,17 +172,37 @@ function programDirs() {
   const base = appRootDir();
   return {
     base,
-    grades: path.join(base, "Grades"),
-    mapas: path.join(base, "Mapas"),
+    grades: path.join(base, "GRADE-MUSICAL"),
+    mapas: path.join(base, "MAPA-COMERCIAL"),
   };
 }
 
-// Garante que a raiz e as subpastas Grades/Mapas existam.
+// Copia modelos distribuídos com o programa apenas quando a pasta está vazia.
+// Arquivos do operador nunca são sobrescritos.
+function seedProgramDefaults(dir, sourceName) {
+  try {
+    if (fs.readdirSync(dir).length > 0) return;
+    const source = path.join(app.getAppPath(), "program-defaults", sourceName);
+    if (!fs.existsSync(source)) return;
+    for (const entry of fs.readdirSync(source)) {
+      if (!/\.txt$/i.test(entry)) continue;
+      const from = path.join(source, entry);
+      const to = path.join(dir, entry);
+      if (!fs.existsSync(to)) fs.copyFileSync(from, to);
+    }
+  } catch {
+    /* modelos são opcionais; a pasta continua utilizável */
+  }
+}
+
+// Garante que a raiz e as duas pastas de programação existam.
 function ensureProgramDirs() {
   const d = programDirs();
   try {
     fs.mkdirSync(d.grades, { recursive: true });
     fs.mkdirSync(d.mapas, { recursive: true });
+    seedProgramDefaults(d.grades, "GRADE-MUSICAL");
+    seedProgramDefaults(d.mapas, "MAPA-COMERCIAL");
   } catch {
     /* ignore */
   }
@@ -191,7 +211,7 @@ function ensureProgramDirs() {
 
 ipcMain.handle("sp:program-dirs", async () => ensureProgramDirs());
 
-// Lista os arquivos .txt de Grades (musical) ou Mapas (comercial),
+// Lista os arquivos .txt de GRADE-MUSICAL (musical) ou MAPA-COMERCIAL (comercial),
 // dos mais recentes para os mais antigos.
 ipcMain.handle("sp:list-program-files", async (_evt, kind) => {
   try {
@@ -228,7 +248,7 @@ ipcMain.handle("sp:read-text-file", async (_evt, file) => {
   }
 });
 
-// Grava um arquivo .txt em Grades/Mapas (programação gerada).
+// Grava um arquivo .txt em GRADE-MUSICAL/MAPA-COMERCIAL (programação gerada).
 ipcMain.handle("sp:write-program-file", async (_evt, payload) => {
   try {
     const kind = payload && payload.kind;
@@ -343,7 +363,7 @@ ipcMain.handle("sp:export-mrk", async (_evt, payload) => {
 });
 
 
-// Abre a pasta Grades/Mapas (ou a raiz) no Explorer do Windows.
+// Abre a pasta GRADE-MUSICAL/MAPA-COMERCIAL (ou a raiz) no Explorer do Windows.
 ipcMain.handle("sp:open-program-folder", async (_evt, kind) => {
   try {
     const d = ensureProgramDirs();

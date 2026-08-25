@@ -35,7 +35,7 @@ export interface RdsWritePayload {
   files: RdsFile[];
 }
 
-// "grades" = programação musical · "mapas" = programação comercial.
+// "grades" = pasta física GRADE-MUSICAL · "mapas" = pasta física MAPA-COMERCIAL.
 export type ProgramKind = "grades" | "mapas";
 export interface ProgramDirs {
   base: string;
@@ -167,7 +167,7 @@ export async function writeRdsNative(payload: RdsWritePayload): Promise<string |
   }
 }
 
-// Raiz do programa + pastas Grades (musical) e Mapas (comercial).
+// Raiz do programa + pastas GRADE-MUSICAL (musical) e MAPA-COMERCIAL (comercial).
 // Retorna null em modo web (sem sistema de arquivos).
 export async function programDirsNative(): Promise<ProgramDirs | null> {
   const b = nativeBridge();
@@ -179,7 +179,7 @@ export async function programDirsNative(): Promise<ProgramDirs | null> {
   }
 }
 
-// Lista os arquivos .txt das pastas Grades/Mapas. Null em modo web.
+// Lista os arquivos .txt das pastas GRADE-MUSICAL/MAPA-COMERCIAL. Null em modo web.
 export async function listProgramFilesNative(kind: ProgramKind): Promise<ProgramFile[] | null> {
   const b = nativeBridge();
   if (!b?.listProgramFiles) return null;
@@ -201,7 +201,7 @@ export async function readTextFileNative(file: string): Promise<string | null> {
   }
 }
 
-// Grava um .txt em Grades/Mapas. Retorna o caminho gravado ou null em modo web.
+// Grava um .txt em GRADE-MUSICAL/MAPA-COMERCIAL. Retorna o caminho gravado ou null em modo web.
 export async function writeProgramFileNative(payload: ProgramWritePayload): Promise<string | null> {
   const b = nativeBridge();
   if (!b?.writeProgramFile) return null;
@@ -212,7 +212,7 @@ export async function writeProgramFileNative(payload: ProgramWritePayload): Prom
   }
 }
 
-// Abre a pasta Grades/Mapas (ou a raiz) no Explorer. False em modo web.
+// Abre a pasta GRADE-MUSICAL/MAPA-COMERCIAL (ou a raiz) no Explorer. False em modo web.
 export async function openProgramFolderNative(kind: ProgramKind | "base"): Promise<boolean> {
   const b = nativeBridge();
   if (!b?.openProgramFolder) return false;

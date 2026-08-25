@@ -39,7 +39,14 @@ function freqFor(text: string): number {
 
 // Normaliza um nome de arquivo p/ comparação (sem extensão, maiúsculas, espaços).
 function normName(name: string): string {
-  return name.replace(AUDIO_EXT, "").trim().toUpperCase().replace(/\s+/g, " ");
+  return name
+    .replace(/^['\"]|['\"]$/g, "")
+    .replace(AUDIO_EXT, "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
 }
 
 // Quebra "ARTISTA - MUSICA (extra).MP3" em artista, título e extensão.
@@ -58,11 +65,19 @@ interface FileIndexEntry { track: Track; shortcut: Shortcut }
 
 function buildFileIndex(shortcuts: Shortcut[]): Map<string, FileIndexEntry> {
   const idx = new Map<string, FileIndexEntry>();
+  const add = (key: string, entry: FileIndexEntry) => {
+    const normalized = normName(key);
+    if (normalized && !idx.has(normalized)) idx.set(normalized, entry);
+  };
   for (const sc of shortcuts) {
     for (const t of sc.tracks) {
+      const entry = { track: t, shortcut: sc };
       const candidate = t.artist ? `${t.artist} - ${t.title}` : t.title;
-      const key = normName(candidate);
-      if (key && !idx.has(key)) idx.set(key, { track: t, shortcut: sc });
+      add(candidate, entry);
+      add(t.title, entry);
+      add(t.id, entry);
+      // Também aceita o código da pasta quando ela contém uma única faixa.
+      if (sc.code && sc.tracks.length === 1) add(sc.code, entry);
     }
   }
   return idx;
@@ -119,6 +134,16 @@ function resolveToken(raw: string, ctx: ResolveCtx): Track {
   if (AUDIO_EXT.test(item)) return resolveFile(item, ctx);
 
   const low = item.toLowerCase();
+  // Nome completo sem extensão e códigos também são resolvidos pelo mesmo índice.
+  const named = ctx.index.get(normName(item));
+  if (named) {
+    ctx.stats.resolved++;
+    const t = cloneTrack(named.track);
+    const file = t.artist ? `${t.artist} - ${t.title}.mp3` : `${t.title}.mp3`;
+    t.filePath = t.filePath ?? shortcutPath(named.shortcut, file);
+    t.origin = "auto";
+    return t;
+  }
   if (low === "mus") {
     return pickFromShortcuts(ctx.music)
       ?? makeTrack("Música (livre)", "—", 0, "musical", freqFor(item + Math.random()));
