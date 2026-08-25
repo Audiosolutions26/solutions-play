@@ -109,3 +109,41 @@ export async function readTrackDuration(track: Track): Promise<number> {
     audio.src = url;
   });
 }
+
+/**
+ * Confirma que a URL entrega uma mídia que o navegador consegue decodificar.
+ * Os ponteiros de assets do projeto podem cair no SPA (HTML/404) quando o
+ * arquivo não foi publicado junto com o bundle; nesse caso não devemos marcar
+ * a faixa como "tocando" sem som.
+ */
+export async function probePlayableAudio(url: string, timeoutMs = 4_000): Promise<boolean> {
+  if (!url || typeof window === "undefined") return false;
+  return new Promise<boolean>((resolve) => {
+    const audio = new Audio();
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      audio.oncanplay = null;
+      audio.onloadedmetadata = null;
+      audio.onerror = null;
+      try {
+        audio.removeAttribute("src");
+        audio.load();
+      } catch {
+        /* ignore cleanup failures */
+      }
+      resolve(ok);
+    };
+    const timer = window.setTimeout(() => finish(false), timeoutMs);
+    audio.preload = "metadata";
+    audio.oncanplay = () => finish(true);
+    audio.onloadedmetadata = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) finish(true);
+    };
+    audio.onerror = () => finish(false);
+    audio.src = url;
+    audio.load();
+  });
+}

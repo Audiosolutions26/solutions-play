@@ -17,7 +17,12 @@ import {
   type Track,
   cloneTrack,
 } from "@/lib/play-data";
-import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
+import {
+  getTrackAudioUrl,
+  probePlayableAudio,
+  resolveTrackAudio,
+  setTrackAudioUrl,
+} from "@/lib/play-audio-files";
 import {
   markerMixEnabled,
   markerStartEnabled,
@@ -211,6 +216,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const startUrl = async (u: string) => {
         await applyTrackOutput(track, outputFn);
         if (currentRef.current.track?.id !== trackId) return;
+
+        // Os assets de demonstração são ponteiros para uma rota externa. Se a
+        // rota responder com HTML/404, não deixe o app afirmar que a faixa está
+        // tocando sem som: use o synth demo disponível para esta faixa.
+        const playable = await probePlayableAudio(u);
+        if (!playable) {
+          if (track.freq > 0) {
+            engine.play(track.freq, Math.max(0, fromOffset ?? 0));
+            prefetchCue(blockId, trackId);
+          } else {
+            engine.stop();
+            setIsPlaying(false);
+          }
+          return;
+        }
+
         const detect = cueDetectionEnabled();
 
         // Assegura que o cue da faixa atual e da próxima estejam carregados
