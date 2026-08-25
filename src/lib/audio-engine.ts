@@ -400,7 +400,9 @@ export class AudioEngine {
       voice.gain.gain.setValueAtTime(gain, now);
     }
 
-    void voice.el.play();
+    // Autoplay pode exigir o gesto do operador; a voz fica preparada e a
+    // rejeição não sobe para o loop do playout.
+    void voice.el.play().catch(() => undefined);
     this.mainVoice = voice;
     this.playing = true;
   }
@@ -425,7 +427,7 @@ export class AudioEngine {
   resume(rootFreq?: number) {
     if (this.mode === "url" && this.mainVoice) {
       if (this.ctx?.state === "suspended") void this.ctx.resume();
-      void this.mainVoice.el.play();
+      void this.mainVoice.el.play().catch(() => undefined);
       this.playing = true;
       return;
     }
@@ -489,7 +491,7 @@ export class AudioEngine {
     } catch {
       /* ignore */
     }
-    void el.play();
+    void el.play().catch(() => undefined);
     if (duration > 0) {
       window.setTimeout(() => {
         try {
@@ -507,7 +509,7 @@ export class AudioEngine {
     applyCrossOrigin(el, url);
     el.src = url;
     const start = () => {
-      void el.play();
+      void el.play().catch(() => undefined);
       if (duration > 0) {
         window.setTimeout(() => {
           try {

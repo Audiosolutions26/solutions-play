@@ -81,3 +81,60 @@ export async function analyzeWaveform(url: string, samples = 1600): Promise<Wave
     return null;
   }
 }
+
+/**
+ * Estima os pontos de mix-in e mix-out a partir do envelope do waveform.
+ * A janela exige atividade sustentada, evitando que um pico isolado mova a
+ * passagem e mantendo o comportamento determinístico do editor v3.
+ */
+export function detectMixPoints(
+  peaks: Float32Array,
+  durationSec: number,
+  threshold = 0.12,
+  windowMs = 250,
+): { mixInSec: number; mixOutSec: number } {
+  if (!peaks.length || !Number.isFinite(durationSec) || durationSec <= 0) {
+    return { mixInSec: 0, mixOutSec: 0 };
+  }
+
+  const count = peaks.length;
+  const safeThreshold = Math.max(0, Math.min(1, Number.isFinite(threshold) ? threshold : 0.12));
+  const safeWindowMs = Math.max(20, Number.isFinite(windowMs) ? windowMs : 250);
+  const smoothBins = Math.max(1, Math.round((safeWindowMs / 1000 / durationSec) * count));
+  const prefix = new Float64Array(count + 1);
+  for (let i = 0; i < count; i++) prefix[i + 1] = prefix[i] + Math.abs(peaks[i] || 0);
+
+  const smoothed = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    let start = Math.max(0, i - Math.floor(smoothBins / 2));
+    let end = Math.min(count, start + smoothBins);
+    if (end - start < smoothBins) start = Math.max(0, end - smoothBins);
+    smoothed[i] = (prefix[end] - prefix[start]) / Math.max(1, end - start);
+  }
+
+  const holdBins = Math.max(1, Math.floor(smoothBins / 2));
+  const findSustained = (startIndex: number, step: 1 | -1): number | null => {
+    let run = 0;
+    for (let i = startIndex; step > 0 ? i < count : i >= 0; i += step) {
+      if (smoothed[i] >= safeThreshold) {
+        run++;
+        if (run >= holdBins) return step > 0 ? i - holdBins + 1 : i + holdBins - 1;
+      } else {
+        run = 0;
+      }
+    }
+    return null;
+  };
+
+  let first = findSustained(0, 1);
+  let last = findSustained(count - 1, -1);
+  if (first === null || last === null) {
+    let peakIndex = 0;
+    for (let i = 1; i < count; i++) if (smoothed[i] > smoothed[peakIndex]) peakIndex = i;
+    first ??= peakIndex;
+    last ??= peakIndex;
+  }
+  if (last < first) [first, last] = [last, first];
+  const scale = durationSec / Math.max(1, count - 1);
+  return { mixInSec: first * scale, mixOutSec: last * scale };
+}

@@ -18,7 +18,12 @@ import {
   cloneTrack,
 } from "@/lib/play-data";
 import { getTrackAudioUrl, setTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
-import { mixTimeForTrack, manualFadeMs } from "@/lib/play-mixagem";
+import {
+  markerMixEnabled,
+  markerStartEnabled,
+  mixTimeForTrack,
+  manualFadeMs,
+} from "@/lib/play-mixagem";
 import {
   analyzeCuePoints,
   getCachedCuePoints,
@@ -261,7 +266,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const normGain = cached?.loudness ? getNormalizationGain(cached.loudness) : 1.0;
 
         // O motor de áudio recebe a curva, o ganho e o fadeOutMs calculado pelo plano
-        engine.playUrl(u, startAt, effectiveFadeMs, curve, plan.fadeOutMs, normGain);
+        // O fade-out pertence à voz que está saindo e precisa acompanhar o
+        // mesmo plano que disparou a entrada. Em passagens manuais, o valor
+        // recebido por playAt prevalece; na inicialização, usa-se o padrão.
+        const effectiveFadeOutMs = Math.max(0, fadeOutMs ?? plan.fadeOutMs);
+        engine.playUrl(u, startAt, effectiveFadeMs, curve, effectiveFadeOutMs, normGain);
         
         prefetchCue(blockId, trackId);
       };
@@ -535,8 +544,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 nextMarkers: getMarkers(nx.track.id),
                 currentCue: cp,
                 mixMs: mixTimeForTrack(cur),
-                useMarkerMix: true,
-                useStartMix: true,
+                useMarkerMix: markerMixEnabled(cur),
+                useStartMix: markerStartEnabled(nx.track),
               })
             : null;
           transitionRef.current = plan;

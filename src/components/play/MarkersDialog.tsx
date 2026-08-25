@@ -37,9 +37,10 @@ import {
 import { usePlayer } from "@/hooks/use-player";
 import { getTrackAudioUrl, resolveTrackAudio } from "@/lib/play-audio-files";
 import { cuePlayAt } from "@/lib/play-cue";
-import { analyzeWaveform, type WaveformPeaks } from "@/lib/play-waveform";
+import { analyzeWaveform, detectMixPoints, type WaveformPeaks } from "@/lib/play-waveform";
 import { createPkfInfoDocument, serializePkfInfo } from "@/lib/play-pkfinfo";
 import { writePkfInfoNative } from "@/lib/play-native";
+import { parsePkFile, pkToMarkers } from "@/lib/play-pk-parser";
 
 const HIT = 0.012; // tolerância (fração) para pegar um marcador ao clicar
 
@@ -58,7 +59,10 @@ export function MarkersDialog({
   const [zoom, setZoom] = useState(1);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [waveform, setWaveform] = useState<WaveformPeaks | null>(null);
+  const [threshold, setThreshold] = useState(0.12);
+  const [windowMs, setWindowMs] = useState(250);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pkInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (track && open) {
@@ -247,6 +251,63 @@ export function MarkersDialog({
     toast.success(`Marcadores aplicados a ${others.length} inserção(ões) do bloco.`);
   };
 
+  const autoDetect = () => {
+    const peaks = waveform?.left ?? Float32Array.from(fallbackWave);
+    if (!peaks.length || durationSec <= 0) {
+      toast.error("Waveform não carregada.");
+      return;
+    }
+    const detected = detectMixPoints(peaks, durationSec, threshold, windowMs);
+    setMarkers((prev) => [
+      ...prev.filter((m) => m.kind !== "mixIn" && m.kind !== "nextEntry"),
+      {
+        id: `auto-mixin-${Date.now()}`,
+        kind: "mixIn",
+        pos: detected.mixInSec / durationSec,
+        positionSec: detected.mixInSec,
+      },
+      {
+        id: `auto-nextentry-${Date.now()}`,
+        kind: "nextEntry",
+        pos: detected.mixOutSec / durationSec,
+        positionSec: detected.mixOutSec,
+      },
+    ]);
+    toast.success(
+      waveform
+        ? "Pontos de mixagem calculados."
+        : "Pontos de mixagem estimados no waveform de demonstração.",
+    );
+  };
+
+  const importPk = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const parsed = parsePkFile(await file.arrayBuffer());
+      if (!parsed) {
+        toast.error("Arquivo .pk inválido ou sem duração.");
+        return;
+      }
+      const imported = pkToMarkers(parsed, durationSec);
+      setMarkers((prev) => {
+        const kinds = new Set(imported.map((m) => m.kind));
+        const lockedKinds = new Set(
+          prev.filter((m) => m.locked && kinds.has(m.kind)).map((m) => m.kind),
+        );
+        return [
+          ...prev.filter((m) => !kinds.has(m.kind) || m.locked),
+          ...imported.filter((m) => !lockedKinds.has(m.kind)),
+        ];
+      });
+      toast.success(`Marcadores importados do .pk (${imported.length}).`);
+    } catch {
+      toast.error("Erro ao ler arquivo .pk.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
   const save = () => {
     const validation = validateMarkers(markers, durationSec);
     if (!validation.valid) {
@@ -322,10 +383,42 @@ export function MarkersDialog({
           />
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] text-muted-foreground">
             {MARKER_DEFS.find((d) => d.kind === tool)?.help}
           </p>
+          <div className="flex items-center gap-1">
+            <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              limiar
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={threshold}
+                onChange={(e) => setThreshold(Number(e.target.value))}
+                className="w-12 rounded border bg-transparent px-1 py-0.5 text-[10px]"
+              />
+            </label>
+            <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              janela
+              <input
+                type="number"
+                min="20"
+                step="10"
+                value={windowMs}
+                onChange={(e) => setWindowMs(Number(e.target.value))}
+                className="w-14 rounded border bg-transparent px-1 py-0.5 text-[10px]"
+              />
+            </label>
+            <button onClick={autoDetect} className="rounded bg-pl-panel-dark/40 px-2 py-1 text-[10px] font-medium hover:bg-pl-panel-dark/60">
+              Calcular Mix
+            </button>
+            <button onClick={() => pkInputRef.current?.click()} className="rounded bg-pl-panel-dark/40 px-2 py-1 text-[10px] font-medium hover:bg-pl-panel-dark/60">
+              Importar .pk
+            </button>
+            <input ref={pkInputRef} type="file" accept=".pk" className="hidden" onChange={importPk} />
+          </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setZoom((z) => Math.max(1, z - 0.5))}

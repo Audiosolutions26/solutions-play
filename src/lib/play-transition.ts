@@ -1,4 +1,4 @@
-import { mixTimeForTrack } from "./play-mixagem";
+import { markerMixEnabled, markerStartEnabled, mixTimeForTrack } from "./play-mixagem";
 import { firstMarker, markerPositionSec, type Marker } from "./play-markers";
 import type { Track } from "./play-data";
 import type { CuePoints } from "./play-cuepoints";
@@ -134,26 +134,41 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
     if (aligned > earliest && aligned > currentStart.sec) defaultTransition = aligned;
   }
 
-  const markedTransition =
-    input.useMarkerMix === false
+  const rawMarkedTransition =
+    input.useMarkerMix === false || !markerMixEnabled(input.current)
       ? null
       : markerSec(currentMarkers, "nextEntry", currentDurationSec);
-  
+  // Alguns .pk registram o mix-out depois do endPoint físico. Esse ponto é
+  // preservado na edição, mas não pode ser usado para iniciar uma passagem;
+  // nesse caso voltamos ao mix padrão para manter a sobreposição audível.
+  const markedTransition =
+    rawMarkedTransition !== null && rawMarkedTransition > earliest && rawMarkedTransition < hardEnd
+      ? rawMarkedTransition
+      : null;
+
   const transitionAtSec = clampPoint(
     markedTransition ?? defaultTransition,
     currentStart.sec,
     hardEnd,
   );
+  const rawNextMixIn =
+    input.useStartMix === false || !markerStartEnabled(input.next)
+      ? null
+      : markerSec(nextMarkers, "mixIn", nextDurationSec);
   const nextMixInSec =
-    input.useStartMix === false
-      ? 0
-      : Math.max(0, markerSec(nextMarkers, "mixIn", nextDurationSec) ?? 0);
+    rawNextMixIn !== null && rawNextMixIn >= nextStart.sec && rawNextMixIn < nextEnd.sec
+      ? Math.max(0, rawNextMixIn)
+      : 0;
   const nextTriggerAtSec = clampPoint(
     transitionAtSec - nextMixInSec,
     currentStart.sec,
     hardEnd,
   );
-  const fadeOutMarked = markerSec(currentMarkers, "fadeOutStart", currentDurationSec);
+  const rawFadeOutMarked = markerSec(currentMarkers, "fadeOutStart", currentDurationSec);
+  const fadeOutMarked =
+    rawFadeOutMarked !== null && rawFadeOutMarked > currentStart.sec && rawFadeOutMarked < hardEnd
+      ? rawFadeOutMarked
+      : null;
   const fadeOutStartSec = clampPoint(
     fadeOutMarked ?? transitionAtSec,
     currentStart.sec,
@@ -162,7 +177,11 @@ export function resolveTransitionPlan(input: TransitionInput): TransitionPlan {
   // O fade-out sempre termina no cue-out: a rampa cobre exatamente a janela
   // de sobreposição com a próxima faixa.
   const fadeOutMs = Math.max(0, Math.round((hardEnd - fadeOutStartSec) * 1000)) || mixMs;
-  const fadeInMarked = markerSec(nextMarkers, "fadeInEnd", nextDurationSec);
+  const rawFadeInMarked = markerSec(nextMarkers, "fadeInEnd", nextDurationSec);
+  const fadeInMarked =
+    rawFadeInMarked !== null && rawFadeInMarked > nextStart.sec && rawFadeInMarked < nextEnd.sec
+      ? rawFadeInMarked
+      : null;
   const fallbackFadeInMs = Math.max(0, Math.round(mixMs));
   const fadeInEndSec =
     fadeInMarked !== null

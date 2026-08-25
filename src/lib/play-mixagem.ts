@@ -68,6 +68,42 @@ export function mixTimeForTrack(t: Track | null | undefined): number {
   }
 }
 
+function configBoolean(key: string, fallback = true): boolean {
+  try {
+    const c = loadConfig() as Record<string, unknown>;
+    const value = c[`insercoes.${key}`];
+    return typeof value === "boolean" ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Define se os marcadores de mix-out/entrada devem governar esta inserção. */
+export function markerMixEnabled(t: Track | null | undefined): boolean {
+  if (!t || t.kind === "pausa") return false;
+  if (t.kind === "locucao") return configBoolean("marcLocucoes.locMarcMix");
+  if (t.kind === "horacerta") return configBoolean("marcHoraCerta.hcMarcMix");
+  switch (t.category) {
+    case "musical": return configBoolean("marcMusicas.musMarcMix");
+    case "comercial": return configBoolean("marcComerciais.comMarcMix");
+    case "vinheta": return configBoolean("marcVinhetas.vinMarcMix");
+    default: return true;
+  }
+}
+
+/** Define se o cue-in/mix-in da faixa entrante deve ser aplicado. */
+export function markerStartEnabled(t: Track | null | undefined): boolean {
+  if (!t || t.kind === "pausa") return false;
+  if (t.kind === "locucao") return configBoolean("marcLocucoes.locMarcInicio");
+  if (t.kind === "horacerta") return configBoolean("marcHoraCerta.hcMarcInicio");
+  switch (t.category) {
+    case "musical": return configBoolean("marcMusicas.musMarcInicio");
+    case "comercial": return configBoolean("marcComerciais.comMarcInicio");
+    case "vinheta": return configBoolean("marcVinhetas.vinMarcInicio");
+    default: return true;
+  }
+}
+
 // Fade (ms) aplicado nas passagens manuais (botão "Próxima").
 export function manualFadeMs(): number {
   return getMixSettings().fadeManual;
