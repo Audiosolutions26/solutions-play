@@ -153,14 +153,6 @@ export function Waveform({ zoom = 1 }: { zoom?: number }) {
             ctx.closePath();
             ctx.fillStyle = `rgba(${rgb},0.14)`;
             ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(x1, rising ? yBottom : yTop);
-            ctx.lineTo(x2, rising ? yTop : yBottom);
-            ctx.strokeStyle = `rgb(${rgb})`;
-            ctx.lineWidth = 3;
-            ctx.lineCap = "round";
-            ctx.stroke();
-            ctx.lineWidth = 1;
           };
 
           ramp(cueIn, fadeInEnd, true, "34,197,94");

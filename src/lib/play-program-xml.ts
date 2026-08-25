@@ -167,6 +167,9 @@ export function parseProgramXml(
         block.items.filter((item) => !item.audioUrl && !item.filePath && item.duration <= 0).length,
       0,
     ),
+    folderSelections: 0,
+    avoidedRepeats: 0,
+    forcedRepeats: 0,
   };
   return { blocks, stats };
 }

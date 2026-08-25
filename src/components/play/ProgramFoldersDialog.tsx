@@ -80,9 +80,15 @@ export function ProgramFoldersDialog({
       return;
     }
     replaceBlocks(blocks);
+    const details = [
+      stats.folderSelections ? `${stats.folderSelections} sorteio(s) por código` : "",
+      stats.avoidedRepeats ? `${stats.avoidedRepeats} repetição(ões) evitada(s) em 60 min` : "",
+      stats.forcedRepeats ? `${stats.forcedRepeats} repetição(ões) inevitável(is)` : "",
+      stats.unresolved ? `${stats.unresolved} arquivo(s) não localizado(s)` : "",
+    ].filter(Boolean);
     toast.success(
       `${file.name}: ${stats.blocks} blocos, ${stats.inserts} inserções` +
-        (stats.unresolved ? ` (${stats.unresolved} arquivo(s) não localizado(s))` : ""),
+        (details.length ? ` — ${details.join("; ")}` : ""),
     );
     onOpenChange(false);
     onLoaded?.();

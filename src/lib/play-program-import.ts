@@ -88,45 +88,106 @@ function shortcutPath(sc: Shortcut, file: string): string {
   return dir ? `${dir}\\${file}` : file;
 }
 
+export const REPEAT_WINDOW_MINUTES = 60;
+
 export interface ImportStats {
   blocks: number;
   inserts: number;
   resolved: number;   // arquivos encontrados nas pastas de trabalho
   unresolved: number; // arquivos não localizados (montados pelo nome)
+  folderSelections: number; // tokens que sortearam dentro de uma pasta por código
+  avoidedRepeats: number;   // faixas descartadas por terem tocado nos 60 min anteriores
+  forcedRepeats: number;    // usado somente quando uma pasta não tem alternativa elegível
 }
 
 interface ResolveCtx {
   index: Map<string, FileIndexEntry>;
+  foldersByCode: Map<string, Shortcut>;
   music: Shortcut[];
   vinhetas: Shortcut[];
   defaultMusicDir: Shortcut | null;
+  recent: Map<string, number>;
+  timelineMinutes: number;
   stats: ImportStats;
+}
+
+function trackKey(t: Track): string {
+  return normName(t.artist ? `${t.artist} - ${t.title}` : t.title);
+}
+
+function isEligible(t: Track, ctx: ResolveCtx): boolean {
+  const last = ctx.recent.get(trackKey(t));
+  return last == null || ctx.timelineMinutes - last >= REPEAT_WINDOW_MINUTES;
+}
+
+function chooseTrack(
+  tracks: Track[],
+  ctx: ResolveCtx,
+  forceWhenNoEligible = true,
+): Track | null {
+  if (!tracks.length) return null;
+  const eligible = tracks.filter((t) => isEligible(t, ctx));
+  ctx.stats.avoidedRepeats += tracks.length - eligible.length;
+  if (!eligible.length && !forceWhenNoEligible) return null;
+  const pool = eligible.length ? eligible : tracks;
+  if (!eligible.length) ctx.stats.forcedRepeats++;
+  const selected = cloneTrack(pick(pool));
+  ctx.recent.set(trackKey(selected), ctx.timelineMinutes);
+  return selected;
+}
+
+function finishResolvedTrack(t: Track, shortcut: Shortcut, requestedName: string, ctx: ResolveCtx): Track {
+  ctx.stats.resolved++;
+  const file = requestedName || (t.artist ? `${t.artist} - ${t.title}.mp3` : `${t.title}.mp3`);
+  t.filePath = t.filePath ?? shortcutPath(shortcut, file);
+  t.origin = "auto";
+  ctx.recent.set(trackKey(t), ctx.timelineMinutes);
+  return t;
 }
 
 function resolveFile(file: string, ctx: ResolveCtx): Track {
   const hit = ctx.index.get(normName(file));
-  if (hit) {
-    ctx.stats.resolved++;
-    const t = cloneTrack(hit.track);
-    t.filePath = shortcutPath(hit.shortcut, file);
-    t.origin = "auto";
-    return t;
-  }
+  if (hit) return finishResolvedTrack(cloneTrack(hit.track), hit.shortcut, file, ctx);
   // Não localizado: monta a inserção a partir do nome do arquivo.
   ctx.stats.unresolved++;
   const { artist, title } = fileToMeta(file);
   const t = makeTrack(title, artist, 0, "musical", freqFor(file));
   if (ctx.defaultMusicDir) t.filePath = shortcutPath(ctx.defaultMusicDir, file);
+  ctx.recent.set(trackKey(t), ctx.timelineMinutes);
   return t;
 }
 
-function pickFromShortcuts(list: Shortcut[]): Track | null {
+function pickFromFolder(
+  folder: Shortcut,
+  ctx: ResolveCtx,
+  forceWhenNoEligible = true,
+): Track | null {
+  const selected = chooseTrack(folder.tracks, ctx, forceWhenNoEligible);
+  if (!selected) return null;
+  ctx.stats.folderSelections++;
+  selected.filePath = selected.filePath ?? shortcutPath(
+    folder,
+    selected.artist ? `${selected.artist} - ${selected.title}.mp3` : `${selected.title}.mp3`,
+  );
+  return selected;
+}
+
+function pickFromShortcuts(list: Shortcut[], ctx: ResolveCtx): Track | null {
   const withTracks = list.filter((s) => s.tracks.length);
   if (!withTracks.length) return null;
-  const sc = pick(withTracks);
-  const t = cloneTrack(pick(sc.tracks));
-  t.filePath = t.filePath ?? shortcutPath(sc, t.artist ? `${t.artist} - ${t.title}.mp3` : `${t.title}.mp3`);
-  return t;
+  // Primeiro sorteia a pasta, depois a faixa elegível dentro dela.
+  const folders = [...withTracks];
+  for (let i = folders.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [folders[i], folders[j]] = [folders[j], folders[i]];
+  }
+  for (const folder of folders) {
+    const selected = pickFromFolder(folder, ctx, false);
+    if (selected) return selected;
+  }
+  // Se todas as pastas estiverem dentro da janela, não deixamos o token vazio:
+  // a repetição só é forçada quando não existe alternativa em nenhuma pasta.
+  return pickFromFolder(pick(folders), ctx, true);
 }
 
 function resolveToken(raw: string, ctx: ResolveCtx): Track {
@@ -134,27 +195,32 @@ function resolveToken(raw: string, ctx: ResolveCtx): Track {
   if (AUDIO_EXT.test(item)) return resolveFile(item, ctx);
 
   const low = item.toLowerCase();
-  // Nome completo sem extensão e códigos também são resolvidos pelo mesmo índice.
-  const named = ctx.index.get(normName(item));
-  if (named) {
-    ctx.stats.resolved++;
-    const t = cloneTrack(named.track);
-    const file = t.artist ? `${t.artist} - ${t.title}.mp3` : `${t.title}.mp3`;
-    t.filePath = t.filePath ?? shortcutPath(named.shortcut, file);
-    t.origin = "auto";
-    return t;
-  }
   if (low === "mus") {
-    return pickFromShortcuts(ctx.music)
+    return pickFromShortcuts(ctx.music, ctx)
       ?? makeTrack("Música (livre)", "—", 0, "musical", freqFor(item + Math.random()));
   }
   if (low === "vht") {
-    return pickFromShortcuts(ctx.vinhetas)
+    return pickFromShortcuts(ctx.vinhetas, ctx)
       ?? makeTrack("Vinheta", "Solutions", 6, "vinheta", 392);
   }
   if (low === "vozbrasil") {
     return makeTrack("A Voz do Brasil", "EBC", 3600, "vinheta", 262);
   }
+
+  // Código é o código da PASTA, não da faixa: escolhe aleatoriamente nela.
+  const folder = ctx.foldersByCode.get(normName(item));
+  if (folder) return pickFromFolder(folder, ctx)
+    ?? makeTrack(`Pasta ${folder.code} sem faixas elegíveis`, "Atalho", 0, "musical", freqFor(item));
+
+  // Nome completo sem extensão também é aceito.
+  const named = ctx.index.get(normName(item));
+  if (named) return finishResolvedTrack(
+    cloneTrack(named.track),
+    named.shortcut,
+    "",
+    ctx,
+  );
+
   // Token desconhecido: trata como placeholder musical.
   return makeTrack(item, "Atalho", 0, "musical", freqFor(item));
 }
@@ -206,17 +272,35 @@ export function parseProgramText(
   const shortcuts = loadShortcuts();
   const music = shortcuts.filter((s) => s.category === "musical");
   const vinhetas = shortcuts.filter((s) => s.category === "vinheta");
-  const stats: ImportStats = { blocks: 0, inserts: 0, resolved: 0, unresolved: 0 };
+  const stats: ImportStats = {
+    blocks: 0,
+    inserts: 0,
+    resolved: 0,
+    unresolved: 0,
+    folderSelections: 0,
+    avoidedRepeats: 0,
+    forcedRepeats: 0,
+  };
+  const foldersByCode = new Map<string, Shortcut>();
+  for (const shortcut of shortcuts) {
+    const code = normName(shortcut.code);
+    if (code && !foldersByCode.has(code)) foldersByCode.set(code, shortcut);
+  }
   const ctx: ResolveCtx = {
     index: buildFileIndex(shortcuts),
+    foldersByCode,
     music,
     vinhetas,
     defaultMusicDir: music.find((s) => s.registered) ?? music[0] ?? null,
+    recent: new Map(),
+    timelineMinutes: 0,
     stats,
   };
 
   const date = todayLabel();
   const blocks: Block[] = [];
+  let previousClockMinutes = -1;
+  let dayOffset = 0;
 
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
@@ -224,6 +308,11 @@ export function parseProgramText(
     const m = line.match(/^(\d{1,2}:\d{2})\s*(.*)$/);
     if (!m) continue;
     const time = m[1];
+    const [hours, minutes] = time.split(":").map(Number);
+    const clockMinutes = hours * 60 + minutes;
+    if (previousClockMinutes >= 0 && clockMinutes < previousClockMinutes) dayOffset += 24 * 60;
+    previousClockMinutes = clockMinutes;
+    ctx.timelineMinutes = dayOffset + clockMinutes;
     const { spec, rest } = readClockSpec(m[2]);
     const clock = parseClock(spec);
     const items = splitItems(rest).map((it) => resolveToken(it, ctx));

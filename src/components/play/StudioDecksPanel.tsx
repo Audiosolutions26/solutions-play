@@ -184,12 +184,6 @@ function DeckWaveform({
       ctx.closePath();
       ctx.fillStyle = `rgba(${rgb},0.2)`;
       ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(x1, rising ? yBottom : yTop);
-      ctx.lineTo(x2, rising ? yTop : yBottom);
-      ctx.strokeStyle = `rgb(${rgb})`;
-      ctx.lineWidth = 2;
-      ctx.stroke();
     };
 
     const cueIn = effectiveMarkers.find((m) => m.kind === "startPoint")?.positionSec ?? 0;
