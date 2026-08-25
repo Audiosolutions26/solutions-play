@@ -4,6 +4,7 @@
 // aplicados de verdade no motor de áudio durante as transições.
 import { loadConfig, type ConfigState } from "./play-config";
 import type { Track } from "./play-data";
+import type { CrossfadeCurve } from "./audio-analysis";
 
 export interface MixSettings {
   comerciais: number;
@@ -13,6 +14,7 @@ export interface MixSettings {
   locucoes: number;
   horaCerta: number;
   refrao: number;
+  crossfadeCurve: CrossfadeCurve;
   fadeInRefrao: number;
   fadeOutRefrao: number;
   fadeManual: number;
@@ -26,6 +28,7 @@ const DEFAULTS: MixSettings = {
   locucoes: 600,
   horaCerta: 400,
   refrao: 500,
+  crossfadeCurve: "equal-power",
   fadeInRefrao: 300,
   fadeOutRefrao: 300,
   fadeManual: 400,
@@ -51,10 +54,28 @@ export function getMixSettings(source?: ConfigState): MixSettings {
     locucoes: n("mixLocucoes", DEFAULTS.locucoes),
     horaCerta: n("mixHoraCerta", DEFAULTS.horaCerta),
     refrao: n("mixRefrao", DEFAULTS.refrao),
+    crossfadeCurve: getCrossfadeCurve(source),
     fadeInRefrao: n("fadeInRefrao", DEFAULTS.fadeInRefrao),
     fadeOutRefrao: n("fadeOutRefrao", DEFAULTS.fadeOutRefrao),
     fadeManual: n("fadeManual", DEFAULTS.fadeManual),
   };
+}
+
+const CURVE_VALUES: CrossfadeCurve[] = ["equal-power", "linear", "logarithmic", "s-curve"];
+
+export function getCrossfadeCurve(source?: ConfigState): CrossfadeCurve {
+  let c: Record<string, unknown> = {};
+  try {
+    c = (source ?? loadConfig()) as Record<string, unknown>;
+  } catch {
+    /* SSR / sem storage */
+  }
+  const value = c["insercoes.tempoMixagem.crossfadeCurve"];
+  if (typeof value === "string" && CURVE_VALUES.includes(value as CrossfadeCurve)) {
+    return value as CrossfadeCurve;
+  }
+  const equalPower = c["insercoes.deteccaoPontos.crossEqualPower"];
+  return equalPower === false ? "linear" : DEFAULTS.crossfadeCurve;
 }
 
 // Tempo de mixagem (ms) para uma inserção, conforme seu tipo/categoria.

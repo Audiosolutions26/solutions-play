@@ -28,6 +28,7 @@ import {
   markerStartEnabled,
   mixTimeForTrack,
   manualFadeMs,
+  getCrossfadeCurve,
 } from "@/lib/play-mixagem";
 import {
   analyzeCuePoints,
@@ -42,7 +43,7 @@ import { importMrkInfoForTrack, exportMrkInfoForTrack } from "@/lib/play-mrk";
 import { logEvent } from "@/lib/play-events";
 import { resolveTransitionPlan, type TransitionPlan } from "@/lib/play-transition";
 import { applyTrackOutput, type OutputFn } from "@/lib/play-outputs";
-import { suggestCrossfadeCurve, getNormalizationGain } from "@/lib/audio-analysis";
+import { getNormalizationGain } from "@/lib/audio-analysis";
 import { getEffectiveMarkers } from "@/lib/play-effective-markers";
 
 export type OperationMode = "AUTO" | "MANUAL" | "RE-BROADCAST" | "OFFLINE";
@@ -299,12 +300,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
         cueRef.current = cached && cached.cueOut > 0 ? cached : null;
 
-        const curve = suggestCrossfadeCurve(
-          track.category || "musical",
-          nextTrack?.category || "musical",
-          cached?.bpm || 0,
-          nextCached?.bpm || 0,
-        );
+        const curve = getCrossfadeCurve();
 
         const normGain = cached?.loudness ? getNormalizationGain(cached.loudness) : 1.0;
 

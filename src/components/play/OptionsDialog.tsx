@@ -42,6 +42,43 @@ const GUIDES: { id: string; title: string }[] = [
   { id: "licenca", title: "Licença" },
 ];
 
+function curveY(curve: string, x: number, rising: boolean): number {
+  const t = Math.max(0, Math.min(1, x));
+  let value = rising ? t : 1 - t;
+  if (curve === "equal-power") value = rising ? Math.sin((t * Math.PI) / 2) : Math.cos((t * Math.PI) / 2);
+  else if (curve === "logarithmic") value = rising ? t * t : (1 - t) * (1 - t);
+  else if (curve === "s-curve") {
+    const smooth = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    value = rising ? smooth : 1 - smooth;
+  }
+  return 28 - value * 22;
+}
+
+function CurveSample({ curve }: { curve: string }) {
+  const points = (rising: boolean) => {
+    const values: string[] = [];
+    for (let i = 0; i <= 32; i++) {
+      const x = 5 + (i / 32) * 66;
+      const y = curveY(curve, i / 32, rising);
+      values.push(`${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    return values.join(" ");
+  };
+  return (
+    <div className="rounded border border-pl-panel-dark/30 bg-black/20 px-2 py-1.5">
+      <div className="mb-0.5 flex justify-between text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-emerald-400">Fade In · subida</span>
+        <span className="text-red-400">Fade Out · queda</span>
+      </div>
+      <svg viewBox="0 0 76 34" className="h-10 w-full" role="img" aria-label={`Amostra da curva ${curve}`}>
+        <path d="M5 28H71 M5 6H71" stroke="currentColor" strokeOpacity="0.12" strokeWidth="0.7" />
+        <path d={points(true)} fill="none" stroke="#34d399" strokeWidth="1.8" />
+        <path d={points(false)} fill="none" stroke="#f87171" strokeWidth="1.8" />
+      </svg>
+    </div>
+  );
+}
+
 function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
   const { draft, setDraft } = useConfig();
   const value = draft[fullKey] ?? field.default;
@@ -77,6 +114,10 @@ function FieldRow({ field, fullKey }: { field: ConfigField; fullKey: string }) {
             ))}
           </SelectContent>
         </Select>
+        {field.key === "crossfadeCurve" && <CurveSample curve={String(value)} />}
+        {field.help && field.key !== "crossfadeCurve" && (
+          <div className="text-[11px] leading-tight text-muted-foreground">{field.help}</div>
+        )}
       </div>
     );
   }

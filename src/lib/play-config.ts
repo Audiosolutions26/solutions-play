@@ -496,6 +496,19 @@ const guiaInsercoes: ConfigGuide = {
         },
         { key: "mixRefrao", label: "Refrão", type: "number", default: 500, unit: "ms" },
         {
+          key: "crossfadeCurve",
+          label: "Curva do Fade In / Fade Out",
+          type: "select",
+          default: "equal-power",
+          help: "Define o desenho da subida (Fade In) e da queda (Fade Out) nas passagens.",
+          options: [
+            { value: "equal-power", label: "Equal-power — suave e constante" },
+            { value: "linear", label: "Linear — queda/subida uniforme" },
+            { value: "logarithmic", label: "Logarítmica — entrada natural" },
+            { value: "s-curve", label: "Curva S — suave no início e no fim" },
+          ],
+        },
+        {
           key: "fadeInRefrao",
           label: "Fade in para refrão",
           type: "number",
